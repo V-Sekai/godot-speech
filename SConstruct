@@ -476,6 +476,9 @@ dll_extension = ""
 if env['platform'] == "windows":
     # Override scons default.
     dll_extension = ".dll"
+if env['platform'] == "osx" or env['platform'] == "macos":
+    # Override scons default.
+    dll_extension = ".dylib"
 
 library = env.SharedLibrary(target='bin/' + target + '/libGodotSpeech' + dll_extension, source=sources)
 if env['platform'] == "osx":
