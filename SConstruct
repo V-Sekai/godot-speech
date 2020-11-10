@@ -129,6 +129,11 @@ opts.Add(BoolVariable(
     'Generate GDNative API bindings',
     False
 ))
+opts.Add(
+    'osxcross_sdk',
+    'OSXCross SDK version',
+    'darwin14'
+)
 opts.Add(EnumVariable(
     'android_arch',
     'Target Android architecture',
@@ -207,21 +212,41 @@ if env['platform'] == 'linux':
         env.Append(LINKFLAGS=['-m32'])
 
 elif env['platform'] == 'osx':
-    # Use Clang on macOS by default
-    env['CC'] = 'clang'
-    env['CXX'] = 'clang++'
+    # Save this in environment for use by other modules
+    if not "OSXCROSS_ROOT" in os.environ:  # regular native build
+        if env["arch"] == "arm64":
+            print("Building for macOS 10.15+, platform arm64.")
+            env.Append(CCFLAGS=["-arch", "arm64", "-mmacosx-version-min=10.15", "-target", "arm64-apple-macos10.15"])
+            env.Append(LINKFLAGS=["-arch", "arm64", "-mmacosx-version-min=10.15", "-target", "arm64-apple-macos10.15"])
+        else:
+            print("Building for macOS 10.9+, platform x86-64.")
+            env.Append(CCFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.9"])
+            env.Append(LINKFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.9"])
+
+        # Use Clang on macOS by default
+        env["CXX"] = "clang"
+        env["CXX"] = "clang++"
+
+    else:  # osxcross build
+        root = os.environ.get("OSXCROSS_ROOT", 0)
+        basecmd = root + "/target/bin/x86_64-apple-" + env["osxcross_sdk"] + "-"
+
+        env["CC"] = basecmd + "cc"
+        env["CXX"] = basecmd + "c++"
+        env["AR"] = basecmd + "ar"
+        env["RANLIB"] = basecmd + "ranlib"
+        env["AS"] = basecmd + "as"
+        env.Append(CPPDEFINES=["__MACPORTS__"])  # hack to fix libvpx MM256_BROADCASTSI128_SI256 define
 
     if env['bits'] == '32':
         raise ValueError(
             'Only 64-bit builds are supported for the macOS target.'
         )
 
-    env.Append(CCFLAGS=['-g', '-arch', 'x86_64'])
+    env.Append(CCFLAGS=['-g'])
     env.Append(CFLAGS=['-std=c11'])
     env.Append(CXXFLAGS=['-std=c++14'])
     env.Append(LINKFLAGS=[
-        '-arch',
-        'x86_64',
         '-framework',
         'Cocoa',
         '-Wl,-undefined,dynamic_lookup',
