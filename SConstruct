@@ -463,7 +463,7 @@ env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 
 # fix needed on OSX
 def rpath_fix(target, source, env):
-    subprocess.check_call([env["install_name_tool"], "-id", "@rpath/libgodot_speech.dylib", str(target[0])])
+    subprocess.check_call("%s -id @rpath/libgodot_speech.dylib %s" % (env["install_name_tool"], str(target[0])), shell=True)
 
 sources = []
 env.modules_sources = sources
