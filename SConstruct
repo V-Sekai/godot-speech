@@ -166,6 +166,8 @@ env = Environment(ENV = os.environ)
 opts.Update(env)
 Help(opts.GenerateHelpText(env))
 
+env["install_name_tool"] = "install_name_tool"
+
 is64 = sys.maxsize > 2**32
 if (
     env['TARGET_ARCH'] == 'amd64' or
@@ -231,6 +233,7 @@ elif env['platform'] == 'osx':
         root = os.environ.get("OSXCROSS_ROOT", 0)
         basecmd = root + "/target/bin/x86_64-apple-" + env["osxcross_sdk"] + "-"
 
+        env["install_name_tool"] = basecmd + "install_name_tool"
         env["CC"] = basecmd + "cc"
         env["CXX"] = basecmd + "c++"
         env["AR"] = basecmd + "ar"
@@ -430,8 +433,8 @@ if env['bits'] == 'default':
 platform_suffix = '.' + env['platform'] + '.' + ("release" if target == "release_debug" else target) + '.' + env["bits"]
 
 # put stuff that is the same for all first, saves duplication 
-if env["platform"] == "osx":
-    platform_suffix = ''
+#if env["platform"] == "osx":
+#    platform_suffix = ''
 
 def add_sources(sources, dir):
     for f in os.listdir(dir):
@@ -460,7 +463,7 @@ env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 
 # fix needed on OSX
 def rpath_fix(target, source, env):
-    os.system('install_name_tool -id @rpath/libgodot_speech.dylib {0}'.format(target[0]))
+    subprocess.check_call([env["install_name_tool"], "-id", "@rpath/libgodot_speech.dylib", target[0]])
 
 sources = []
 env.modules_sources = sources
