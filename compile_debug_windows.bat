@@ -1,1 +1,0 @@
-call scons platform=windows bits=64 llvm=yes target=debug opus_path="external/opus/include" opus_library="external/opus/output/Debug/opus" libsamplerate_path="external/libsamplerate/src" libsamplerate_library="external/libsamplerate/output/Debug/samplerate" -j12
