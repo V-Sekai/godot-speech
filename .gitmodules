@@ -1,6 +1,3 @@
 [submodule "external/opus"]
 	path = external/opus
 	url = https://github.com/xiph/opus
-[submodule "external/libsamplerate"]
-	path = external/libsamplerate
-	url = https://github.com/erikd/libsamplerate
