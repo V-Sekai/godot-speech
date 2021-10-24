@@ -31,7 +31,6 @@
 #include "speech_processor.h"
 
 #include <algorithm>
-#include <sys/_types/_int64_t.h>
 
 #define SET_BUFFER_16_BIT(buffer, buffer_pos, sample) ((int16_t *)buffer)[buffer_pos] = sample >> 16;
 #define STEREO_CHANNEL_COUNT 2
