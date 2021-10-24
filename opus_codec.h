@@ -139,7 +139,6 @@ public:
 	}
 
 	OpusCodec(uint32_t p_channel_count) : channel_count(p_channel_count) {
-		print_line("OpusCodec::OpusCodec");
 		int error = 0;
 		encoder = opus_encoder_create(sample_rate, channel_count, APPLICATION, &error);
 
@@ -158,7 +157,6 @@ public:
 	}
 
 	~OpusCodec() {
-		print_line("OpusCodec::~OpusCodec");
 		opus_encoder_destroy(encoder);
 	}
 };

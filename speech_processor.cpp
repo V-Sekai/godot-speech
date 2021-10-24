@@ -343,7 +343,6 @@ Dictionary SpeechProcessor::get_stats() const {
 }
 
 SpeechProcessor::SpeechProcessor() {
-	print_line(String("SpeechProcessor::SpeechProcessor"));
 	opus_codec = new OpusCodec(CHANNEL_COUNT);
 
 	capture_discarded_frames = 0;
@@ -359,9 +358,6 @@ SpeechProcessor::SpeechProcessor() {
 	resampled_real_array.resize(RECORD_MIX_FRAMES * RESAMPLED_BUFFER_FACTOR);
 	pcm_byte_array_cache.resize(pcm_buffer_size);
 	libresample_state = src_new(SRC_SINC_BEST_QUALITY, CHANNEL_COUNT, &libresample_error);
-
-	print_line(String("SpeechProcessor::SpeechProcessor"));
-
 	audio_server = AudioServer::get_singleton();
 	if (audio_server != nullptr) {
 		mix_rate = audio_server->get_mix_rate();
@@ -370,8 +366,6 @@ SpeechProcessor::SpeechProcessor() {
 
 SpeechProcessor::~SpeechProcessor() {
 	libresample_state = src_delete(libresample_state);
-
-	print_line(String("SpeechProcessor::~SpeechProcessor"));
 	delete opus_codec;
 }
 
