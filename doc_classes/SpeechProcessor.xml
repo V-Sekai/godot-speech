@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpeechProcessor" inherits="Node" version="4.0">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="compress_buffer">
+			<return type="Dictionary" />
+			<argument index="0" name="arg0" type="PackedByteArray" />
+			<argument index="1" name="arg1" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="decompress_buffer">
+			<return type="PackedVector2Array" />
+			<argument index="0" name="arg0" type="SpeechDecoder" />
+			<argument index="1" name="arg1" type="PackedByteArray" />
+			<argument index="2" name="arg2" type="int" />
+			<argument index="3" name="arg3" type="PackedVector2Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_audio_input_stream_player">
+			<return type="bool" />
+			<argument index="0" name="arg0" type="Node" />
+			<description>
+			</description>
+		</method>
+		<method name="set_streaming_bus">
+			<return type="void" />
+			<argument index="0" name="arg0" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="start">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="stop">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<signals>
+		<signal name="speech_processed">
+			<argument index="0" name="packet" type="Dictionary" />
+			<description>
+			</description>
+		</signal>
+	</signals>
+</class>

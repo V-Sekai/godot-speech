@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Speech" inherits="Node" version="4.0">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="clear_skipped_audio_packets">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="copy_and_clear_buffers">
+			<return type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="decompress_buffer">
+			<return type="PackedVector2Array" />
+			<argument index="0" name="decoder" type="SpeechDecoder" />
+			<argument index="1" name="read_array" type="PackedByteArray" />
+			<argument index="2" name="read_size" type="int" />
+			<argument index="3" name="write_array" type="PackedVector2Array" />
+			<description>
+			</description>
+		</method>
+		<method name="end_recording">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="get_skipped_audio_packets">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_speech_decoder">
+			<return type="SpeechDecoder" />
+			<description>
+			</description>
+		</method>
+		<method name="get_stats">
+			<return type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="set_audio_input_stream_player">
+			<return type="bool" />
+			<argument index="0" name="player" type="Node" />
+			<description>
+			</description>
+		</method>
+		<method name="set_streaming_bus">
+			<return type="void" />
+			<argument index="0" name="bus" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="start_recording">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>
