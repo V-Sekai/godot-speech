@@ -235,15 +235,9 @@ public:
 				setup_connections();
 				if (speech_processor) {
 					add_child(speech_processor);
+					speech_processor->set_owner(get_owner());
 				}
 				break;
-			case NOTIFICATION_PREDELETE: {
-				if (speech_processor) {
-					speech_processor->queue_delete();
-					speech_processor = nullptr;
-				}
-				break;
-			}
 			default: {
 				break;
 			}
