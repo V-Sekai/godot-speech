@@ -40,125 +40,133 @@
 
 class OpusCodec {
 private:
-	const uint32_t sample_rate = 48000;
-	const uint32_t channel_count = 0;
-	static const uint32_t APPLICATION = OPUS_APPLICATION_VOIP;
-	static const uint32_t MILLISECONDS_PER_PACKET = 100;
-	const int BUFFER_FRAME_COUNT = sample_rate / MILLISECONDS_PER_PACKET;
+  const uint32_t sample_rate = 48000;
+  const uint32_t channel_count = 0;
+  static const uint32_t APPLICATION = OPUS_APPLICATION_VOIP;
+  static const uint32_t MILLISECONDS_PER_PACKET = 100;
+  const int BUFFER_FRAME_COUNT = sample_rate / MILLISECONDS_PER_PACKET;
 
-	static const int INTERNAL_BUFFER_SIZE = (25 * 3 * 1276);
-	unsigned char internal_buffer[INTERNAL_BUFFER_SIZE];
+  static const int INTERNAL_BUFFER_SIZE = (25 * 3 * 1276);
+  unsigned char internal_buffer[INTERNAL_BUFFER_SIZE];
 
-	OpusEncoder *encoder = nullptr;
+  OpusEncoder *encoder = nullptr;
 
 protected:
-	void print_opus_error(int error_code) {
-		switch (error_code) {
-			case OPUS_OK:
-				print_line("OpusCodec::OPUS_OK");
-				break;
-			case OPUS_BAD_ARG:
-				print_line("OpusCodec::OPUS_BAD_ARG");
-				break;
-			case OPUS_BUFFER_TOO_SMALL:
-				print_line("OpusCodec::OPUS_BUFFER_TOO_SMALL");
-				break;
-			case OPUS_INTERNAL_ERROR:
-				print_line("OpusCodec::OPUS_INTERNAL_ERROR");
-				break;
-			case OPUS_INVALID_PACKET:
-				print_line("OpusCodec::OPUS_INVALID_PACKET");
-				break;
-			case OPUS_UNIMPLEMENTED:
-				print_line("OpusCodec::OPUS_UNIMPLEMENTED");
-				break;
-			case OPUS_INVALID_STATE:
-				print_line("OpusCodec::OPUS_INVALID_STATE");
-				break;
-			case OPUS_ALLOC_FAIL:
-				print_line("OpusCodec::OPUS_ALLOC_FAIL");
-				break;
-		}
-	}
+  void print_opus_error(int error_code) {
+    switch (error_code) {
+    case OPUS_OK:
+      print_line("OpusCodec::OPUS_OK");
+      break;
+    case OPUS_BAD_ARG:
+      print_line("OpusCodec::OPUS_BAD_ARG");
+      break;
+    case OPUS_BUFFER_TOO_SMALL:
+      print_line("OpusCodec::OPUS_BUFFER_TOO_SMALL");
+      break;
+    case OPUS_INTERNAL_ERROR:
+      print_line("OpusCodec::OPUS_INTERNAL_ERROR");
+      break;
+    case OPUS_INVALID_PACKET:
+      print_line("OpusCodec::OPUS_INVALID_PACKET");
+      break;
+    case OPUS_UNIMPLEMENTED:
+      print_line("OpusCodec::OPUS_UNIMPLEMENTED");
+      break;
+    case OPUS_INVALID_STATE:
+      print_line("OpusCodec::OPUS_INVALID_STATE");
+      break;
+    case OPUS_ALLOC_FAIL:
+      print_line("OpusCodec::OPUS_ALLOC_FAIL");
+      break;
+    }
+  }
 
 public:
-	Ref<SpeechDecoder> get_speech_decoder() {
-		int error;
-		::OpusDecoder *decoder = opus_decoder_create(sample_rate, channel_count, &error);
-		if (error != OPUS_OK) {
-			ERR_PRINT("OpusCodec: could not create Opus decoder!");
-			return nullptr;
-		}
+  Ref<SpeechDecoder> get_speech_decoder() {
+    int error;
+    ::OpusDecoder *decoder =
+        opus_decoder_create(sample_rate, channel_count, &error);
+    if (error != OPUS_OK) {
+      ERR_PRINT("OpusCodec: could not create Opus decoder!");
+      return nullptr;
+    }
 
-		Ref<SpeechDecoder> speech_decoder;
-		speech_decoder.instantiate();
-		speech_decoder->set_decoder(decoder);
+    Ref<SpeechDecoder> speech_decoder;
+    speech_decoder.instantiate();
+    speech_decoder->set_decoder(decoder);
 
-		return speech_decoder;
-	}
+    return speech_decoder;
+  }
 
-	int encode_buffer(const PackedByteArray *p_pcm_buffer, PackedByteArray *p_output_buffer) {
-		int number_of_bytes = -1;
-		
-		// The following line disables compression and sends data uncompressed.
-		// Combine it with a change in speech_decoder.h
-		memcpy(p_output_buffer->ptrw(), p_pcm_buffer->ptr() + 1, BUFFER_FRAME_COUNT * 2 - 1);
-		return BUFFER_FRAME_COUNT * 2 - 1;
+  int encode_buffer(const PackedByteArray *p_pcm_buffer,
+                    PackedByteArray *p_output_buffer) {
+    int number_of_bytes = -1;
 
-		if (encoder) {
-			const opus_int16 *pcm_buffer_pointer = reinterpret_cast<const opus_int16 *>(p_pcm_buffer->ptr());
+    // The following line disables compression and sends data uncompressed.
+    // Combine it with a change in speech_decoder.h
+    memcpy(p_output_buffer->ptrw(), p_pcm_buffer->ptr() + 1,
+           BUFFER_FRAME_COUNT * 2 - 1);
+    return BUFFER_FRAME_COUNT * 2 - 1;
 
-			opus_int32 ret_value = opus_encode(encoder, pcm_buffer_pointer, BUFFER_FRAME_COUNT, internal_buffer, INTERNAL_BUFFER_SIZE);
-			if (ret_value >= 0) {
-				number_of_bytes = ret_value;
+    if (encoder) {
+      const opus_int16 *pcm_buffer_pointer =
+          reinterpret_cast<const opus_int16 *>(p_pcm_buffer->ptr());
 
-				if (number_of_bytes > 0) {
-					unsigned char *output_buffer_pointer = reinterpret_cast<unsigned char *>(p_output_buffer->ptrw());
-					memcpy(output_buffer_pointer, internal_buffer, number_of_bytes);
-				}
-			} else {
-				print_opus_error(ret_value);
-			}
-		}
+      opus_int32 ret_value =
+          opus_encode(encoder, pcm_buffer_pointer, BUFFER_FRAME_COUNT,
+                      internal_buffer, INTERNAL_BUFFER_SIZE);
+      if (ret_value >= 0) {
+        number_of_bytes = ret_value;
 
-		return number_of_bytes;
-	}
+        if (number_of_bytes > 0) {
+          unsigned char *output_buffer_pointer =
+              reinterpret_cast<unsigned char *>(p_output_buffer->ptrw());
+          memcpy(output_buffer_pointer, internal_buffer, number_of_bytes);
+        }
+      } else {
+        print_opus_error(ret_value);
+      }
+    }
 
-	bool decode_buffer(
-			SpeechDecoder *p_speech_decoder,
-			const PackedByteArray *p_compressed_buffer,
-			PackedByteArray *p_pcm_output_buffer,
-			const int p_compressed_buffer_size,
-			const int p_pcm_output_buffer_size) {
-		if (p_pcm_output_buffer->size() != p_pcm_output_buffer_size) {
-			ERR_PRINT("OpusCodec: decode_buffer output_buffer_size mismatch!");
-			return false;
-		}
+    return number_of_bytes;
+  }
 
-		return p_speech_decoder->process(p_compressed_buffer, p_pcm_output_buffer, p_compressed_buffer_size, p_pcm_output_buffer_size, BUFFER_FRAME_COUNT);
-	}
+  bool decode_buffer(SpeechDecoder *p_speech_decoder,
+                     const PackedByteArray *p_compressed_buffer,
+                     PackedByteArray *p_pcm_output_buffer,
+                     const int p_compressed_buffer_size,
+                     const int p_pcm_output_buffer_size) {
+    if (p_pcm_output_buffer->size() != p_pcm_output_buffer_size) {
+      ERR_PRINT("OpusCodec: decode_buffer output_buffer_size mismatch!");
+      return false;
+    }
 
-	OpusCodec(uint32_t p_channel_count) : channel_count(p_channel_count) {
-		int error = 0;
-		encoder = opus_encoder_create(sample_rate, channel_count, APPLICATION, &error);
+    return p_speech_decoder->process(
+        p_compressed_buffer, p_pcm_output_buffer, p_compressed_buffer_size,
+        p_pcm_output_buffer_size, BUFFER_FRAME_COUNT);
+  }
 
-		if (error != OPUS_OK) {
-			ERR_PRINT("OpusCodec: could not create Opus encoder!");
-		}
-		// allowed half-sample-rate.
-		//error = opus_encoder_ctl(encoder, OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND)); //OPUS_AUTO));
-		if (error != OPUS_OK) {
-			print_opus_error(error);
-		}
-		//error = opus_encoder_ctl(encoder, OPUS_SET_BITRATE(512000));
-		if (error != OPUS_OK) {
-			print_opus_error(error);
-		}
-	}
+  OpusCodec(uint32_t p_channel_count) : channel_count(p_channel_count) {
+    int error = 0;
+    encoder =
+        opus_encoder_create(sample_rate, channel_count, APPLICATION, &error);
 
-	~OpusCodec() {
-		opus_encoder_destroy(encoder);
-	}
+    if (error != OPUS_OK) {
+      ERR_PRINT("OpusCodec: could not create Opus encoder!");
+    }
+    // allowed half-sample-rate.
+    // error = opus_encoder_ctl(encoder,
+    // OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND)); //OPUS_AUTO));
+    if (error != OPUS_OK) {
+      print_opus_error(error);
+    }
+    // error = opus_encoder_ctl(encoder, OPUS_SET_BITRATE(512000));
+    if (error != OPUS_OK) {
+      print_opus_error(error);
+    }
+  }
+
+  ~OpusCodec() { opus_encoder_destroy(encoder); }
 };
 
 #endif // OPUS_CODEC_HPP

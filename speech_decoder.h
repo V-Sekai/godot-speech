@@ -36,45 +36,45 @@
 #include "thirdparty/opus/opus/opus.h"
 
 class SpeechDecoder : public RefCounted {
-	GDCLASS(SpeechDecoder, RefCounted)
+  GDCLASS(SpeechDecoder, RefCounted)
 private:
-	::OpusDecoder *decoder = nullptr;
+  ::OpusDecoder *decoder = nullptr;
 
 public:
-	SpeechDecoder() {
-	}
-	
-	~SpeechDecoder() {
-		set_decoder(nullptr);
-	}
+  SpeechDecoder() {}
 
-	void set_decoder(::OpusDecoder *p_decoder) {
-		if (!decoder) {
-			opus_decoder_destroy(decoder);
-		}
-		decoder = p_decoder;
-	}
+  ~SpeechDecoder() { set_decoder(nullptr); }
 
-	virtual bool process(
-			const PackedByteArray *p_compressed_buffer,
-			PackedByteArray *p_pcm_output_buffer,
-			const int p_compressed_buffer_size,
-			const int p_pcm_output_buffer_size,
-			const int p_buffer_frame_count) {
-		// The following line disables compression and sends data uncompressed.
-		// Combine it with a change in opus_codec.h
-		if (p_compressed_buffer_size < p_pcm_output_buffer_size - 1) {
-			return false;
-		}
-		*p_pcm_output_buffer->ptrw() = 0;
-		if (!decoder) {
-			return false;
-		}
-		opus_int16 *output_buffer_pointer = reinterpret_cast<opus_int16 *>(p_pcm_output_buffer->ptrw());
-		const unsigned char *opus_buffer_pointer = reinterpret_cast<const unsigned char *>(p_compressed_buffer->ptr());
+  void set_decoder(::OpusDecoder *p_decoder) {
+    if (!decoder) {
+      opus_decoder_destroy(decoder);
+    }
+    decoder = p_decoder;
+  }
 
-		opus_int32 ret_value = opus_decode(decoder, opus_buffer_pointer, p_compressed_buffer_size, output_buffer_pointer, p_buffer_frame_count, 0);
-		return ret_value;
-	}
+  virtual bool process(const PackedByteArray *p_compressed_buffer,
+                       PackedByteArray *p_pcm_output_buffer,
+                       const int p_compressed_buffer_size,
+                       const int p_pcm_output_buffer_size,
+                       const int p_buffer_frame_count) {
+    // The following line disables compression and sends data uncompressed.
+    // Combine it with a change in opus_codec.h
+    if (p_compressed_buffer_size < p_pcm_output_buffer_size - 1) {
+      return false;
+    }
+    *p_pcm_output_buffer->ptrw() = 0;
+    if (!decoder) {
+      return false;
+    }
+    opus_int16 *output_buffer_pointer =
+        reinterpret_cast<opus_int16 *>(p_pcm_output_buffer->ptrw());
+    const unsigned char *opus_buffer_pointer =
+        reinterpret_cast<const unsigned char *>(p_compressed_buffer->ptr());
+
+    opus_int32 ret_value =
+        opus_decode(decoder, opus_buffer_pointer, p_compressed_buffer_size,
+                    output_buffer_pointer, p_buffer_frame_count, 0);
+    return ret_value;
+  }
 };
-#endif //SPEECH_DECODER_H
+#endif // SPEECH_DECODER_H

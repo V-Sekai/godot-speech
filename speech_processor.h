@@ -42,8 +42,8 @@
 #include "scene/audio/audio_stream_player.h"
 #include "servers/audio/audio_stream.h"
 
-#include <stdlib.h>
 #include <functional>
+#include <stdlib.h>
 
 #include "opus_codec.h"
 #include "thirdparty/libsamplerate/src/samplerate.h"
@@ -52,141 +52,147 @@
 
 class SpeechDecoder;
 class SpeechProcessor : public Node {
-	GDCLASS(SpeechProcessor, Node)
-	Mutex mutex;
+  GDCLASS(SpeechProcessor, Node)
+  Mutex mutex;
 
 public:
-	static const int32_t CHANNEL_COUNT = 1;
-	static const int32_t MILLISECONDS_PER_PACKET = 100;
-	static const int32_t BUFFER_BYTE_COUNT = sizeof(int16_t);
-	int32_t get_pcm_buffer_size() const;
+  static const int32_t CHANNEL_COUNT = 1;
+  static const int32_t MILLISECONDS_PER_PACKET = 100;
+  static const int32_t BUFFER_BYTE_COUNT = sizeof(int16_t);
+  int32_t get_pcm_buffer_size() const;
 
 private:
-	OpusCodec *opus_codec = nullptr;
+  OpusCodec *opus_codec = nullptr;
 
 private:
-	const int32_t voice_sample_rate = 48000;
-	const int64_t buffer_frame_count = voice_sample_rate / MILLISECONDS_PER_PACKET;
-	const int32_t pcm_buffer_size = buffer_frame_count * BUFFER_BYTE_COUNT * CHANNEL_COUNT;
-	int32_t record_mix_frames_processed = 0;
+  const int32_t voice_sample_rate = 48000;
+  const int64_t buffer_frame_count =
+      voice_sample_rate / MILLISECONDS_PER_PACKET;
+  const int32_t pcm_buffer_size =
+      buffer_frame_count * BUFFER_BYTE_COUNT * CHANNEL_COUNT;
+  int32_t record_mix_frames_processed = 0;
 
-	AudioServer *audio_server = nullptr;
-	AudioStreamPlayer *audio_input_stream_player = nullptr;
-	Ref<AudioEffectCapture> audio_effect_capture = nullptr;
+  AudioServer *audio_server = nullptr;
+  AudioStreamPlayer *audio_input_stream_player = nullptr;
+  Ref<AudioEffectCapture> audio_effect_capture = nullptr;
 
-	uint32_t mix_rate = 0;
-	PackedByteArray mix_byte_array;
+  uint32_t mix_rate = 0;
+  PackedByteArray mix_byte_array;
 
-	PackedFloat32Array mono_real_array;
-	PackedFloat32Array resampled_real_array;
-	uint32_t resampled_real_array_offset = 0;
+  PackedFloat32Array mono_real_array;
+  PackedFloat32Array resampled_real_array;
+  uint32_t resampled_real_array_offset = 0;
 
-	PackedByteArray pcm_byte_array_cache;
+  PackedByteArray pcm_byte_array_cache;
 
-	// LibResample
-	SRC_STATE *libresample_state = nullptr;
-	int libresample_error = 0;
+  // LibResample
+  SRC_STATE *libresample_state = nullptr;
+  int libresample_error = 0;
 
-	int64_t capture_discarded_frames = 0;
-	int64_t capture_pushed_frames = 0;
-	int32_t capture_ring_limit = 0;
-	int32_t capture_ring_current_size = 0;
-	int32_t capture_ring_max_size = 0;
-	int64_t capture_ring_size_sum = 0;
-	int32_t capture_get_calls = 0;
-	int64_t capture_get_frames = 0;
+  int64_t capture_discarded_frames = 0;
+  int64_t capture_pushed_frames = 0;
+  int32_t capture_ring_limit = 0;
+  int32_t capture_ring_current_size = 0;
+  int32_t capture_ring_max_size = 0;
+  int64_t capture_ring_size_sum = 0;
+  int32_t capture_get_calls = 0;
+  int64_t capture_get_frames = 0;
 
 public:
-	struct SpeechInput {
-		PackedByteArray *pcm_byte_array = nullptr;
-		float volume = 0.0;
-	};
+  struct SpeechInput {
+    PackedByteArray *pcm_byte_array = nullptr;
+    float volume = 0.0;
+  };
 
-	struct CompressedSpeechBuffer {
-		PackedByteArray *compressed_byte_array = nullptr;
-		int buffer_size = 0;
-	};
+  struct CompressedSpeechBuffer {
+    PackedByteArray *compressed_byte_array = nullptr;
+    int buffer_size = 0;
+  };
 
-	std::function<void(SpeechInput *)> speech_processed;
-	void register_speech_processed(const std::function<void(SpeechInput *)> &callback) {
-		speech_processed = callback;
-	}
+  std::function<void(SpeechInput *)> speech_processed;
+  void register_speech_processed(
+      const std::function<void(SpeechInput *)> &callback) {
+    speech_processed = callback;
+  }
 
-	static void _bind_methods();
+  static void _bind_methods();
 
-	uint32_t _resample_audio_buffer(const float *p_src,
-			const uint32_t p_src_frame_count,
-			const uint32_t p_src_samplerate,
-			const uint32_t p_target_samplerate,
-			float *p_dst);
+  uint32_t _resample_audio_buffer(const float *p_src,
+                                  const uint32_t p_src_frame_count,
+                                  const uint32_t p_src_samplerate,
+                                  const uint32_t p_target_samplerate,
+                                  float *p_dst);
 
-	void start();
-	void stop();
+  void start();
+  void stop();
 
-	static void _get_capture_block(
-			AudioServer *p_audio_server,
-			const uint32_t &p_mix_frame_count,
-			const Vector2 *p_process_buffer_in,
-			float *p_process_buffer_out);
+  static void _get_capture_block(AudioServer *p_audio_server,
+                                 const uint32_t &p_mix_frame_count,
+                                 const Vector2 *p_process_buffer_in,
+                                 float *p_process_buffer_out);
 
-	void _mix_audio(const Vector2 *p_process_buffer_in);
+  void _mix_audio(const Vector2 *p_process_buffer_in);
 
-	static bool _16_pcm_mono_to_real_stereo(const PackedByteArray *p_src_buffer, PackedVector2Array *p_dst_buffer);
+  static bool _16_pcm_mono_to_real_stereo(const PackedByteArray *p_src_buffer,
+                                          PackedVector2Array *p_dst_buffer);
 
-	virtual bool compress_buffer_internal(const PackedByteArray *p_pcm_byte_array, CompressedSpeechBuffer *p_output_buffer) {
-		p_output_buffer->buffer_size = opus_codec->encode_buffer(p_pcm_byte_array, p_output_buffer->compressed_byte_array);
-		if (p_output_buffer->buffer_size != -1) {
-			return true;
-		}
+  virtual bool
+  compress_buffer_internal(const PackedByteArray *p_pcm_byte_array,
+                           CompressedSpeechBuffer *p_output_buffer) {
+    p_output_buffer->buffer_size = opus_codec->encode_buffer(
+        p_pcm_byte_array, p_output_buffer->compressed_byte_array);
+    if (p_output_buffer->buffer_size != -1) {
+      return true;
+    }
 
-		return false;
-	}
+    return false;
+  }
 
-	virtual bool decompress_buffer_internal(
-			SpeechDecoder *speech_decoder,
-			const PackedByteArray *p_read_byte_array,
-			const int p_read_size,
-			PackedVector2Array *p_write_vec2_array) {
-		if (opus_codec->decode_buffer(speech_decoder, p_read_byte_array, &pcm_byte_array_cache, p_read_size, pcm_buffer_size)) {
-			if (_16_pcm_mono_to_real_stereo(&pcm_byte_array_cache, p_write_vec2_array)) {
-				return true;
-			}
-		}
-		return true;
-	}
+  virtual bool decompress_buffer_internal(
+      SpeechDecoder *speech_decoder, const PackedByteArray *p_read_byte_array,
+      const int p_read_size, PackedVector2Array *p_write_vec2_array) {
+    if (opus_codec->decode_buffer(speech_decoder, p_read_byte_array,
+                                  &pcm_byte_array_cache, p_read_size,
+                                  pcm_buffer_size)) {
+      if (_16_pcm_mono_to_real_stereo(&pcm_byte_array_cache,
+                                      p_write_vec2_array)) {
+        return true;
+      }
+    }
+    return true;
+  }
 
-	virtual Dictionary compress_buffer(
-			const PackedByteArray &p_pcm_byte_array,
-			Dictionary p_output_buffer);
+  virtual Dictionary compress_buffer(const PackedByteArray &p_pcm_byte_array,
+                                     Dictionary p_output_buffer);
 
-	virtual PackedVector2Array decompress_buffer(
-			Ref<SpeechDecoder> p_speech_decoder,
-			const PackedByteArray &p_read_byte_array,
-			const int p_read_size,
-			PackedVector2Array p_write_vec2_array);
+  virtual PackedVector2Array
+  decompress_buffer(Ref<SpeechDecoder> p_speech_decoder,
+                    const PackedByteArray &p_read_byte_array,
+                    const int p_read_size,
+                    PackedVector2Array p_write_vec2_array);
 
-	Ref<SpeechDecoder> get_speech_decoder() {
-		if (opus_codec) {
-			return opus_codec->get_speech_decoder();
-		} else {
-			return nullptr;
-		}
-	}
+  Ref<SpeechDecoder> get_speech_decoder() {
+    if (opus_codec) {
+      return opus_codec->get_speech_decoder();
+    } else {
+      return nullptr;
+    }
+  }
 
-	void set_streaming_bus(const String &p_name);
-	bool set_audio_input_stream_player(Node *p_audio_input_stream_player);
+  void set_streaming_bus(const String &p_name);
+  bool set_audio_input_stream_player(Node *p_audio_input_stream_player);
 
-	void set_process_all(bool p_active);
+  void set_process_all(bool p_active);
 
-	Dictionary get_stats() const;
+  Dictionary get_stats() const;
 
-	void _setup();
-	void _update_stats();
+  void _setup();
+  void _update_stats();
 
-	void _notification(int p_what);
+  void _notification(int p_what);
 
-	SpeechProcessor();
-	~SpeechProcessor();
+  SpeechProcessor();
+  ~SpeechProcessor();
 };
 
 #endif // SPEECH_PROCESSOR_H

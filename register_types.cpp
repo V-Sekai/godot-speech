@@ -39,22 +39,21 @@
 
 extern "C"
 #ifdef __GNUC__
-		__attribute__((noreturn))
+    __attribute__((noreturn))
 #endif
-		void
-		celt_fatal(const char *str, const char *file, int line) {
-	ERR_PRINT(String(str));
+    void
+    celt_fatal(const char *str, const char *file, int line) {
+  ERR_PRINT(String(str));
 #if defined(_MSC_VER)
-	_set_abort_behavior(0, _WRITE_ABORT_MSG);
+  _set_abort_behavior(0, _WRITE_ABORT_MSG);
 #endif
-	abort();
+  abort();
 }
 
 void register_speech_types() {
-	ClassDB::register_class<SpeechProcessor>();
-	ClassDB::register_class<SpeechDecoder>();
-	ClassDB::register_class<Speech>();
+  ClassDB::register_class<SpeechProcessor>();
+  ClassDB::register_class<SpeechDecoder>();
+  ClassDB::register_class<Speech>();
 }
 
-void unregister_speech_types() {
-}
+void unregister_speech_types() {}
