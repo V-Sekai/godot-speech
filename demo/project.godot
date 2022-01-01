@@ -18,7 +18,6 @@ config/features=PackedStringArray("4.0")
 [audio]
 
 driver/enable_input=true
-driver/mix_rate=48000
 enable_audio_input=true
 mix_rate=48000
 
