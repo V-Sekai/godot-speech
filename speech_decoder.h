@@ -85,11 +85,11 @@ public:
 
 protected:
   static void _bind_methods() {
-    ClassDB::bind_method(D_METHOD("set_compression", "is_compressed"),
+    ClassDB::bind_method(D_METHOD("set_compression", "compression"),
                          &SpeechDecoder::set_compression);
     ClassDB::bind_method(D_METHOD("get_compression"),
                          &SpeechDecoder::get_compression);
-    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "compressed"), "get_compression",
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "compression"), "set_compression",
                  "get_compression");
   }
 };
