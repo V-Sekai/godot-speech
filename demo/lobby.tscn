@@ -12,14 +12,11 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="players" type="VBoxContainer" parent="."]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
+[node name="players" type="HBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -30,31 +27,26 @@ offset_bottom = 26.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 text = "Lobby"
-align = 1
-structured_text_bidi_override_options = []
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="list" type="ItemList" parent="players"]
-offset_top = 30.0
-offset_right = 400.0
-offset_bottom = 330.0
+offset_left = 514.0
+offset_right = 914.0
+offset_bottom = 300.0
 rect_min_size = Vector2(400, 300)
 size_flags_horizontal = 2
 size_flags_vertical = 2
-items = []
-script = null
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
-[node name="connect" type="VBoxContainer" parent="."]
-anchor_left = 0.5
-anchor_top = 0.505716
-anchor_right = 0.5
-anchor_bottom = 0.505716
+[node name="connect" type="GridContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -65,121 +57,104 @@ offset_bottom = 26.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 text = "Name:"
-structured_text_bidi_override_options = []
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="name" type="LineEdit" parent="connect"]
 offset_top = 30.0
-offset_right = 70.0
+offset_right = 66.0
 offset_bottom = 63.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Player"
-structured_text_bidi_override_options = []
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="ip_label" type="Label" parent="connect"]
-offset_top = 67.0
+offset_top = 120.0
 offset_right = 19.0
-offset_bottom = 93.0
+offset_bottom = 146.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 text = "IP:"
-structured_text_bidi_override_options = []
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="ip" type="LineEdit" parent="connect"]
-offset_top = 97.0
-offset_right = 70.0
-offset_bottom = 130.0
+offset_top = 150.0
+offset_right = 66.0
+offset_bottom = 183.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "127.0.0.1"
-structured_text_bidi_override_options = []
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="port_label" type="Label" parent="connect"]
-offset_top = 134.0
+offset_top = 240.0
 offset_right = 37.0
-offset_bottom = 160.0
+offset_bottom = 266.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 text = "Port:"
-structured_text_bidi_override_options = []
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="port" type="SpinBox" parent="connect"]
-offset_top = 164.0
-offset_right = 86.0
-offset_bottom = 197.0
+offset_top = 270.0
+offset_right = 82.0
+offset_bottom = 303.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 max_value = 99999.0
 value = 10567.0
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="host" type="Button" parent="connect"]
-offset_top = 201.0
+offset_top = 360.0
 offset_right = 48.0
-offset_bottom = 230.0
+offset_bottom = 389.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Host"
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="join" type="Button" parent="connect"]
-offset_top = 234.0
+offset_top = 450.0
 offset_right = 41.0
-offset_bottom = 263.0
+offset_bottom = 479.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Join"
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="server_only" type="CheckBox" parent="connect"]
-offset_top = 267.0
-offset_right = 118.0
-offset_bottom = 298.0
+offset_top = 540.0
+offset_right = 1024.0
+offset_bottom = 571.0
 text = "Server Only"
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="error_label" type="Label" parent="connect"]
-offset_top = 302.0
+offset_top = 575.0
 offset_right = 1.0
-offset_bottom = 325.0
+offset_bottom = 598.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 theme_override_colors/font_color = Color(0.820312, 0.291595, 0.291595, 1)
-align = 1
-structured_text_bidi_override_options = []
-script = null
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -189,8 +164,7 @@ anchor_right = 0.446
 anchor_bottom = 1.0
 offset_right = 14.296
 offset_bottom = 6.0
-structured_text_bidi_override_options = []
-script = null
+theme_override_font_sizes/font_size = 16
 __meta__ = {
 "_edit_use_anchors_": false
 }
