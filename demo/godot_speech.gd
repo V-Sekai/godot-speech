@@ -335,14 +335,13 @@ func _process(_delta: float) -> void:
 		if not elem.has("playback_stats"):
 			continue
 		var playback_stats = elem["playback_stats"]
-		var player_audio = elem
 		attempt_to_feed_stream(
 			0,
 			speech_decoder,
 			audio_stream_player,
 			jitter_buffer,
 			playback_stats,
-			player_audio
+			elem
 		)
 		player_audio[elem]["packets_received_this_frame"] = 0
 	packets_received_this_frame = 0
