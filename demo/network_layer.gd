@@ -72,7 +72,7 @@ func _player_disconnected(p_id : int) -> void:
 		unregister_player(p_id)
 		for id in players:
 			# Erase in the server
-			rpc_id(id, "unregister_player", p_id)
+			rpc_id(id, StringName("unregister_player"), p_id)
 	emit_signal("peer_disconnected", p_id)
 
 
