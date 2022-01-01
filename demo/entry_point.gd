@@ -36,6 +36,16 @@ func _init() -> void:
 		for n in nodes:
 			n.queue_free()
 
+
+func _exit_tree():
+	var godot_speech = get_node_or_null("GodotSpeech")
+	if godot_speech == null:
+		return
+	var nodes = godot_speech.get_children()
+	if nodes != null and nodes.size():
+		for n in nodes:
+			n.queue_free()
+
 func get_voice_timeslice() -> int:
 	return voice_timeslice
 	
