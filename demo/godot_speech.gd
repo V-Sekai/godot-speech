@@ -241,7 +241,6 @@ func attempt_to_feed_stream(
 
 	var playback = p_audio_stream_player.get_stream_playback()
 	if playback == null:
-		p_audio_stream_player.play()
 		return
 	if not p_player_dict["playback_start_time"]:
 		if float(playback.get_skips()) > 0:
