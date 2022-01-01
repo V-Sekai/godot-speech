@@ -322,8 +322,6 @@ func _process(_delta: float) -> void:
 	for key in player_audio:
 		if not key:
 			continue
-		if not player_audio[key] is Dictionary:
-			continue
 		var elem: Dictionary = player_audio[key]
 		if not elem.has("speech_decoder"):
 			continue
