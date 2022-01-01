@@ -181,7 +181,7 @@ func decode_voice_packet(p_voice_buffer : PackedByteArray) -> Array:
 		var encoded_size : int = decode_16_bit_value(PackedByteArray([p_voice_buffer[index + 0], p_voice_buffer[index + 1]]))
 		index += 2
 		
-		new_pool = p_voice_buffer.subarray(index, index + (encoded_size - 1))
+		new_pool = p_voice_buffer.slice(index, index + (encoded_size))
 		
 		
 	return [encoded_id, new_pool]
