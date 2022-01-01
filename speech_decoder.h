@@ -39,11 +39,15 @@ class SpeechDecoder : public RefCounted {
   GDCLASS(SpeechDecoder, RefCounted)
 private:
   ::OpusDecoder *decoder = nullptr;
+  bool is_compressed = false;
 
 public:
   SpeechDecoder() {}
-
   ~SpeechDecoder() { set_decoder(nullptr); }
+
+  void set_compression(bool p_compressed) { is_compressed = p_compressed; }
+
+  bool get_compression() const { return is_compressed; }
 
   void set_decoder(::OpusDecoder *p_decoder) {
     if (!decoder) {
@@ -57,10 +61,12 @@ public:
                        const int p_compressed_buffer_size,
                        const int p_pcm_output_buffer_size,
                        const int p_buffer_frame_count) {
-    // The following line disables compression and sends data uncompressed.
-    // Combine it with a change in opus_codec.h
-    if (p_compressed_buffer_size < p_pcm_output_buffer_size - 1) {
-      return false;
+    if (!get_compression()) {
+      // The following line disables compression and sends data uncompressed.
+      // Combine it with a change in opus_codec.h
+      if (p_compressed_buffer_size < p_pcm_output_buffer_size - 1) {
+        return false;
+      }
     }
     *p_pcm_output_buffer->ptrw() = 0;
     if (!decoder) {
@@ -75,6 +81,16 @@ public:
         opus_decode(decoder, opus_buffer_pointer, p_compressed_buffer_size,
                     output_buffer_pointer, p_buffer_frame_count, 0);
     return ret_value;
+  }
+
+protected:
+  static void _bind_methods() {
+    ClassDB::bind_method(D_METHOD("set_compression", "is_compressed"),
+                         &SpeechDecoder::set_compression);
+    ClassDB::bind_method(D_METHOD("get_compression"),
+                         &SpeechDecoder::get_compression);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "compressed"), "get_compression",
+                 "get_compression");
   }
 };
 #endif // SPEECH_DECODER_H

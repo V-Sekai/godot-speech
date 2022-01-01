@@ -316,14 +316,33 @@ func attempt_to_feed_stream(
 		p_audio_stream_player.pitch_scale = STREAM_STANDARD_PITCH
 
 func _process(_delta: float) -> void:
-	for elem in player_audio.keys():
+	if player_audio == null:
+		return
+	for elem in player_audio:
+		if not elem:
+			continue
+		if not elem is Dictionary:
+			continue
+		if not elem.has("speech_decoder"):
+			continue
+		var speech_decoder = elem["speech_decoder"]
+		if not elem.has("audio_stream_player"):
+			continue
+		var audio_stream_player = elem["audio_stream_player"]
+		if not elem.has("jitter_buffer"):
+			continue
+		var jitter_buffer = elem["jitter_buffer"]
+		if not elem.has("playback_stats"):
+			continue
+		var playback_stats = elem["playback_stats"]
+		var player_audio = elem
 		attempt_to_feed_stream(
 			0,
-			player_audio[elem]["speech_decoder"],
-			player_audio[elem]["audio_stream_player"],
-			player_audio[elem]["jitter_buffer"],
-			player_audio[elem]["playback_stats"],
-			player_audio[elem]
+			speech_decoder,
+			audio_stream_player,
+			jitter_buffer,
+			playback_stats,
+			player_audio
 		)
 		player_audio[elem]["packets_received_this_frame"] = 0
 	packets_received_this_frame = 0

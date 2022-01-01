@@ -149,7 +149,7 @@ private:
     }
   }
 
-public:
+protected:
   static void _bind_methods() {
     ClassDB::bind_method(D_METHOD("get_skipped_audio_packets"),
                          &Speech::get_skipped_audio_packets);
