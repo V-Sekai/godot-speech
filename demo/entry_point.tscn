@@ -3,13 +3,13 @@
 [ext_resource type="Script" path="res://godot_speech.gd" id="1"]
 [ext_resource type="Script" path="res://entry_point.gd" id="3"]
 
-[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_irc63"]
+[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_5fao2"]
 
 [node name="EntryPoint" type="Node"]
 script = ExtResource( "3" )
 
 [node name="MicrophoneStreamAudio" type="AudioStreamPlayer" parent="."]
-stream = SubResource( "AudioStreamMicrophone_irc63" )
+stream = SubResource( "AudioStreamMicrophone_5fao2" )
 autoplay = true
 bus = &"Mic"
 

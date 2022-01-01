@@ -101,30 +101,34 @@ func _network_peer_packet(p_id : int, packet : PackedByteArray) -> void:
 # Lobby management functions
 
 
-@rpc(authority)
+@rpc(any_peer)
 func register_player(id : int, new_player_name : String) -> void:
-	if get_tree().multiplayer.is_network_server():
+	if get_tree().multiplayer.is_server():
+		var remote_id: int = get_tree().multiplayer.get_remote_sender_id()
 		if is_server_only == false:
-			rpc_id(id, StringName("register_player"), 1, player_name)
+			rpc_id(remote_id, StringName("register_player"), 1, player_name)
 		
 		for p_id in players:
-			rpc_id(id, StringName("register_player"), p_id, players[p_id])
-			rpc_id(p_id, StringName("register_player"), id, new_player_name)
+			rpc_id(remote_id, StringName("register_player"), p_id, players[p_id])
+			rpc_id(p_id, StringName("register_player"), remote_id, new_player_name)
 
 	players[id] = new_player_name
 	emit_signal("player_list_changed")
 
 
-@rpc(authority)
+@rpc(any_peer)
 func unregister_player(p_id : int) -> void:
-	if players.erase(p_id) == true:
+	var remote_id: int = p_id
+	if get_tree().multiplayer.is_server():
+		remote_id = get_tree().multiplayer.get_remote_sender_id()
+	if players.erase(remote_id) == true:
 		emit_signal("player_list_changed")
 	else:
-		printerr("unregister_player: invalid id " + str(p_id))
+		printerr("unregister_player: invalid id " + str(remote_id))
 
 
 func is_network_server():
-	return get_tree().multiplayer.is_network_server()
+	return get_tree().multiplayer.is_server()
 
 
 func host_game(new_player_name : String, port : int, p_is_server_only : bool) -> bool:

@@ -241,6 +241,7 @@ func attempt_to_feed_stream(
 
 	var playback = p_audio_stream_player.get_stream_playback()
 	if playback == null:
+		p_audio_stream_player.play()
 		return
 	if not p_player_dict["playback_start_time"]:
 		if float(playback.get_skips()) > 0:
@@ -318,11 +319,12 @@ func attempt_to_feed_stream(
 func _process(_delta: float) -> void:
 	if player_audio == null:
 		return
-	for elem in player_audio:
-		if not elem:
+	for key in player_audio:
+		if not key:
 			continue
-		if not elem is Dictionary:
+		if not player_audio[key] is Dictionary:
 			continue
+		var elem: Dictionary = player_audio[key]
 		if not elem.has("speech_decoder"):
 			continue
 		var speech_decoder = elem["speech_decoder"]
@@ -343,7 +345,7 @@ func _process(_delta: float) -> void:
 			playback_stats,
 			elem
 		)
-		player_audio[elem]["packets_received_this_frame"] = 0
+		player_audio[key]["packets_received_this_frame"] = 0
 	packets_received_this_frame = 0
 
 
