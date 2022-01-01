@@ -12,7 +12,8 @@ script = ExtResource( "3" )
 stream = SubResource( "1" )
 autoplay = true
 bus = &"Mic"
-script = null
 
 [node name="GodotSpeech" type="Speech" parent="."]
 script = ExtResource( "1" )
+
+[node name="@@15304" type="SpeechProcessor" parent="GodotSpeech"]
