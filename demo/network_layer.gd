@@ -156,7 +156,7 @@ func get_player_name() -> String:
 func end_game():
 	emit_signal("game_ended")
 	players.clear()
-	get_tree().multiplayer.set_network_peer(null) # End networking
+	get_tree().multiplayer.multiplayer_peer = null
 	
 func encode_voice_packet(p_index : int, p_voice_buffer : PackedByteArray) -> PackedByteArray:
 	var encoded_index : PackedByteArray = encode_24_bit_value(p_index)

@@ -19,3 +19,5 @@ script = ExtResource( "1" )
 [node name="@@15304" type="SpeechProcessor" parent="GodotSpeech"]
 
 [node name="@@15299" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="@@15299" type="SpeechProcessor" parent="GodotSpeech"]
