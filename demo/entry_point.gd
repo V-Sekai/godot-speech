@@ -28,7 +28,6 @@ var voice_timeslice: int = 0
 var voice_recording_started: bool = false
 
 func _init() -> void:
-	var godot_speech = get_node_or_null("GodotSpeech")
 	if godot_speech == null:
 		return
 	var nodes = godot_speech.get_children()
@@ -38,7 +37,6 @@ func _init() -> void:
 
 
 func _exit_tree():
-	var godot_speech = get_node_or_null("GodotSpeech")
 	if godot_speech == null:
 		return
 	var nodes = godot_speech.get_children()
@@ -130,12 +128,12 @@ func add_player_audio(p_id):
 	audio_players[p_id] = audio_stream_player
 	audio_stream_player.set_name(str(p_id))
 	
-	godot_speech.add_player_audio(p_id, audio_stream_player)
 	add_child(audio_stream_player)
 	audio_stream_player.owner = owner
+	godot_speech.add_player_audio(p_id, audio_stream_player)
 	
 func remove_player_audio(p_id):
-#	godot_speech.voice_controller.remove_player_audio(p_id)
+	godot_speech.voice_controller.remove_player_audio(p_id)
 	var audio_stream_player = audio_players[p_id]
 	audio_stream_player.queue_free()
 	audio_players.erase(p_id)
@@ -174,8 +172,8 @@ func process_input_audio(_delta : float):
 	
 	voice_id += current_skipped
 	
-	voice_timeslice = (get_ticks_since_recording_started() / PACKET_TICK_TIMESLICE)\
-	- (copied_voice_buffers.size() + current_skipped)
+	voice_timeslice = int(float(get_ticks_since_recording_started()) / PACKET_TICK_TIMESLICE)\
+	- (copied_voice_buffers.size() + int(current_skipped))
 	
 	if copied_voice_buffers.size() > 0:
 		for voice_buffer in copied_voice_buffers:
