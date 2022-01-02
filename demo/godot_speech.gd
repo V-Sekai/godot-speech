@@ -242,21 +242,16 @@ func attempt_to_feed_stream(
 	var playback = p_audio_stream_player.get_stream_playback()
 	if playback == null:
 		return
-	if not p_player_dict["playback_start_time"]:
-		if float(playback.get_skips()) > 0:
-			p_player_dict["playback_start_time"] = Time.get_ticks_msec()
-			p_player_dict["playback_prev_time"] = Time.get_ticks_msec()
-			p_jitter_buffer.clear()
-		else:
-			return
-			
 # TODO: iFire 2021-10-22 Submit upstream
 #	if dict_get(p_player_dict,"playback_last_skips") != playback.get_skips():
 #		p_player_dict["playback_prev_time"] = dict_get(p_player_dict,"playback_prev_time") - voice_manager_const.MILLISECONDS_PER_PACKET
 #		p_player_dict["playback_last_skips"] = playback.get_skips()
 
-	var required_packets: int = (Time.get_ticks_msec() - p_player_dict["playback_prev_time"]) / voice_manager_const.MILLISECONDS_PER_PACKET
-	p_player_dict["playback_prev_time"] = p_player_dict["playback_prev_time"] + required_packets * voice_manager_const.MILLISECONDS_PER_PACKET
+	var to_fill: int = playback.get_frames_available()
+	var required_packets: int = 0
+	while to_fill >= voice_manager_const.BUFFER_FRAME_COUNT:
+		to_fill -= voice_manager_const.BUFFER_FRAME_COUNT
+		required_packets += 1
 
 	var last_packet = null
 	if p_jitter_buffer.size() > 0:
