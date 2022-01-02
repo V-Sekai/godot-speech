@@ -209,9 +209,7 @@ func _process(p_delta):
 	var json = JSON.new()
 	debug_output.set_text(json.stringify(statdict, "\t"))
 
-func _ready() -> void:
-	randomize()
-	
+func _ready() -> void:	
 	lobby_scene = lobby_scene_const.instantiate()
 	add_child(lobby_scene)
 	debug_output = lobby_scene.get_node("debug_output")
