@@ -61,7 +61,7 @@ public:
                        const int p_compressed_buffer_size,
                        const int p_pcm_output_buffer_size,
                        const int p_buffer_frame_count) {
-    if (get_compression()) {
+    if (!get_compression()) {
       // The following line disables compression and sends data uncompressed.
       // Combine it with a change in opus_codec.h
       if (p_compressed_buffer_size < p_pcm_output_buffer_size - 1) {
