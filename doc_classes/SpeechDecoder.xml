@@ -6,4 +6,8 @@
 	</description>
 	<tutorials>
 	</tutorials>
+	<members>
+		<member name="compression" type="bool" setter="set_compression" getter="get_compression" default="false">
+		</member>
+	</members>
 </class>
