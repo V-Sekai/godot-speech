@@ -102,7 +102,8 @@ public:
                     PackedByteArray *p_output_buffer) {
     int number_of_bytes = -1;
 
-    if (get_speech_decoder().is_valid() && get_speech_decoder()->get_compression()) {
+    if (get_speech_decoder().is_valid() &&
+        get_speech_decoder()->get_compression()) {
       // The following line disables compression and sends data uncompressed.
       // Combine it with a change in speech_decoder.h
       memcpy(p_output_buffer->ptrw(), p_pcm_buffer->ptr() + 1,
