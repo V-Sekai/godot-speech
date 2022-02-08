@@ -107,7 +107,7 @@ func register_player(id : int, new_player_name : String) -> void:
 		var remote_id: int = get_tree().multiplayer.get_remote_sender_id()
 		if is_server_only == false:
 			rpc_id(remote_id, StringName("register_player"), 1, player_name)
-		
+
 		for p_id in players:
 			rpc_id(remote_id, StringName("register_player"), p_id, players[p_id])
 			rpc_id(p_id, StringName("register_player"), remote_id, new_player_name)
@@ -121,7 +121,7 @@ func unregister_player(p_id : int) -> void:
 	var remote_id: int = p_id
 	if get_tree().multiplayer.is_server():
 		remote_id = get_tree().multiplayer.get_remote_sender_id()
-	if players.erase(remote_id) == true:
+	if players.erase(remote_id):
 		emit_signal("player_list_changed")
 	else:
 		printerr("unregister_player: invalid id " + str(remote_id))
@@ -138,7 +138,7 @@ func host_game(new_player_name : String, port : int, p_is_server_only : bool) ->
 	if host.create_server(port, MAX_PEERS) == OK:
 		get_tree().multiplayer.multiplayer_peer = host
 		return true
-	
+
 	return false
 
 
@@ -150,7 +150,7 @@ func join_game(ip : String, port : int, new_player_name : String) -> void:
 
 func get_player_list() -> Array:
 	return players.values()
-	
+
 func get_player_ids() -> Array:
 	return players.keys()
 
@@ -161,33 +161,33 @@ func end_game():
 	emit_signal("game_ended")
 	players.clear()
 	get_tree().multiplayer.multiplayer_peer = null
-	
+
 func encode_voice_packet(p_index : int, p_voice_buffer : PackedByteArray) -> PackedByteArray:
 	var encoded_index : PackedByteArray = encode_24_bit_value(p_index)
 	var encoded_size : PackedByteArray = encode_16_bit_value(p_voice_buffer.size())
-	
+
 	var new_pool = PackedByteArray()
 	new_pool.append_array(encoded_index)
 	new_pool.append_array(encoded_size)
 	new_pool.append_array(p_voice_buffer)
-	
+
 	return new_pool
-	
+
 func decode_voice_packet(p_voice_buffer : PackedByteArray) -> Array:
 	var new_pool : PackedByteArray = PackedByteArray()
 	var encoded_id : int = -1
-	
+
 	if p_voice_buffer.size() > 5:
 		var index : int = 0
 		encoded_id = decode_24_bit_value(PackedByteArray([p_voice_buffer[index + 0], p_voice_buffer[index + 1], p_voice_buffer[index + 2]]))
 		index += 3
-		
+
 		var encoded_size : int = decode_16_bit_value(PackedByteArray([p_voice_buffer[index + 0], p_voice_buffer[index + 1]]))
 		index += 2
-		
+
 		new_pool = p_voice_buffer.slice(index, index + (encoded_size))
-		
-		
+
+
 	return [encoded_id, new_pool]
 
 func send_audio_packet(p_index : int, p_data : PackedByteArray) -> void:
@@ -200,12 +200,12 @@ func send_audio_packet(p_index : int, p_data : PackedByteArray) -> void:
 func get_full_player_list() -> Array:
 	var player_list = get_player_list()
 	player_list.sort()
-	
+
 	if is_active_player():
 		player_list.push_front(get_player_name() + " (You)")
-	
+
 	return player_list
-	
+
 func _input(p_event : InputEvent):
 	if p_event is InputEventKey:
 		if p_event.keycode == KEY_X:
@@ -216,7 +216,7 @@ func _input(p_event : InputEvent):
 
 func _ready() -> void:
 	var connect_result : int = OK
-	
+
 	if get_tree().multiplayer.connect("peer_connected", self._player_connected) != OK:
 		printerr("could not connect network_peer_connected!")
 	if get_tree().multiplayer.connect("peer_disconnected", self._player_disconnected) != OK:
@@ -227,7 +227,7 @@ func _ready() -> void:
 		printerr("could not connect connection_failed!")
 	if get_tree().multiplayer.connect("server_disconnected", self._server_disconnected) != OK:
 		printerr("could not connect server_disconnected!")
-	
+
 	connect_result = get_tree().multiplayer.connect("peer_packet", self._network_peer_packet)
 	if connect_result != OK:
 		printerr("NetworkManager: network_peer_packet could not be connected!")

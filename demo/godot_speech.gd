@@ -155,7 +155,7 @@ func remove_player_audio(p_player_id: int) -> void:
 	if player_audio.has(p_player_id):
 		if player_audio.erase(p_player_id):
 			return
-	
+
 	printerr("Attempted to remove non-existant player_audio entry (%s)" % p_player_id)
 
 
@@ -172,14 +172,14 @@ func on_received_audio_packet(p_peer_id: int, p_sequence_id: int, p_packet: Pack
 			{"id": str(p_peer_id), "sequence_id": str(p_sequence_id)}
 		)
 	)
-	
+
 	if not player_audio.has(p_peer_id):
-		return 
+		return
 
 	# Detects if no audio packets have been received from this player yet.
 	if player_audio[p_peer_id]["sequence_id"] == -1:
 		player_audio[p_peer_id]["sequence_id"] = p_sequence_id - 1
-		
+
 	player_audio[p_peer_id]["packets_received_this_frame"] += 1
 	packets_received_this_frame += 1
 
@@ -235,7 +235,7 @@ func attempt_to_feed_stream(
 ) -> void:
 	if p_audio_stream_player == null:
 		return
-		
+
 	for _i in range(0, p_skip_count):
 		p_jitter_buffer.pop_front()
 

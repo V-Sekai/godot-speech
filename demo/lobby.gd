@@ -12,18 +12,18 @@ func _on_host_pressed() -> void:
 	get_node("connect").hide()
 	get_node("players").show()
 	get_node("connect/error_label").text = ""
-	
+
 	var server_only : bool = get_node("connect/server_only").pressed
 	var player_name : String = get_node("connect/name").text
 	var port : int = get_node("connect/port").value
-	
+
 	emit_signal("host_requested", player_name, port, server_only)
 
 func _on_join_pressed() -> void:
 	if get_node("connect/name").text == "":
 		get_node("connect/error_label").text = "Invalid name!"
 		return
-		
+
 	var port : int = get_node("connect/port").value
 
 	var ip : String = get_node("connect/ip").text
@@ -63,6 +63,6 @@ func on_game_error(p_errtxt : String) -> void:
 
 func refresh_lobby(p_player_names : Array) -> void:
 	get_node("players/list").clear()
-	
+
 	for p in p_player_names:
 		get_node("players/list").add_item(p)
