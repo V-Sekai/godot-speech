@@ -92,8 +92,8 @@ func get_playback_stats(speech_statdict: Dictionary) -> Dictionary:
 	statdict["capture_discard_percent"] = 100.0 * statdict["capture_discarded_s"] / statdict["capture_pushed_s"]
 	for key in player_audio.keys():
 		statdict[key] = player_audio[key]["playback_stats"].get_playback_stats(self)
-		#statdict[key]["playback_prev_ticks"] = dict_get(player_audio[key],"playback_prev_time") / float(voice_manager_const.MILLISECONDS_PER_SECOND)
-		#statdict[key]["playback_start_ticks"] = dict_get(player_audio[key],"playback_start_time") / float(voice_manager_const.MILLISECONDS_PER_SECOND)
+		#statdict[key]["playback_prev_ticks"] = player_audio[key]["playback_prev_time"] / float(voice_manager_const.MILLISECONDS_PER_SECOND)
+		#statdict[key]["playback_start_ticks"] = player_audio[key]["playback_start_time"] / float(voice_manager_const.MILLISECONDS_PER_SECOND)
 		statdict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(voice_manager_const.MILLISECONDS_PER_SECOND)
 		statdict[key]["excess_packets"] = player_audio[key]["excess_packets"]
 		statdict[key]["excess_s"] = player_audio[key]["excess_packets"] * voice_manager_const.PACKET_DELTA_TIME
@@ -242,10 +242,9 @@ func attempt_to_feed_stream(
 	var playback = p_audio_stream_player.get_stream_playback()
 	if playback == null:
 		return
-# TODO: iFire 2021-10-22 Submit upstream
-#	if dict_get(p_player_dict,"playback_last_skips") != playback.get_skips():
-#		p_player_dict["playback_prev_time"] = dict_get(p_player_dict,"playback_prev_time") - voice_manager_const.MILLISECONDS_PER_PACKET
-#		p_player_dict["playback_last_skips"] = playback.get_skips()
+	if p_player_dict["playback_last_skips"] != playback.get_skips():
+		p_player_dict["playback_prev_time"] = p_player_dict["playback_prev_time"] - voice_manager_const.MILLISECONDS_PER_PACKET
+		p_player_dict["playback_last_skips"] = playback.get_skips()
 
 	var to_fill: int = playback.get_frames_available()
 	var required_packets: int = 0

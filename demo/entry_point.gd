@@ -133,6 +133,8 @@ func add_player_audio(p_id):
 	godot_speech.add_player_audio(p_id, audio_stream_player)
 
 func remove_player_audio(p_id):
+	if not godot_speech.get_property_list().has("voice_controller"):
+		return
 	godot_speech.voice_controller.remove_player_audio(p_id)
 	var audio_stream_player = audio_players[p_id]
 	audio_stream_player.queue_free()
