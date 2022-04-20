@@ -47,7 +47,6 @@
 void SpeechProcessor::_bind_methods() {
   ClassDB::bind_method(D_METHOD("start"), &SpeechProcessor::start);
   ClassDB::bind_method(D_METHOD("stop"), &SpeechProcessor::stop);
-
   ClassDB::bind_method(D_METHOD("compress_buffer"),
                        &SpeechProcessor::compress_buffer);
   ClassDB::bind_method(D_METHOD("decompress_buffer"),
@@ -57,9 +56,22 @@ void SpeechProcessor::_bind_methods() {
                        &SpeechProcessor::set_streaming_bus);
   ClassDB::bind_method(D_METHOD("set_audio_input_stream_player"),
                        &SpeechProcessor::set_audio_input_stream_player);
-
   ADD_SIGNAL(MethodInfo("speech_processed",
                         PropertyInfo(Variant::DICTIONARY, "packet")));
+
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_CHANNEL_COUNT);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_MILLISECONDS_PER_PACKET);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_BUFFER_BYTE_COUNT);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_APPLICATION);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_BUFFER_FRAME_COUNT);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_INTERNAL_BUFFER_SIZE);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_VOICE_SAMPLE_RATE);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_VOICE_BUFFER_FRAME_COUNT);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_PCM_BUFFER_SIZE);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_PACKET_DELTA_TIME);
+  BIND_ENUM_CONSTANT(SPEECH_SETTING_MILLISECONDS_PER_SECOND);
+  
 }
 
 uint32_t SpeechProcessor::_resample_audio_buffer(
@@ -113,7 +125,7 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_incoming_buffer) {
             mono_real_array.ptr(), // Pointer to source buffer
             RECORD_MIX_FRAMES,     // Size of source buffer * sizeof(float)
             mix_rate,              // Source sample rate
-            voice_sample_rate,     // Target sample rate
+            SPEECH_SETTING_VOICE_SAMPLE_RATE, // Target sample rate
             resampled_real_array.ptrw() +
                 static_cast<size_t>(resampled_real_array_offset));
 
@@ -122,9 +134,9 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_incoming_buffer) {
     const float *resampled_real_array_read_ptr = resampled_real_array.ptr();
     double_t sum = 0;
     while (resampled_real_array_offset <
-           resampled_frame_count - buffer_frame_count) {
+           resampled_frame_count - SPEECH_SETTING_BUFFER_FRAME_COUNT) {
       sum = 0.0;
-      for (int64_t i = 0; i < buffer_frame_count; i++) {
+      for (int64_t i = 0; i < SPEECH_SETTING_BUFFER_FRAME_COUNT; i++) {
         float frame_float = resampled_real_array_read_ptr
             [static_cast<size_t>(resampled_real_array_offset) + i];
         int frame_integer = int32_t(frame_float * (float)SIGNED_32_BIT_SIZE);
@@ -134,7 +146,7 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_incoming_buffer) {
         write_buffer[i * 2] = SET_BUFFER_16_BIT(write_buffer, i, frame_integer);
       }
 
-      float average = (float)sum / (float)buffer_frame_count;
+      float average = (float)sum / (float)SPEECH_SETTING_BUFFER_FRAME_COUNT;
 
       Dictionary voice_data_packet;
       voice_data_packet["buffer"] = mix_byte_array;
@@ -150,7 +162,7 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_incoming_buffer) {
         speech_processed(&speech_input);
       }
 
-      resampled_real_array_offset += buffer_frame_count;
+      resampled_real_array_offset += SPEECH_SETTING_BUFFER_FRAME_COUNT;
     }
 
     {
@@ -221,7 +233,7 @@ bool SpeechProcessor::_16_pcm_mono_to_real_stereo(
 Dictionary
 SpeechProcessor::compress_buffer(const PackedByteArray &p_pcm_byte_array,
                                  Dictionary p_output_buffer) {
-  if (p_pcm_byte_array.size() != pcm_buffer_size) {
+  if (p_pcm_byte_array.size() != SPEECH_SETTING_PCM_BUFFER_SIZE) {
     ERR_PRINT("SpeechProcessor: PCM buffer is incorrect size!");
     return p_output_buffer;
   }
@@ -236,7 +248,7 @@ SpeechProcessor::compress_buffer(const PackedByteArray &p_pcm_byte_array,
               "p_output_buffer argument!");
     return p_output_buffer;
   } else {
-    if (byte_array->size() == pcm_buffer_size) {
+    if (byte_array->size() == SPEECH_SETTING_PCM_BUFFER_SIZE) {
       ERR_PRINT("SpeechProcessor: output byte array is incorrect size!");
       return p_output_buffer;
     }
@@ -319,7 +331,8 @@ void SpeechProcessor::_notification(int p_what) {
     set_process_all(true);
     break;
   case NOTIFICATION_ENTER_TREE:
-    mix_byte_array.resize(buffer_frame_count * BUFFER_BYTE_COUNT);
+    mix_byte_array.resize(SPEECH_SETTING_BUFFER_FRAME_COUNT *
+                          SPEECH_SETTING_BUFFER_BYTE_COUNT);
     break;
   case NOTIFICATION_EXIT_TREE:
     stop();
@@ -378,8 +391,23 @@ Dictionary SpeechProcessor::get_stats() const {
 }
 
 SpeechProcessor::SpeechProcessor() {
-  opus_codec = new OpusCodec(CHANNEL_COUNT);
-
+  int error = 0;
+  encoder = opus_encoder_create(SPEECH_SETTING_SAMPLE_RATE,
+                                SPEECH_SETTING_CHANNEL_COUNT,
+                                SPEECH_SETTING_APPLICATION, &error);
+  if (error != OPUS_OK) {
+    ERR_PRINT("OpusCodec: could not create Opus encoder!");
+  }
+  // allowed half-sample-rate.
+  // error = opus_encoder_ctl(encoder,
+  // OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND)); //OPUS_AUTO));
+  if (error != OPUS_OK) {
+    print_opus_error(error);
+  }
+  // error = opus_encoder_ctl(encoder, OPUS_SET_BITRATE(512000));
+  if (error != OPUS_OK) {
+    print_opus_error(error);
+  }
   capture_discarded_frames = 0;
   capture_pushed_frames = 0;
   capture_ring_limit = 0;
@@ -391,9 +419,9 @@ SpeechProcessor::SpeechProcessor() {
 
   mono_real_array.resize(RECORD_MIX_FRAMES);
   resampled_real_array.resize(RECORD_MIX_FRAMES * RESAMPLED_BUFFER_FACTOR);
-  pcm_byte_array_cache.resize(pcm_buffer_size);
-  libresample_state =
-      src_new(SRC_SINC_BEST_QUALITY, CHANNEL_COUNT, &libresample_error);
+  pcm_byte_array_cache.resize(SPEECH_SETTING_PCM_BUFFER_SIZE);
+  libresample_state = src_new(SRC_SINC_BEST_QUALITY,
+                              SPEECH_SETTING_CHANNEL_COUNT, &libresample_error);
   audio_server = AudioServer::get_singleton();
   if (audio_server != nullptr) {
     mix_rate = audio_server->get_mix_rate();
@@ -402,7 +430,24 @@ SpeechProcessor::SpeechProcessor() {
 
 SpeechProcessor::~SpeechProcessor() {
   libresample_state = src_delete(libresample_state);
-  delete opus_codec;
+  if (encoder) {
+    delete encoder;
+    encoder = nullptr;
+  }
 }
 
-int32_t SpeechProcessor::get_pcm_buffer_size() const { return pcm_buffer_size; }
+Ref<SpeechDecoder> SpeechProcessor::get_speech_decoder() {
+  int error;
+  ::OpusDecoder *decoder = opus_decoder_create(
+      SPEECH_SETTING_SAMPLE_RATE, SPEECH_SETTING_CHANNEL_COUNT, &error);
+  if (error != OPUS_OK) {
+    ERR_PRINT("OpusCodec: could not create Opus decoder!");
+    return nullptr;
+  }
+
+  Ref<SpeechDecoder> speech_decoder;
+  speech_decoder.instantiate();
+  speech_decoder->set_decoder(decoder);
+
+  return speech_decoder;
+}

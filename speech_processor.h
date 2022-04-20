@@ -31,47 +31,143 @@
 #ifndef SPEECH_PROCESSOR_H
 #define SPEECH_PROCESSOR_H
 
+#include "scene/main/node.h"
+
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
+#include "core/object/class_db.h"
+#include "core/object/ref_counted.h"
 #include "core/os/mutex.h"
-#include "scene/main/node.h"
-#include "servers/audio_server.h"
-
-#include "servers/audio/effects/audio_effect_capture.h"
-
 #include "scene/audio/audio_stream_player.h"
 #include "servers/audio/audio_stream.h"
+#include "servers/audio/effects/audio_effect_capture.h"
+#include "servers/audio_server.h"
 
 #include <functional>
 #include <stdlib.h>
 
-#include "opus_codec.h"
 #include "thirdparty/libsamplerate/src/samplerate.h"
+#include "thirdparty/opus/opus/opus.h"
+
+#include <stdint.h>
 
 #include "speech_decoder.h"
 
 class SpeechDecoder;
 class SpeechProcessor : public Node {
-  GDCLASS(SpeechProcessor, Node)
+  GDCLASS(SpeechProcessor, Node);
   Mutex mutex;
 
 public:
-  static const int32_t CHANNEL_COUNT = 1;
-  static const int32_t MILLISECONDS_PER_PACKET = 100;
-  static const int32_t BUFFER_BYTE_COUNT = sizeof(int16_t);
-  int32_t get_pcm_buffer_size() const;
+  static const int32_t SPEECH_SETTING_CHANNEL_COUNT = 1;
+  static const int32_t SPEECH_SETTING_MILLISECONDS_PER_PACKET = 100;
+  static const int32_t SPEECH_SETTING_BUFFER_BYTE_COUNT = sizeof(int16_t);
+  static const int32_t SPEECH_SETTING_SAMPLE_RATE = 48000;
+  static const int32_t SPEECH_SETTING_APPLICATION = OPUS_APPLICATION_VOIP;
+  static const int32_t SPEECH_SETTING_BUFFER_FRAME_COUNT =
+      SPEECH_SETTING_SAMPLE_RATE / SPEECH_SETTING_MILLISECONDS_PER_PACKET;
+  static const int32_t SPEECH_SETTING_INTERNAL_BUFFER_SIZE = 25 * 3 * 1276;
+  static const int32_t SPEECH_SETTING_VOICE_SAMPLE_RATE = 48000;
+  static const int32_t SPEECH_SETTING_VOICE_BUFFER_FRAME_COUNT =
+      SPEECH_SETTING_VOICE_SAMPLE_RATE / SPEECH_SETTING_MILLISECONDS_PER_PACKET;
+  static const int32_t SPEECH_SETTING_PCM_BUFFER_SIZE =
+      SPEECH_SETTING_BUFFER_FRAME_COUNT * SPEECH_SETTING_BUFFER_BYTE_COUNT *
+      SPEECH_SETTING_CHANNEL_COUNT;
+  static const int32_t SPEECH_SETTING_MILLISECONDS_PER_SECOND = 1000;
+  static constexpr float SPEECH_SETTING_PACKET_DELTA_TIME = SPEECH_SETTING_MILLISECONDS_PER_PACKET / float(SPEECH_SETTING_MILLISECONDS_PER_SECOND);
+protected:
+  static void _bind_methods();
 
 private:
-  OpusCodec *opus_codec = nullptr;
+  unsigned char internal_buffer[(size_t)SPEECH_SETTING_INTERNAL_BUFFER_SIZE];
+
+protected:
+  void print_opus_error(int error_code) {
+    switch (error_code) {
+    case OPUS_OK:
+      print_line("OpusCodec::OPUS_OK");
+      break;
+    case OPUS_BAD_ARG:
+      print_line("OpusCodec::OPUS_BAD_ARG");
+      break;
+    case OPUS_BUFFER_TOO_SMALL:
+      print_line("OpusCodec::OPUS_BUFFER_TOO_SMALL");
+      break;
+    case OPUS_INTERNAL_ERROR:
+      print_line("OpusCodec::OPUS_INTERNAL_ERROR");
+      break;
+    case OPUS_INVALID_PACKET:
+      print_line("OpusCodec::OPUS_INVALID_PACKET");
+      break;
+    case OPUS_UNIMPLEMENTED:
+      print_line("OpusCodec::OPUS_UNIMPLEMENTED");
+      break;
+    case OPUS_INVALID_STATE:
+      print_line("OpusCodec::OPUS_INVALID_STATE");
+      break;
+    case OPUS_ALLOC_FAIL:
+      print_line("OpusCodec::OPUS_ALLOC_FAIL");
+      break;
+    }
+  }
+
+public:
+  Ref<SpeechDecoder> get_speech_decoder();
+
+  int encode_buffer(const PackedByteArray *p_pcm_buffer,
+                    PackedByteArray *p_output_buffer) {
+    int number_of_bytes = -1;
+
+    if (get_speech_decoder().is_valid() &&
+        get_speech_decoder()->get_compression()) {
+      // The following line disables compression and sends data uncompressed.
+      // Combine it with a change in speech_decoder.h
+      memcpy(p_output_buffer->ptrw(), p_pcm_buffer->ptr() + 1,
+             SPEECH_SETTING_BUFFER_FRAME_COUNT * 2 - 1);
+      return SPEECH_SETTING_BUFFER_FRAME_COUNT * 2 - 1;
+    }
+    if (encoder) {
+      const opus_int16 *pcm_buffer_pointer =
+          reinterpret_cast<const opus_int16 *>(p_pcm_buffer->ptr());
+
+      opus_int32 ret_value = opus_encode(
+          encoder, pcm_buffer_pointer, SPEECH_SETTING_BUFFER_FRAME_COUNT,
+          internal_buffer, SPEECH_SETTING_INTERNAL_BUFFER_SIZE);
+      if (ret_value >= 0) {
+        number_of_bytes = ret_value;
+
+        if (number_of_bytes > 0) {
+          unsigned char *output_buffer_pointer =
+              reinterpret_cast<unsigned char *>(p_output_buffer->ptrw());
+          memcpy(output_buffer_pointer, internal_buffer, number_of_bytes);
+        }
+      } else {
+        print_opus_error(ret_value);
+      }
+    }
+
+    return number_of_bytes;
+  }
+
+  bool decode_buffer(SpeechDecoder *p_speech_decoder,
+                     const PackedByteArray *p_compressed_buffer,
+                     PackedByteArray *p_pcm_output_buffer,
+                     const int p_compressed_buffer_size,
+                     const int p_pcm_output_buffer_size) {
+    if (p_pcm_output_buffer->size() != p_pcm_output_buffer_size) {
+      ERR_PRINT("OpusCodec: decode_buffer output_buffer_size mismatch!");
+      return false;
+    }
+
+    return p_speech_decoder->process(
+        p_compressed_buffer, p_pcm_output_buffer, p_compressed_buffer_size,
+        p_pcm_output_buffer_size, SPEECH_SETTING_BUFFER_FRAME_COUNT);
+  }
 
 private:
-  const int32_t voice_sample_rate = 48000;
-  const int64_t buffer_frame_count =
-      voice_sample_rate / MILLISECONDS_PER_PACKET;
-  const int32_t pcm_buffer_size =
-      buffer_frame_count * BUFFER_BYTE_COUNT * CHANNEL_COUNT;
   int32_t record_mix_frames_processed = 0;
 
+  OpusEncoder *encoder = nullptr;
   AudioServer *audio_server = nullptr;
   AudioStreamPlayer *audio_input_stream_player = nullptr;
   Ref<AudioEffectCapture> audio_effect_capture = nullptr;
@@ -115,8 +211,6 @@ public:
     speech_processed = callback;
   }
 
-  static void _bind_methods();
-
   uint32_t _resample_audio_buffer(const float *p_src,
                                   const uint32_t p_src_frame_count,
                                   const uint32_t p_src_samplerate,
@@ -139,8 +233,8 @@ public:
   virtual bool
   compress_buffer_internal(const PackedByteArray *p_pcm_byte_array,
                            CompressedSpeechBuffer *p_output_buffer) {
-    p_output_buffer->buffer_size = opus_codec->encode_buffer(
-        p_pcm_byte_array, p_output_buffer->compressed_byte_array);
+    p_output_buffer->buffer_size =
+        encode_buffer(p_pcm_byte_array, p_output_buffer->compressed_byte_array);
     if (p_output_buffer->buffer_size != -1) {
       return true;
     }
@@ -151,9 +245,8 @@ public:
   virtual bool decompress_buffer_internal(
       SpeechDecoder *speech_decoder, const PackedByteArray *p_read_byte_array,
       const int p_read_size, PackedVector2Array *p_write_vec2_array) {
-    if (opus_codec->decode_buffer(speech_decoder, p_read_byte_array,
-                                  &pcm_byte_array_cache, p_read_size,
-                                  pcm_buffer_size)) {
+    if (decode_buffer(speech_decoder, p_read_byte_array, &pcm_byte_array_cache,
+                      p_read_size, SPEECH_SETTING_PCM_BUFFER_SIZE)) {
       if (_16_pcm_mono_to_real_stereo(&pcm_byte_array_cache,
                                       p_write_vec2_array)) {
         return true;
@@ -171,14 +264,6 @@ public:
                     const int p_read_size,
                     PackedVector2Array p_write_vec2_array);
 
-  Ref<SpeechDecoder> get_speech_decoder() {
-    if (opus_codec) {
-      return opus_codec->get_speech_decoder();
-    } else {
-      return nullptr;
-    }
-  }
-
   void set_streaming_bus(const String &p_name);
   bool set_audio_input_stream_player(Node *p_audio_input_stream_player);
 
@@ -194,5 +279,4 @@ public:
   SpeechProcessor();
   ~SpeechProcessor();
 };
-
 #endif // SPEECH_PROCESSOR_H

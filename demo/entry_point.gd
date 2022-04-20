@@ -1,6 +1,5 @@
 extends Node
 
-const voice_manager_const = preload("voice_manager_constants.gd")
 const lobby_scene_const = preload("lobby.tscn")
 
 const PACKET_TICK_TIMESLICE = 10

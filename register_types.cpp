@@ -33,7 +33,6 @@
 #include "core/object/class_db.h"
 #include "speech.h"
 
-#include "opus_codec.h"
 #include "speech_decoder.h"
 #include "speech_processor.h"
 
@@ -51,9 +50,9 @@ extern "C"
 }
 
 void register_speech_types() {
-  ClassDB::register_class<SpeechProcessor>();
-  ClassDB::register_class<SpeechDecoder>();
-  ClassDB::register_class<Speech>();
+  GDREGISTER_CLASS(SpeechProcessor);
+  GDREGISTER_CLASS(SpeechDecoder);
+  GDREGISTER_CLASS(Speech);
 }
 
 void unregister_speech_types() {}

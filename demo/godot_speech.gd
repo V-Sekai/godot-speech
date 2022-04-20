@@ -1,6 +1,5 @@
 extends Speech
 
-const voice_manager_const = preload("voice_manager_constants.gd")
 var blank_packet: PackedVector2Array = PackedVector2Array()
 var player_audio: Dictionary = {}
 
@@ -53,9 +52,9 @@ class PlaybackStats:
 		"playback_ring_current_size_s": playback_ring_current_size / float(outerscope.VOICE_PACKET_SAMPLERATE),
 		"playback_ring_max_size_s": playback_ring_max_size / float(outerscope.VOICE_PACKET_SAMPLERATE),
 		"playback_ring_mean_size_s": playback_ring_size_sum / playback_push_buffer_calls / float(outerscope.VOICE_PACKET_SAMPLERATE),
-		"jitter_buffer_current_size_s": float(jitter_buffer_current_size) * outerscope.voice_manager_const.PACKET_DELTA_TIME,
-		"jitter_buffer_max_size_s": float(jitter_buffer_max_size) * outerscope.voice_manager_const.PACKET_DELTA_TIME,
-		"jitter_buffer_mean_size_s": float(jitter_buffer_size_sum) / jitter_buffer_calls * outerscope.voice_manager_const.PACKET_DELTA_TIME,
+		"jitter_buffer_current_size_s": float(jitter_buffer_current_size) * SpeechProcessor.PACKET_DELTA_TIME,
+		"jitter_buffer_max_size_s": float(jitter_buffer_max_size) * SpeechProcessor.PACKET_DELTA_TIME,
+		"jitter_buffer_mean_size_s": float(jitter_buffer_size_sum) / jitter_buffer_calls * SpeechProcessor.PACKET_DELTA_TIME,
 		"jitter_buffer_calls": jitter_buffer_calls,
 		"playback_position_s": playback_position,
 		"playback_get_percent": 100.0 * playback_get_frames / playback_pushed_frames,
@@ -65,7 +64,7 @@ class PlaybackStats:
 		"playback_discarded_s": playback_discarded_frames / float(outerscope.VOICE_PACKET_SAMPLERATE),
 		"playback_push_buffer_calls": floor(playback_push_buffer_calls),
 		#"playback_blank_push_calls": floor(playback_blank_push_calls),
-		"playback_blank_s": playback_blank_push_calls * outerscope.voice_manager_const.PACKET_DELTA_TIME,
+		"playback_blank_s": playback_blank_push_calls * SpeechProcessor.PACKET_DELTA_TIME,
 		"playback_blank_percent": 100.0 * playback_blank_push_calls / playback_push_buffer_calls,
 		"playback_skips": floor(playback_skips),
 		}
@@ -80,7 +79,7 @@ func nearest_shift(p_number: int) -> int:
 
 
 func calc_playback_ring_buffer_length(audio_stream_generator: AudioStreamGenerator) -> int:
-	var target_buffer_size : int = audio_stream_generator.mix_rate * audio_stream_generator.buffer_length;
+	var target_buffer_size : int = int(audio_stream_generator.mix_rate * audio_stream_generator.buffer_length);
 	return (1 << nearest_shift(target_buffer_size));
 
 
@@ -92,11 +91,11 @@ func get_playback_stats(speech_statdict: Dictionary) -> Dictionary:
 	statdict["capture_discard_percent"] = 100.0 * statdict["capture_discarded_s"] / statdict["capture_pushed_s"]
 	for key in player_audio.keys():
 		statdict[key] = player_audio[key]["playback_stats"].get_playback_stats(self)
-		#statdict[key]["playback_prev_ticks"] = player_audio[key]["playback_prev_time"] / float(voice_manager_const.MILLISECONDS_PER_SECOND)
-		#statdict[key]["playback_start_ticks"] = player_audio[key]["playback_start_time"] / float(voice_manager_const.MILLISECONDS_PER_SECOND)
-		statdict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(voice_manager_const.MILLISECONDS_PER_SECOND)
+		#statdict[key]["playback_prev_ticks"] = player_audio[key]["playback_prev_time"] / float(SpeechProcessor.MILLISECONDS_PER_SECOND)
+		#statdict[key]["playback_start_ticks"] = player_audio[key]["playback_start_time"] / float(SpeechProcessor.MILLISECONDS_PER_SECOND)
+		statdict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.MILLISECONDS_PER_SECOND)
 		statdict[key]["excess_packets"] = player_audio[key]["excess_packets"]
-		statdict[key]["excess_s"] = player_audio[key]["excess_packets"] * voice_manager_const.PACKET_DELTA_TIME
+		statdict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.PACKET_DELTA_TIME
 	return statdict
 
 
@@ -133,7 +132,7 @@ func add_player_audio(p_player_id: int, p_audio_stream_player: Node) -> void:
 
 			var pstats = PlaybackStats.new()
 			pstats.playback_ring_buffer_length = playback_ring_buffer_length
-			pstats.buffer_frame_count = voice_manager_const.BUFFER_FRAME_COUNT
+			pstats.buffer_frame_count = SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT
 			player_audio[p_player_id] = {
 				"audio_stream_player": p_audio_stream_player,
 				"jitter_buffer": [],
@@ -243,13 +242,13 @@ func attempt_to_feed_stream(
 	if playback == null:
 		return
 	if p_player_dict["playback_last_skips"] != playback.get_skips():
-		p_player_dict["playback_prev_time"] = p_player_dict["playback_prev_time"] - voice_manager_const.MILLISECONDS_PER_PACKET
+		p_player_dict["playback_prev_time"] = p_player_dict["playback_prev_time"] - SpeechProcessor.MILLISECONDS_PER_PACKET
 		p_player_dict["playback_last_skips"] = playback.get_skips()
 
 	var to_fill: int = playback.get_frames_available()
 	var required_packets: int = 0
-	while to_fill >= voice_manager_const.BUFFER_FRAME_COUNT:
-		to_fill -= voice_manager_const.BUFFER_FRAME_COUNT
+	while to_fill >= SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT:
+		to_fill -= SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT
 		required_packets += 1
 
 	var last_packet = null
@@ -274,7 +273,7 @@ func attempt_to_feed_stream(
 					p_decoder, buffer, buffer.size(), uncompressed_audio
 				)
 				if uncompressed_audio:
-					if uncompressed_audio.size() == voice_manager_const.BUFFER_FRAME_COUNT:
+					if uncompressed_audio.size() == SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT:
 						push_result =  playback.push_buffer(uncompressed_audio)
 						packet_pushed = true
 		if !packet_pushed:
@@ -341,10 +340,10 @@ func _process(_delta: float) -> void:
 
 
 func _ready() -> void:
-	uncompressed_audio.resize(voice_manager_const.BUFFER_FRAME_COUNT)
+	uncompressed_audio.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT)
 
 
 func _init():
-	blank_packet.resize(voice_manager_const.BUFFER_FRAME_COUNT)
-	for i in range(0, voice_manager_const.BUFFER_FRAME_COUNT):
+	blank_packet.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT)
+	for i in range(0, SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT):
 		blank_packet[i] = Vector2(0.0, 0.0)

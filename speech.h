@@ -32,7 +32,6 @@
 #define STREAM_AUDIO_OPUS_H
 
 #include "core/error/error_macros.h"
-#include "opus_codec.h"
 #include "thirdparty/libsamplerate/src/samplerate.h"
 
 #include "core/config/engine.h"
@@ -72,12 +71,12 @@ class Speech : public Node {
 private:
   // Assigns the memory to the fixed audio buffer arrays
   void preallocate_buffers() {
-    input_byte_array.resize(speech_processor->get_pcm_buffer_size());
+    input_byte_array.resize(SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
     compression_output_byte_array.resize(
-        speech_processor->get_pcm_buffer_size());
+        SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
     for (int i = 0; i < MAX_AUDIO_BUFFER_ARRAY_SIZE; i++) {
       input_audio_buffer_array[i].compressed_byte_array.resize(
-          speech_processor->get_pcm_buffer_size());
+          SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
     }
   }
 
@@ -103,7 +102,7 @@ private:
       for (int i = MAX_AUDIO_BUFFER_ARRAY_SIZE - 1; i > 0; i--) {
         memcpy(input_audio_buffer_array[i - 1].compressed_byte_array.ptrw(),
                input_audio_buffer_array[i].compressed_byte_array.ptr(),
-               speech_processor->get_pcm_buffer_size());
+               SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
 
         input_audio_buffer_array[i - 1].buffer_size =
             input_audio_buffer_array[i].buffer_size;
@@ -121,7 +120,7 @@ private:
     // Copy the raw PCM data from the SpeechInput packet to the input byte array
     PackedByteArray *mic_input_byte_array = p_mic_input->pcm_byte_array;
     memcpy(input_byte_array.ptrw(), mic_input_byte_array->ptr(),
-           speech_processor->get_pcm_buffer_size());
+           SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
 
     // Create a new SpeechProcessor::CompressedBufferInput to be passed into the
     // compressor and assign it the compressed_byte_array from the input packet
@@ -142,7 +141,7 @@ private:
       // input packet
       memcpy(input_packet->compressed_byte_array.ptrw(),
              compressed_buffer_input.compressed_byte_array->ptr(),
-             speech_processor->get_pcm_buffer_size());
+             SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
 
       input_packet->buffer_size = compressed_buffer_input.buffer_size;
       input_packet->loudness = p_mic_input->volume;
