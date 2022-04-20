@@ -52,9 +52,9 @@ class PlaybackStats:
 		"playback_ring_current_size_s": playback_ring_current_size / float(outerscope.VOICE_PACKET_SAMPLERATE),
 		"playback_ring_max_size_s": playback_ring_max_size / float(outerscope.VOICE_PACKET_SAMPLERATE),
 		"playback_ring_mean_size_s": playback_ring_size_sum / playback_push_buffer_calls / float(outerscope.VOICE_PACKET_SAMPLERATE),
-		"jitter_buffer_current_size_s": float(jitter_buffer_current_size) * SpeechProcessor.PACKET_DELTA_TIME,
-		"jitter_buffer_max_size_s": float(jitter_buffer_max_size) * SpeechProcessor.PACKET_DELTA_TIME,
-		"jitter_buffer_mean_size_s": float(jitter_buffer_size_sum) / jitter_buffer_calls * SpeechProcessor.PACKET_DELTA_TIME,
+		"jitter_buffer_current_size_s": float(jitter_buffer_current_size) * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
+		"jitter_buffer_max_size_s": float(jitter_buffer_max_size) * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
+		"jitter_buffer_mean_size_s": float(jitter_buffer_size_sum) / jitter_buffer_calls * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
 		"jitter_buffer_calls": jitter_buffer_calls,
 		"playback_position_s": playback_position,
 		"playback_get_percent": 100.0 * playback_get_frames / playback_pushed_frames,
@@ -64,7 +64,7 @@ class PlaybackStats:
 		"playback_discarded_s": playback_discarded_frames / float(outerscope.VOICE_PACKET_SAMPLERATE),
 		"playback_push_buffer_calls": floor(playback_push_buffer_calls),
 		#"playback_blank_push_calls": floor(playback_blank_push_calls),
-		"playback_blank_s": playback_blank_push_calls * SpeechProcessor.PACKET_DELTA_TIME,
+		"playback_blank_s": playback_blank_push_calls * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
 		"playback_blank_percent": 100.0 * playback_blank_push_calls / playback_push_buffer_calls,
 		"playback_skips": floor(playback_skips),
 		}
@@ -93,9 +93,9 @@ func get_playback_stats(speech_statdict: Dictionary) -> Dictionary:
 		statdict[key] = player_audio[key]["playback_stats"].get_playback_stats(self)
 		#statdict[key]["playback_prev_ticks"] = player_audio[key]["playback_prev_time"] / float(SpeechProcessor.MILLISECONDS_PER_SECOND)
 		#statdict[key]["playback_start_ticks"] = player_audio[key]["playback_start_time"] / float(SpeechProcessor.MILLISECONDS_PER_SECOND)
-		statdict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.MILLISECONDS_PER_SECOND)
+		statdict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
 		statdict[key]["excess_packets"] = player_audio[key]["excess_packets"]
-		statdict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.PACKET_DELTA_TIME
+		statdict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
 	return statdict
 
 
