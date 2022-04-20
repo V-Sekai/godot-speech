@@ -47,10 +47,10 @@ class PlaybackStats:
 		var playback_pushed_frames: float = playback_pushed_calls * (buffer_frame_count * 1.0)
 		var playback_discarded_frames: float = playback_discarded_calls * (buffer_frame_count * 1.0)
 		return {
-		"playback_ring_limit_s": playback_ring_buffer_length / float(SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE),
-		"playback_ring_current_size_s": playback_ring_current_size / float(SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE),
-		"playback_ring_max_size_s": playback_ring_max_size / float(SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE),
-		"playback_ring_mean_size_s": playback_ring_size_sum / playback_push_buffer_calls / float(SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE),
+		"playback_ring_limit_s": playback_ring_buffer_length / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
+		"playback_ring_current_size_s": playback_ring_current_size / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
+		"playback_ring_max_size_s": playback_ring_max_size / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
+		"playback_ring_mean_size_s": playback_ring_size_sum / playback_push_buffer_calls / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
 		"jitter_buffer_current_size_s": float(jitter_buffer_current_size) * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
 		"jitter_buffer_max_size_s": float(jitter_buffer_max_size) * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
 		"jitter_buffer_mean_size_s": float(jitter_buffer_size_sum) / jitter_buffer_calls * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
@@ -58,9 +58,9 @@ class PlaybackStats:
 		"playback_position_s": playback_position,
 		"playback_get_percent": 100.0 * playback_get_frames / playback_pushed_frames,
 		"playback_discard_percent": 100.0 * playback_discarded_frames / playback_pushed_frames,
-		"playback_get_s": playback_get_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE),
-		"playback_pushed_s": playback_pushed_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE),
-		"playback_discarded_s": playback_discarded_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE),
+		"playback_get_s": playback_get_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
+		"playback_pushed_s": playback_pushed_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
+		"playback_discarded_s": playback_discarded_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
 		"playback_push_buffer_calls": floor(playback_push_buffer_calls),
 		#"playback_blank_push_calls": floor(playback_blank_push_calls),
 		"playback_blank_s": playback_blank_push_calls * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
@@ -118,7 +118,7 @@ func add_player_audio(p_player_id: int, p_audio_stream_player: Node) -> void:
 	):
 		if ! player_audio.has(p_player_id):
 			var new_generator: AudioStreamGenerator = AudioStreamGenerator.new()
-			new_generator.set_mix_rate(SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE)
+			new_generator.set_mix_rate(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE)
 			new_generator.set_buffer_length(BUFFER_DELAY_THRESHOLD)
 			playback_ring_buffer_length = calc_playback_ring_buffer_length(new_generator)
 
@@ -241,7 +241,7 @@ func attempt_to_feed_stream(
 	if playback == null:
 		return
 	if p_player_dict["playback_last_skips"] != playback.get_skips():
-		p_player_dict["playback_prev_time"] = p_player_dict["playback_prev_time"] - SpeechProcessor.MILLISECONDS_PER_PACKET
+		p_player_dict["playback_prev_time"] = p_player_dict["playback_prev_time"] - SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_PACKET
 		p_player_dict["playback_last_skips"] = playback.get_skips()
 
 	var to_fill: int = playback.get_frames_available()
@@ -283,7 +283,7 @@ func attempt_to_feed_stream(
 		p_playback_stats.playback_ring_size_sum += 1.0 * p_playback_stats.playback_ring_current_size
 # TODO: iFire 2021-10-22 Submit upstream
 #		p_playback_stats.playback_position = playback.get_playback_position()
-#		p_playback_stats.playback_get_frames = playback.get_playback_position() * SpeechProcessor.SPEECH_SETTING_VOICE_SAMPLE_RATE
+#		p_playback_stats.playback_get_frames = playback.get_playback_position() * SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE
 		p_playback_stats.playback_push_buffer_calls += 1
 		if ! packet_pushed:
 			p_playback_stats.playback_blank_push_calls += 1
