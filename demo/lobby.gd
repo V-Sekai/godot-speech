@@ -15,7 +15,7 @@ func _on_host_pressed() -> void:
 	
 	var server_only_checkbox : CheckBox = get_node("connect/server_only")
 	# TODO: Remove when debugged
-	server_only_checkbox.button_pressed = false
+	server_only_checkbox.button_pressed = true
 	var server_only : bool = server_only_checkbox.button_pressed
 	var player_name : String = get_node("connect/name").text
 	var port : int = get_node("connect/port").value
