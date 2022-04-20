@@ -80,7 +80,7 @@ func nearest_shift(p_number: int) -> int:
 
 
 func calc_playback_ring_buffer_length(audio_stream_generator: AudioStreamGenerator) -> int:
-	var target_buffer_size = audio_stream_generator.mix_rate * audio_stream_generator.buffer_length;
+	var target_buffer_size : int = audio_stream_generator.mix_rate * audio_stream_generator.buffer_length;
 	return (1 << nearest_shift(target_buffer_size));
 
 
