@@ -2,6 +2,3 @@
 
 [node name="error" type="AcceptDialog"]
 size = Vector2i(176, 100)
-__meta__ = {
-"_edit_use_anchors_": false
-}
