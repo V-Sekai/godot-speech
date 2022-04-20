@@ -58,7 +58,7 @@ func on_game_ended() -> void:
 func on_game_error(p_errtxt : String) -> void:
 	if error_dialog.get_parent() == null:
 		error_dialog.set_name("error")
-		add_child(error_dialog)
+		add_child(error_dialog, true)
 	get_node("error").dialog_text = p_errtxt
 	get_node("error").popup_centered()
 

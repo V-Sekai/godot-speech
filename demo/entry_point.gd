@@ -128,7 +128,7 @@ func add_player_audio(p_id):
 	audio_players[p_id] = audio_stream_player
 	audio_stream_player.set_name(str(p_id))
 
-	add_child(audio_stream_player)
+	add_child(audio_stream_player, true)
 	audio_stream_player.owner = owner
 	godot_speech.add_player_audio(p_id, audio_stream_player)
 
@@ -213,7 +213,7 @@ func _process(p_delta):
 
 func _ready() -> void:
 	lobby_scene = lobby_scene_const.instantiate()
-	add_child(lobby_scene)
+	add_child(lobby_scene, true)
 	debug_output = lobby_scene.get_node("debug_output")
 	debug_output.set_text("Ready!")
 
