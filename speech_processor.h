@@ -70,9 +70,7 @@ public:
   static const int32_t SPEECH_SETTING_INTERNAL_BUFFER_SIZE = 25 * 3 * 1276;
   static const int32_t SPEECH_SETTING_VOICE_SAMPLE_RATE = SPEECH_SETTING_SAMPLE_RATE;
   static const int32_t SPEECH_SETTING_VOICE_BUFFER_FRAME_COUNT = SPEECH_SETTING_BUFFER_FRAME_COUNT;
-  static const int32_t SPEECH_SETTING_PCM_BUFFER_SIZE =
-      SPEECH_SETTING_BUFFER_FRAME_COUNT * SPEECH_SETTING_BUFFER_BYTE_COUNT *
-      SPEECH_SETTING_CHANNEL_COUNT;
+  static const int32_t SPEECH_SETTING_PCM_BUFFER_SIZE = SPEECH_SETTING_BUFFER_FRAME_COUNT * SPEECH_SETTING_BUFFER_BYTE_COUNT * SPEECH_SETTING_CHANNEL_COUNT;
   static const int32_t SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE = SPEECH_SETTING_VOICE_SAMPLE_RATE;
   static constexpr float SPEECH_SETTING_PACKET_DELTA_TIME = SPEECH_SETTING_MILLISECONDS_PER_PACKET / float(SPEECH_SETTING_MILLISECONDS_PER_SECOND);
 protected:
@@ -117,15 +115,6 @@ public:
   int encode_buffer(const PackedByteArray *p_pcm_buffer,
                     PackedByteArray *p_output_buffer) {
     int number_of_bytes = -1;
-
-    if (get_speech_decoder().is_valid() &&
-        get_speech_decoder()->get_compression()) {
-      // The following line disables compression and sends data uncompressed.
-      // Combine it with a change in speech_decoder.h
-      memcpy(p_output_buffer->ptrw(), p_pcm_buffer->ptr() + 1,
-             SPEECH_SETTING_BUFFER_FRAME_COUNT - 1);
-      return SPEECH_SETTING_BUFFER_FRAME_COUNT - 1;
-    }
     if (encoder) {
       const opus_int16 *pcm_buffer_pointer =
           reinterpret_cast<const opus_int16 *>(p_pcm_buffer->ptr());

@@ -44,9 +44,6 @@ private:
 public:
   SpeechDecoder() {}
   ~SpeechDecoder() { set_decoder(nullptr); }
-  void set_compression(bool p_compressed);
-
-  bool get_compression() const;
 
   void set_decoder(::OpusDecoder *p_decoder);
 
