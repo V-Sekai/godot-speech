@@ -3,8 +3,7 @@ extends Speech
 var blank_packet: PackedVector2Array = PackedVector2Array()
 var player_audio: Dictionary = {}
 
-@export  var use_sample_stretching : bool = true
-var Xuse_sample_stretching : bool = false
+@export  var use_sample_stretching : bool = false
 
 const BUFFER_DELAY_THRESHOLD = 0.1
 
@@ -192,7 +191,7 @@ func on_received_audio_packet(p_peer_id: int, p_sequence_id: int, p_packet: Pack
 			var fill_packets = null
 
 			# If using stretching, fill with last received packet
-			if Xuse_sample_stretching and jitter_buffer.size() > 0:
+			if use_sample_stretching and jitter_buffer.size() > 0:
 				fill_packets = jitter_buffer.back()["packet"]
 
 			for _i in range(0, skipped_packets):
@@ -213,7 +212,7 @@ func on_received_audio_packet(p_peer_id: int, p_sequence_id: int, p_packet: Pack
 		vc_debug_print("Updating existing sequence_id: %s" % str(sequence_id))
 		if sequence_id >= 0:
 			# Update existing buffer
-			if Xuse_sample_stretching:
+			if use_sample_stretching:
 				var jitter_buffer_size = jitter_buffer.size()
 				for i in range(sequence_id, jitter_buffer_size - 1):
 					if jitter_buffer[i]["valid"]:
@@ -256,7 +255,7 @@ func attempt_to_feed_stream(
 	while p_jitter_buffer.size() < required_packets:
 		var fill_packets = null
 		# If using stretching, fill with last received packet
-		if Xuse_sample_stretching and p_jitter_buffer.size() > 0:
+		if use_sample_stretching and p_jitter_buffer.size() > 0:
 			fill_packets = last_packet
 
 		p_jitter_buffer.push_back({"packet": fill_packets, "valid": false})
@@ -293,7 +292,7 @@ func attempt_to_feed_stream(
 			p_playback_stats.playback_discarded_calls += 1
 		p_playback_stats.playback_skips = 1.0 * float(playback.get_skips())
 
-	if Xuse_sample_stretching and p_jitter_buffer.size() == 0:
+	if use_sample_stretching and p_jitter_buffer.size() == 0:
 		p_jitter_buffer.push_back({"packet": last_packet, "valid": false})
 
 	p_playback_stats.jitter_buffer_size_sum += p_jitter_buffer.size()
