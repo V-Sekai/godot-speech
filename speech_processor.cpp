@@ -398,13 +398,9 @@ SpeechProcessor::SpeechProcessor() {
   if (error != OPUS_OK) {
     ERR_PRINT("OpusCodec: could not create Opus encoder!");
   }
-  // allowed half-sample-rate.
-  // error = opus_encoder_ctl(encoder,
-  // OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND)); //OPUS_AUTO));
   if (error != OPUS_OK) {
     print_opus_error(error);
   }
-  // error = opus_encoder_ctl(encoder, OPUS_SET_BITRATE(512000));
   if (error != OPUS_OK) {
     print_opus_error(error);
   }
@@ -425,14 +421,6 @@ SpeechProcessor::SpeechProcessor() {
   audio_server = AudioServer::get_singleton();
   if (audio_server != nullptr) {
     mix_rate = audio_server->get_mix_rate();
-  }
-}
-
-SpeechProcessor::~SpeechProcessor() {
-  libresample_state = src_delete(libresample_state);
-  if (encoder) {
-    delete encoder;
-    encoder = nullptr;
   }
 }
 

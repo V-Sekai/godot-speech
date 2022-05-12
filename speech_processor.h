@@ -53,7 +53,6 @@
 
 #include "speech_decoder.h"
 
-class SpeechDecoder;
 class SpeechProcessor : public Node {
   GDCLASS(SpeechProcessor, Node);
   Mutex mutex;
@@ -266,6 +265,11 @@ public:
   void _notification(int p_what);
 
   SpeechProcessor();
-  ~SpeechProcessor();
+  ~SpeechProcessor() {
+    libresample_state = src_delete(libresample_state);
+    if (encoder) {
+      encoder = nullptr;
+    }
+  }
 };
 #endif // SPEECH_PROCESSOR_H
