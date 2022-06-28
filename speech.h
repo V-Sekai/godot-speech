@@ -250,7 +250,7 @@ protected:
     case NOTIFICATION_READY:
       setup_connections();
       if (speech_processor) {
-        add_child(speech_processor);
+        add_child(speech_processor, true);
         speech_processor->set_owner(get_owner());
       }
       break;
