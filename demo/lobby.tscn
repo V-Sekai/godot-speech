@@ -29,12 +29,13 @@ offset_bottom = 600.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="connect" type="HFlowContainer" parent="."]
+[node name="connect" type="VFlowContainer" parent="."]
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_top = -15.5
-offset_bottom = 15.5
+offset_top = -33.0
+offset_right = -514.0
+offset_bottom = 28.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 2
@@ -50,74 +51,77 @@ size_flags_vertical = 0
 text = "Name:"
 
 [node name="name" type="LineEdit" parent="connect"]
-offset_left = 106.0
-offset_right = 173.063
-offset_bottom = 31.0
+offset_top = 30.0
+offset_right = 67.0625
+offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Player"
 
 [node name="ip_label" type="Label" parent="connect"]
-offset_left = 228.0
-offset_right = 248.0
+offset_left = 71.0
+offset_right = 91.0
 offset_bottom = 26.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 text = "IP:"
 
 [node name="ip" type="LineEdit" parent="connect"]
-offset_left = 303.0
-offset_right = 370.063
-offset_bottom = 31.0
+offset_left = 71.0
+offset_top = 30.0
+offset_right = 138.063
+offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "127.0.0.1"
 
 [node name="port_label" type="Label" parent="connect"]
-offset_left = 425.0
-offset_right = 463.0
+offset_left = 142.0
+offset_right = 180.0
 offset_bottom = 26.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 text = "Port:"
 
 [node name="port" type="SpinBox" parent="connect"]
-offset_left = 518.0
-offset_right = 601.063
-offset_bottom = 31.0
+offset_left = 142.0
+offset_top = 30.0
+offset_right = 225.063
+offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 max_value = 99999.0
 value = 10567.0
 
 [node name="server_only" type="CheckBox" parent="connect"]
-offset_left = 656.0
-offset_right = 774.0
+offset_left = 229.0
+offset_right = 347.0
 offset_bottom = 31.0
 theme_override_font_sizes/font_size = 16
 button_pressed = true
 text = "Server Only"
 
 [node name="host" type="Button" parent="connect"]
-offset_left = 778.0
-offset_right = 822.0
+offset_left = 351.0
+offset_right = 395.0
 offset_bottom = 31.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Host"
 
 [node name="join" type="Button" parent="connect"]
-offset_left = 877.0
-offset_right = 915.0
+offset_left = 399.0
+offset_right = 437.0
 offset_bottom = 31.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Join"
 
 [node name="error_label" type="Label" parent="connect"]
-offset_left = 970.0
-offset_right = 971.0
-offset_bottom = 23.0
+offset_left = 399.0
+offset_top = 38.0
+offset_right = 400.0
+offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 theme_override_colors/font_color = Color(0.820312, 0.291595, 0.291595, 1)
@@ -128,6 +132,8 @@ anchor_bottom = 1.0
 offset_right = 14.296
 offset_bottom = 6.0
 theme_override_font_sizes/font_size = 16
+metadata/_edit_layout_mode = 1
+metadata/_edit_use_custom_anchors = true
 
 [connection signal="pressed" from="connect/host" to="." method="_on_host_pressed"]
 [connection signal="pressed" from="connect/join" to="." method="_on_join_pressed"]
