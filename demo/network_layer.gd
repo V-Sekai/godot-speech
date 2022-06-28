@@ -217,18 +217,18 @@ func _input(p_event : InputEvent):
 func _ready() -> void:
 	var connect_result : int = OK
 
-	if get_tree().multiplayer.connect("peer_connected", self._player_connected) != OK:
+	if get_tree().get_multiplayer().connect("peer_connected", self._player_connected) != OK:
 		printerr("could not connect network_peer_connected!")
-	if get_tree().multiplayer.connect("peer_disconnected", self._player_disconnected) != OK:
+	if get_tree().get_multiplayer().connect("peer_disconnected", self._player_disconnected) != OK:
 		printerr("could not connect network_peer_disconnected!")
-	if get_tree().multiplayer.connect("connected_to_server", self._connected_ok) != OK:
+	if get_tree().get_multiplayer().connect("connected_to_server", self._connected_ok) != OK:
 		printerr("could not connect connected_to_server!")
-	if get_tree().multiplayer.connect("connection_failed", self._connected_fail) != OK:
+	if get_tree().get_multiplayer().connect("connection_failed", self._connected_fail) != OK:
 		printerr("could not connect connection_failed!")
-	if get_tree().multiplayer.connect("server_disconnected", self._server_disconnected) != OK:
+	if get_tree().get_multiplayer().connect("server_disconnected", self._server_disconnected) != OK:
 		printerr("could not connect server_disconnected!")
 
-	connect_result = get_tree().multiplayer.connect("peer_packet", self._network_peer_packet)
+	connect_result = get_tree().get_multiplayer().connect("peer_packet", self._network_peer_packet)
 	if connect_result != OK:
 		printerr("NetworkManager: network_peer_packet could not be connected!")
 

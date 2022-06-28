@@ -6,16 +6,18 @@
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_tmvyd"]
 
 [node name="EntryPoint" type="Node"]
-script = ExtResource( "3" )
+script = ExtResource("3")
 
 [node name="MicrophoneStreamAudio" type="AudioStreamPlayer" parent="."]
-stream = SubResource( "AudioStreamMicrophone_tmvyd" )
+stream = SubResource("AudioStreamMicrophone_tmvyd")
 volume_db = 1.0
 bus = &"Mic"
 
 [node name="GodotSpeech" type="Speech" parent="."]
-script = ExtResource( "1" )
+script = ExtResource("1")
 
 [node name="@@20326" type="SpeechProcessor" parent="GodotSpeech"]
 
 [node name="@@19424" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="@@16244" type="SpeechProcessor" parent="GodotSpeech"]
