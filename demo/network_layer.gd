@@ -53,7 +53,7 @@ static func decode_24_bit_value(p_buffer : PackedByteArray) -> int:
 
 
 func is_active_player() -> bool:
-	if get_tree().multiplayer.is_server():
+	if get_tree().get_multiplayer().is_server():
 		if !is_server_only:
 			return true
 		else:
@@ -119,7 +119,7 @@ func register_player(id : int, new_player_name : String) -> void:
 @rpc(any_peer)
 func unregister_player(p_id : int) -> void:
 	var remote_id: int = p_id
-	if get_tree().multiplayer.is_server():
+	if get_tree().get_multiplayer().is_server():
 		remote_id = get_tree().multiplayer.get_remote_sender_id()
 	if players.erase(remote_id):
 		emit_signal("player_list_changed")
@@ -128,7 +128,7 @@ func unregister_player(p_id : int) -> void:
 
 
 func is_network_server():
-	return get_tree().multiplayer.is_server()
+	return get_tree().get_multiplayer().is_server()
 
 
 func host_game(new_player_name : String, port : int, p_is_server_only : bool) -> bool:
@@ -136,7 +136,7 @@ func host_game(new_player_name : String, port : int, p_is_server_only : bool) ->
 	is_server_only = p_is_server_only
 	var host : ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	if host.create_server(port, MAX_PEERS) == OK:
-		get_tree().multiplayer.multiplayer_peer = host
+		get_tree().get_multiplayer().multiplayer_peer = host
 		return true
 
 	return false
