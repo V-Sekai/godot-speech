@@ -50,16 +50,16 @@ extern "C"
 }
 
 void initialize_speech_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
+  if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+    return;
+  }
   GDREGISTER_CLASS(SpeechProcessor);
   GDREGISTER_CLASS(SpeechDecoder);
   GDREGISTER_CLASS(Speech);
 }
 
 void uninitialize_speech_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
+  if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+    return;
+  }
 }

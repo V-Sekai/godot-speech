@@ -37,6 +37,7 @@
 
 class SpeechDecoder : public RefCounted {
   GDCLASS(SpeechDecoder, RefCounted);
+
 private:
   ::OpusDecoder *decoder = nullptr;
   bool is_compressed = false;
@@ -57,5 +58,3 @@ protected:
   static void _bind_methods();
 };
 #endif // SPEECH_DECODER_H
-
-

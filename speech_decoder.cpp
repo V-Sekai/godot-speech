@@ -25,5 +25,4 @@ void SpeechDecoder::set_decoder(::OpusDecoder *p_decoder) {
   }
   decoder = p_decoder;
 }
-void SpeechDecoder::_bind_methods() {
-}
+void SpeechDecoder::_bind_methods() {}
