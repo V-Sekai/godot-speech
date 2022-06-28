@@ -401,9 +401,6 @@ SpeechProcessor::SpeechProcessor() {
   if (error != OPUS_OK) {
     print_opus_error(error);
   }
-  if (error != OPUS_OK) {
-    print_opus_error(error);
-  }
   capture_discarded_frames = 0;
   capture_pushed_frames = 0;
   capture_ring_limit = 0;
