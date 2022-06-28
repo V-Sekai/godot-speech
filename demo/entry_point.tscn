@@ -15,11 +15,3 @@ bus = &"Mic"
 
 [node name="GodotSpeech" type="Speech" parent="."]
 script = ExtResource("1")
-
-[node name="@@20326" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="@@19424" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="@@16244" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="@@17402" type="SpeechProcessor" parent="GodotSpeech"]
