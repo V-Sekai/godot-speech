@@ -137,6 +137,7 @@ func host_game(new_player_name : String, port : int, p_is_server_only : bool) ->
 	var host : ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	if host.create_server(port, MAX_PEERS) == OK:
 		get_tree().get_multiplayer().multiplayer_peer = host
+		host.host.compress(ENetConnection.COMPRESS_RANGE_CODER)
 		return true
 
 	return false
@@ -147,6 +148,7 @@ func join_game(ip : String, port : int, new_player_name : String) -> void:
 	var host : ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	if host.create_client(ip, port) == OK:
 		get_tree().get_multiplayer().multiplayer_peer = host
+		host.host.compress(ENetConnection.COMPRESS_RANGE_CODER)
 
 func get_player_list() -> Array:
 	return players.values()
@@ -160,7 +162,7 @@ func get_player_name() -> String:
 func end_game():
 	emit_signal("game_ended")
 	players.clear()
-	get_tree().get_multiplayer().multiplayer_peer = null
+	get_tree().multiplayer.multiplayer_peer = null
 
 func encode_voice_packet(p_index : int, p_voice_buffer : PackedByteArray) -> PackedByteArray:
 	var encoded_index : PackedByteArray = encode_24_bit_value(p_index)
