@@ -142,12 +142,9 @@ private:
       InputPacket *input_packet = get_next_valid_input_packet();
       // Copy the buffer size from the compressed_buffer_input back into the
       // input packet
-      int64_t size = input_packet->compressed_byte_array.size();
+      int64_t size = compressed_buffer_input.compressed_byte_array.size();
       if (size > SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE) {
         size = SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE;
-      }
-      if (size > input_packet->compressed_byte_array.size()) {
-        size = input_packet->compressed_byte_array.size();
       }
       memcpy(input_packet->compressed_byte_array.ptrw(),
              compressed_buffer_input.compressed_byte_array->ptr(), size);
