@@ -77,7 +77,7 @@ func _player_disconnected(p_id : int) -> void:
 
 
 func _connected_ok() -> void:
-	rpc(StringName("register_player"), get_tree().multiplayer.get_unique_id(), player_name)
+	rpc(StringName("register_player"), get_tree().get_multiplayer().get_unique_id(), player_name)
 	emit_signal("connection_succeeded")
 
 
@@ -103,8 +103,8 @@ func _network_peer_packet(p_id : int, packet : PackedByteArray) -> void:
 
 @rpc(any_peer)
 func register_player(id : int, new_player_name : String) -> void:
-	if get_tree().multiplayer.is_server():
-		var remote_id: int = get_tree().multiplayer.get_remote_sender_id()
+	if get_tree().get_multiplayer().is_server():
+		var remote_id: int = get_tree().get_multiplayer().get_remote_sender_id()
 		if is_server_only == false:
 			rpc_id(remote_id, StringName("register_player"), 1, player_name)
 
@@ -146,7 +146,7 @@ func join_game(ip : String, port : int, new_player_name : String) -> void:
 	player_name = new_player_name
 	var host : ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	if host.create_client(ip, port) == OK:
-		get_tree().multiplayer.multiplayer_peer = host
+		get_tree().get_multiplayer().multiplayer_peer = host
 
 func get_player_list() -> Array:
 	return players.values()
@@ -193,7 +193,7 @@ func decode_voice_packet(p_voice_buffer : PackedByteArray) -> Array:
 func send_audio_packet(p_index : int, p_data : PackedByteArray) -> void:
 	if not blocking_sending_audio_packets:
 		var compressed_audio_packet : PackedByteArray = encode_voice_packet(p_index , p_data)
-		var e = get_tree().multiplayer.send_bytes(compressed_audio_packet, 0, TRANSFER_MODE_UNRELIABLE, 1)
+		var e = get_tree().get_multiplayer().send_bytes(compressed_audio_packet, 0, TRANSFER_MODE_UNRELIABLE, 1)
 		if (e & 0xffffffff) != OK:
 			printerr("send_audio_packet: send_bytes failed! %s" % e)
 
