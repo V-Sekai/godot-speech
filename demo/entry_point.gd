@@ -78,9 +78,9 @@ func host(p_player_name : String, p_port : int, p_server_only : bool) -> void:
 			if network_layer.is_active_player():
 				started()
 			lobby_scene.refresh_lobby(network_layer.get_full_player_list())
-		
+
 		confirm_connection()
-		
+
 func confirm_connection() -> void:
 	is_connected = true
 	voice_id = 0

@@ -12,7 +12,7 @@ func _on_host_pressed() -> void:
 	get_node("connect").hide()
 	get_node("players").show()
 	get_node("connect/error_label").text = ""
-	
+
 	var server_only_checkbox : CheckBox = get_node("connect/server_only")
 	# TODO: Remove when debugged
 	server_only_checkbox.button_pressed = true
