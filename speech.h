@@ -72,11 +72,14 @@ private:
   // Assigns the memory to the fixed audio buffer arrays
   void preallocate_buffers() {
     input_byte_array.resize(SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
+    input_byte_array.fill(0);
     compression_output_byte_array.resize(
         SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
+    compression_output_byte_array.fill(0);
     for (int i = 0; i < MAX_AUDIO_BUFFER_ARRAY_SIZE; i++) {
       input_audio_buffer_array[i].compressed_byte_array.resize(
           SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
+        input_audio_buffer_array[i].compressed_byte_array.fill(0);
     }
   }
 

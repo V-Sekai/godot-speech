@@ -335,6 +335,7 @@ void SpeechProcessor::_notification(int p_what) {
   case NOTIFICATION_ENTER_TREE:
     mix_byte_array.resize(SPEECH_SETTING_BUFFER_FRAME_COUNT *
                           SPEECH_SETTING_BUFFER_BYTE_COUNT);
+    mix_byte_array.fill(0);
     break;
   case NOTIFICATION_EXIT_TREE:
     stop();
@@ -413,8 +414,11 @@ SpeechProcessor::SpeechProcessor() {
   capture_get_frames = 0;
 
   mono_real_array.resize(RECORD_MIX_FRAMES);
+  mono_real_array.fill(0);
   resampled_real_array.resize(RECORD_MIX_FRAMES * RESAMPLED_BUFFER_FACTOR);
+  resampled_real_array.fill(0);
   pcm_byte_array_cache.resize(SPEECH_SETTING_PCM_BUFFER_SIZE);
+  resampled_real_array.fill(0);
   libresample_state = src_new(SRC_SINC_BEST_QUALITY,
                               SPEECH_SETTING_CHANNEL_COUNT, &libresample_error);
   audio_server = AudioServer::get_singleton();
