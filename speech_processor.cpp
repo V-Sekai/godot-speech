@@ -193,9 +193,7 @@ void SpeechProcessor::start() {
   if (!audio_input_stream_player || !audio_effect_capture.is_valid()) {
     return;
   }
-  if (AudioDriver::get_singleton()) {
-    mix_rate = AudioDriver::get_singleton()->get_mix_rate();
-  }
+
   audio_input_stream_player->play();
   audio_effect_capture->clear_buffer();
 }
@@ -417,6 +415,10 @@ SpeechProcessor::SpeechProcessor() {
   pcm_byte_array_cache.resize(SPEECH_SETTING_PCM_BUFFER_SIZE);
   libresample_state = src_new(SRC_SINC_BEST_QUALITY,
                               SPEECH_SETTING_CHANNEL_COUNT, &libresample_error);
+  audio_server = AudioServer::get_singleton();
+  if (AudioDriver::get_singleton()) {
+    mix_rate = AudioDriver::get_singleton()->get_mix_rate();
+  }
 }
 
 Ref<SpeechDecoder> SpeechProcessor::get_speech_decoder() {
