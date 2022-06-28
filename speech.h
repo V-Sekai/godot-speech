@@ -79,7 +79,7 @@ private:
     for (int i = 0; i < MAX_AUDIO_BUFFER_ARRAY_SIZE; i++) {
       input_audio_buffer_array[i].compressed_byte_array.resize(
           SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
-        input_audio_buffer_array[i].compressed_byte_array.fill(0);
+      input_audio_buffer_array[i].compressed_byte_array.fill(0);
     }
   }
 
@@ -142,11 +142,17 @@ private:
       InputPacket *input_packet = get_next_valid_input_packet();
       // Copy the buffer size from the compressed_buffer_input back into the
       // input packet
+      int64_t size = input_packet->compressed_byte_array.size();
+      if (size > SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE) {
+        size = SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE;
+      }
+      if (size > input_packet->compressed_byte_array.size()) {
+        size = input_packet->compressed_byte_array.size();
+      }
       memcpy(input_packet->compressed_byte_array.ptrw(),
-             compressed_buffer_input.compressed_byte_array->ptr(),
-             SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
+             compressed_buffer_input.compressed_byte_array->ptr(), size);
 
-      input_packet->buffer_size = compressed_buffer_input.buffer_size;
+      input_packet->buffer_size = size;
       input_packet->loudness = p_mic_input->volume;
     }
   }
