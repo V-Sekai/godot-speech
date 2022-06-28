@@ -415,9 +415,8 @@ SpeechProcessor::SpeechProcessor() {
   pcm_byte_array_cache.resize(SPEECH_SETTING_PCM_BUFFER_SIZE);
   libresample_state = src_new(SRC_SINC_BEST_QUALITY,
                               SPEECH_SETTING_CHANNEL_COUNT, &libresample_error);
-  audio_server = AudioServer::get_singleton();
-  if (audio_server != nullptr) {
-    mix_rate = audio_server->get_mix_rate();
+  if (AudioDriver::get_singleton()) {
+    mix_rate = AudioDriver::get_singleton()->get_mix_rate();
   }
 }
 
