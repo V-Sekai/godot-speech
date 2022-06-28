@@ -68,7 +68,7 @@ func _player_connected(p_id : int) -> void:
 
 
 func _player_disconnected(p_id : int) -> void:
-	if get_tree().multiplayer.is_server():
+	if get_tree().get_multiplayer().is_server():
 		unregister_player(p_id)
 		for id in players:
 			# Erase in the server
@@ -89,7 +89,7 @@ func _server_disconnected() -> void:
 
 # Callback from SceneTree, only for clients (not server)
 func _connected_fail() -> void:
-	get_tree().multiplayer.set_network_peer(null) # Remove peer
+	get_tree().get_multiplayer().set_network_peer(null) # Remove peer
 	emit_signal("connection_failed")
 
 
@@ -120,7 +120,7 @@ func register_player(id : int, new_player_name : String) -> void:
 func unregister_player(p_id : int) -> void:
 	var remote_id: int = p_id
 	if get_tree().get_multiplayer().is_server():
-		remote_id = get_tree().multiplayer.get_remote_sender_id()
+		remote_id = get_tree().get_multiplayer().get_remote_sender_id()
 	if players.erase(remote_id):
 		emit_signal("player_list_changed")
 	else:
@@ -162,7 +162,7 @@ func get_player_name() -> String:
 func end_game():
 	emit_signal("game_ended")
 	players.clear()
-	get_tree().multiplayer.multiplayer_peer = null
+	get_tree().get_multiplayer().multiplayer_peer = null
 
 func encode_voice_packet(p_index : int, p_voice_buffer : PackedByteArray) -> PackedByteArray:
 	var encoded_index : PackedByteArray = encode_24_bit_value(p_index)
