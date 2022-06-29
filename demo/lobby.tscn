@@ -63,41 +63,43 @@ text = "Name:"
 
 [node name="name" type="LineEdit" parent="connect"]
 offset_top = 30.0
-offset_right = 67.0625
+offset_right = 71.7656
 offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Player"
+expand_to_text_length = true
 
 [node name="ip_label" type="Label" parent="connect"]
-offset_left = 71.0
-offset_right = 91.0
+offset_left = 75.0
+offset_right = 95.0
 offset_bottom = 26.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 text = "IP:"
 
 [node name="ip" type="LineEdit" parent="connect"]
-offset_left = 71.0
+offset_left = 75.0
 offset_top = 30.0
-offset_right = 138.063
+offset_right = 166.766
 offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "127.0.0.1"
+expand_to_text_length = true
 
 [node name="port_label" type="Label" parent="connect"]
-offset_left = 142.0
-offset_right = 180.0
+offset_left = 170.0
+offset_right = 208.0
 offset_bottom = 26.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 text = "Port:"
 
 [node name="port" type="SpinBox" parent="connect"]
-offset_left = 142.0
+offset_left = 170.0
 offset_top = 30.0
-offset_right = 225.063
+offset_right = 253.063
 offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
@@ -105,33 +107,33 @@ max_value = 99999.0
 value = 10567.0
 
 [node name="server_only" type="CheckBox" parent="connect"]
-offset_left = 229.0
-offset_right = 347.0
+offset_left = 257.0
+offset_right = 375.0
 offset_bottom = 31.0
 theme_override_font_sizes/font_size = 16
 button_pressed = true
 text = "Server Only"
 
 [node name="host" type="Button" parent="connect"]
-offset_left = 351.0
-offset_right = 395.0
+offset_left = 379.0
+offset_right = 423.0
 offset_bottom = 31.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Host"
 
 [node name="join" type="Button" parent="connect"]
-offset_left = 399.0
-offset_right = 437.0
+offset_left = 427.0
+offset_right = 465.0
 offset_bottom = 31.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Join"
 
 [node name="error_label" type="Label" parent="connect"]
-offset_left = 399.0
+offset_left = 427.0
 offset_top = 38.0
-offset_right = 400.0
+offset_right = 428.0
 offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
