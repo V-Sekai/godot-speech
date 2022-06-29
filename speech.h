@@ -138,14 +138,12 @@ private:
       // Lock
       MutexLock mutex_lock(audio_mutex);
 
-      // Find the next valid input packet in the queue
+	  int64_t size = compressed_buffer_input.buffer_size;
+	  ERR_FAIL_COND(size > SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
+	  // Find the next valid input packet in the queue
       InputPacket *input_packet = get_next_valid_input_packet();
       // Copy the buffer size from the compressed_buffer_input back into the
       // input packet
-      int64_t size = compressed_buffer_input.compressed_byte_array->size();
-      if (size > SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE) {
-        size = SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE;
-      }
       memcpy(input_packet->compressed_byte_array.ptrw(),
              compressed_buffer_input.compressed_byte_array->ptr(), size);
 

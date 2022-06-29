@@ -26,10 +26,6 @@ mix_rate=48000
 
 network_layer="*res://network_layer.gd"
 
-[display]
-
-window/size/resizable=false
-
 [gdnative]
 
 singletons=[]
