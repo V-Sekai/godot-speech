@@ -108,34 +108,26 @@ size_flags_vertical = 2
 max_value = 99999.0
 value = 10567.0
 
-[node name="server_only" type="CheckBox" parent="connect"]
-offset_left = 289.0
-offset_right = 407.0
-offset_bottom = 31.0
-theme_override_font_sizes/font_size = 16
-button_pressed = true
-text = "Server Only"
-
 [node name="host" type="Button" parent="connect"]
-offset_left = 411.0
-offset_right = 455.0
+offset_left = 289.0
+offset_right = 333.0
 offset_bottom = 31.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Host"
 
 [node name="join" type="Button" parent="connect"]
-offset_left = 459.0
-offset_right = 497.0
+offset_left = 337.0
+offset_right = 375.0
 offset_bottom = 31.0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 text = "Join"
 
 [node name="error_label" type="Label" parent="connect"]
-offset_left = 459.0
+offset_left = 337.0
 offset_top = 38.0
-offset_right = 460.0
+offset_right = 338.0
 offset_bottom = 61.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
