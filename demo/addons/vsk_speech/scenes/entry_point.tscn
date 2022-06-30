@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://addons/vsk_speech/godot_speech.gd" id="1"]
-[ext_resource type="Script" path="res://entry_point.gd" id="3"]
+[ext_resource type="Script" path="res://addons/vsk_speech/scenes/entry_point.gd" id="3"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_tmvyd"]
 
