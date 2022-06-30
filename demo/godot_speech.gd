@@ -339,9 +339,11 @@ func _process(_delta: float) -> void:
 
 func _ready() -> void:
 	uncompressed_audio.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT)
+	uncompressed_audio.fill(Vector2())
 
 
 func _init():
 	blank_packet.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT)
+	blank_packet.fill(Vector2())
 	for i in range(0, SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT):
 		blank_packet[i] = Vector2(0.0, 0.0)
