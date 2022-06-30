@@ -26,6 +26,10 @@ mix_rate=48000
 
 network_layer="*res://network_layer.gd"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/vsk_speech/plugin.cfg")
+
 [gdnative]
 
 singletons=[]
