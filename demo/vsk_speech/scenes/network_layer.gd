@@ -204,12 +204,14 @@ func get_full_player_list() -> Array:
 
 
 func _input(p_event : InputEvent) -> void:
-	if p_event is InputEventKey:
-		if p_event.keycode == KEY_X:
-			if p_event.pressed:
-				blocking_sending_audio_packets = true
-			else:
-				blocking_sending_audio_packets = false
+	if not p_event is InputEventKey:
+		return
+	if p_event.keycode != KEY_X:
+		return
+	if p_event.pressed:
+		blocking_sending_audio_packets = true
+	else:
+		blocking_sending_audio_packets = false
 
 
 func _ready() -> void:
@@ -225,8 +227,9 @@ func _ready() -> void:
 	if get_tree().get_multiplayer().connect("server_disconnected", self._server_disconnected) != OK:
 		printerr("could not connect server_disconnected!")
 	connect_result = get_tree().get_multiplayer().connect("peer_packet", self._network_peer_packet)
-	if connect_result != OK:
-		printerr("NetworkManager: network_peer_packet could not be connected!")
+	if connect_result == OK:
+		return
+	printerr("NetworkManager: network_peer_packet could not be connected!")
 
 
 func _init() -> void:
