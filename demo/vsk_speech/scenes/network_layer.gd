@@ -98,7 +98,7 @@ func _network_peer_packet(p_id : int, packet : PackedByteArray) -> void:
 	emit_signal("received_audio_packet", p_id, result[0], result[1])
 
 
-# Functions to manage the lobby. 
+# Functions to manage the lobby.
 @rpc(any_peer)
 func register_player(id : int, new_player_name : String) -> void:
 	if get_tree().get_multiplayer().is_server():

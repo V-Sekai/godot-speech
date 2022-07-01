@@ -80,18 +80,16 @@ func calc_playback_ring_buffer_length(audio_stream_generator: AudioStreamGenerat
 	return (1 << nearest_shift(target_buffer_size));
 
 
-func get_playback_stats(speech_statdict: Dictionary) -> Dictionary:
-	var statdict = {}
-	for skey in speech_statdict:
-		statdict[str(skey)] = (speech_statdict[skey])
-	statdict["capture_get_percent"] = 100.0 * statdict["capture_get_s"] / statdict["capture_pushed_s"]
-	statdict["capture_discard_percent"] = 100.0 * statdict["capture_discarded_s"] / statdict["capture_pushed_s"]
+func get_playback_stats(speech_stat_dict: Dictionary) -> Dictionary:
+	var stat_dict : Dictionary = speech_stat_dict.duplicate(true)
+	stat_dict["capture_get_percent"] = 100.0 * stat_dict["capture_get_s"] / stat_dict["capture_pushed_s"]
+	stat_dict["capture_discard_percent"] = 100.0 * stat_dict["capture_discarded_s"] / stat_dict["capture_pushed_s"]
 	for key in player_audio.keys():
-		statdict[key] = player_audio[key]["playback_stats"].get_playback_stats()
-		statdict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
-		statdict[key]["excess_packets"] = player_audio[key]["excess_packets"]
-		statdict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
-	return statdict
+		stat_dict[key] = player_audio[key]["playback_stats"].get_playback_stats()
+		stat_dict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
+		stat_dict[key]["excess_packets"] = player_audio[key]["excess_packets"]
+		stat_dict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
+	return stat_dict
 
 
 func vc_debug_print(p_str):
