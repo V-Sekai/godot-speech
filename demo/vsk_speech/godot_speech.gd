@@ -11,7 +11,7 @@ const STREAM_STANDARD_PITCH = 1.0
 const STREAM_SPEEDUP_PITCH = 1.5
 
 const MAX_JITTER_BUFFER_SIZE = 16
-const JITTER_BUFFER_SPEEDUP = 12s
+const JITTER_BUFFER_SPEEDUP = 12
 const JITTER_BUFFER_SLOWDOWN = 6
 
 const DEBUG = false
@@ -87,7 +87,7 @@ func get_playback_stats(speech_statdict: Dictionary) -> Dictionary:
 	statdict["capture_get_percent"] = 100.0 * statdict["capture_get_s"] / statdict["capture_pushed_s"]
 	statdict["capture_discard_percent"] = 100.0 * statdict["capture_discarded_s"] / statdict["capture_pushed_s"]
 	for key in player_audio.keys():
-		statdict[key] = player_audio[key]["playback_stats"].get_playback_stats(self)
+		statdict[key] = player_audio[key]["playback_stats"].get_playback_stats()
 		statdict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
 		statdict[key]["excess_packets"] = player_audio[key]["excess_packets"]
 		statdict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
