@@ -92,13 +92,13 @@ func get_playback_stats(speech_stat_dict: Dictionary) -> Dictionary:
 	return stat_dict
 
 
-func vc_debug_print(p_str):
+func vc_debug_print(p_str) -> void:
 	if not DEBUG:
 		return
 	print(p_str)
 
 
-func vc_debug_printerr(p_str):
+func vc_debug_printerr(p_str) -> void:
 	if not DEBUG:
 		return
 	printerr(p_str)
@@ -333,7 +333,7 @@ func _ready() -> void:
 	uncompressed_audio.fill(Vector2())
 
 
-func _init():
+func _init() -> void:
 	blank_packet.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT)
 	blank_packet.fill(Vector2())
 	for i in range(0, SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT):

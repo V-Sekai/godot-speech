@@ -8,7 +8,7 @@ var is_server_only : bool = false
 var player_name : String = "Player"
 var players : Dictionary
 
-@export var debug_output_path: NodePath = NodePath()
+@export var debug_output_path: NodePath
 var debug_output: Label = null
 
 signal peer_connected(p_id)
@@ -81,15 +81,15 @@ func _connected_ok() -> void:
 	emit_signal("connection_succeeded")
 
 
-# Callback from SceneTree, only for clients (not server)
+# Callback from the SceneTree, only for the clients (not the server).
 func _server_disconnected() -> void:
 	emit_signal("game_error", "Server disconnected")
 	end_game()
 
 
-# Callback from SceneTree, only for clients (not server)
+# Callback from the SceneTree, only for the clients (not the server).
 func _connected_fail() -> void:
-	get_tree().get_multiplayer().set_network_peer(null) # Remove peer
+	get_tree().get_multiplayer().set_network_peer(null) # Remove the peer.
 	emit_signal("connection_failed")
 
 
@@ -158,7 +158,7 @@ func get_player_name() -> String:
 	return player_name
 
 
-func end_game():
+func end_game() -> void:
 	emit_signal("game_ended")
 	players.clear()
 	get_tree().get_multiplayer().multiplayer_peer = null
@@ -229,5 +229,5 @@ func _ready() -> void:
 		printerr("NetworkManager: network_peer_packet could not be connected!")
 
 
-func _init():
+func _init() -> void:
 	players = Dictionary()
