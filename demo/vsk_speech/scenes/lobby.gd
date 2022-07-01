@@ -2,7 +2,10 @@ extends Control
 
 signal host_requested(p_player_name, p_port, p_server_only)
 
-var error_dialog = preload("res://error_dialog.tscn").instantiate()
+@export_file
+var const_error_dialog_scene : String = "res://vsk_speech/scenes/error_dialog.tscn"
+
+var error_dialog : Node = load(const_error_dialog_scene).instantiate()
 
 func _on_host_pressed() -> void:
 	if get_node("connect/name").text == "":

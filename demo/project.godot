@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Speech Voip Demo"
-run/main_scene="res://addons/vsk_speech/scenes/entry_point.tscn"
+run/main_scene="res://vsk_speech/scenes/entry_point.tscn"
 config/features=PackedStringArray("4.0")
 config/icon="res://icon.png"
 
@@ -24,7 +24,7 @@ mix_rate=48000
 
 [autoload]
 
-network_layer="*res://addons/vsk_speech/scenes/network_layer.gd"
+network_layer="*res://vsk_speech/scenes/network_layer.gd"
 
 [editor_plugins]
 

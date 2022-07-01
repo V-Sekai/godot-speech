@@ -3,7 +3,7 @@ extends Speech
 var blank_packet: PackedVector2Array = PackedVector2Array()
 var player_audio: Dictionary = {}
 
-@export  var use_sample_stretching : bool = false
+@export var use_sample_stretching : bool = true
 
 const BUFFER_DELAY_THRESHOLD = 0.1
 

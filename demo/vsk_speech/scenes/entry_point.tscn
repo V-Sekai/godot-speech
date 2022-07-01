@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://qb561bq27ksx"]
+
+[ext_resource type="Script" path="res://vsk_speech/scenes/entry_point.gd" id="1_rgc2c"]
+[ext_resource type="Script" path="res://vsk_speech/godot_speech.gd" id="2_aken5"]
+
+[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_tmvyd"]
+
+[node name="EntryPoint" type="Node"]
+script = ExtResource("1_rgc2c")
+
+[node name="MicrophoneStreamAudio" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamMicrophone_tmvyd")
+volume_db = 1.0
+bus = &"Mic"
+
+[node name="GodotSpeech" type="Speech" parent="."]
+script = ExtResource("2_aken5")
+
+[node name="SpeechProcessor" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor2" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor3" type="SpeechProcessor" parent="GodotSpeech"]
