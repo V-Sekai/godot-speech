@@ -218,7 +218,7 @@ func _ready() -> void:
 	var connect_result : int = OK
 	if get_tree().get_multiplayer().connect("peer_connected", self._player_connected) != OK:
 		printerr("could not connect network_peer_connected!")
-	if get_tree().get_multiplayer().connect("peer_disconnecsted", self._player_disconnected) != OK:
+	if get_tree().get_multiplayer().connect("peer_disconnected", self._player_disconnected) != OK:
 		printerr("could not connect network_peer_disconnected!")
 	if get_tree().get_multiplayer().connect("connected_to_server", self._connected_ok) != OK:
 		printerr("could not connect connected_to_server!")
