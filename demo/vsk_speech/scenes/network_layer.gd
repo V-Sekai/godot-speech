@@ -167,15 +167,15 @@ func end_game() -> void:
 func encode_voice_packet(p_index : int, p_voice_buffer : PackedByteArray) -> PackedByteArray:
 	var encoded_index : PackedByteArray = encode_24_bit_value(p_index)
 	var encoded_size : PackedByteArray = encode_16_bit_value(p_voice_buffer.size())
-	var new_pool : PackedByteArray
-	new_pool.append_array(encoded_index)
-	new_pool.append_array(encoded_size)
-	new_pool.append_array(p_voice_buffer)
-	return new_pool
+	var new_bytes : PackedByteArray
+	new_bytes.append_array(encoded_index)
+	new_bytes.append_array(encoded_size)
+	new_bytes.append_array(p_voice_buffer)
+	return new_bytes
 
 
 func decode_voice_packet(p_voice_buffer : PackedByteArray) -> Array:
-	var new_pool : PackedByteArray = PackedByteArray()
+	var new_bytes : PackedByteArray = PackedByteArray()
 	var encoded_id : int = -1
 	if p_voice_buffer.size() > 5:
 		var index : int = 0
@@ -183,8 +183,8 @@ func decode_voice_packet(p_voice_buffer : PackedByteArray) -> Array:
 		index += 3
 		var encoded_size : int = decode_16_bit_value(PackedByteArray([p_voice_buffer[index + 0], p_voice_buffer[index + 1]]))
 		index += 2
-		new_pool = p_voice_buffer.slice(index, index + (encoded_size))
-	return [encoded_id, new_pool]
+		new_bytes = p_voice_buffer.slice(index, index + (encoded_size))
+	return [encoded_id, new_bytes]
 
 
 func send_audio_packet(p_index : int, p_data : PackedByteArray) -> void:
