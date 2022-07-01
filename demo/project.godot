@@ -28,7 +28,7 @@ network_layer="*res://vsk_speech/scenes/network_layer.gd"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/vsk_speech/plugin.cfg")
+enabled=PackedStringArray()
 
 [gdnative]
 

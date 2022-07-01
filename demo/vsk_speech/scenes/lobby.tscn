@@ -87,7 +87,7 @@ color = Color(0.576471, 0.25098, 0.231373, 1)
 
 [node name="label" type="Label" parent="."]
 offset_right = 1024.0
-offset_bottom = 42.0
+offset_bottom = 40.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.843137, 0.882353, 0.909804, 1)
@@ -97,7 +97,7 @@ horizontal_alignment = 1
 [node name="players" type="HBoxContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 42.0
+offset_left = 768.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 2
@@ -105,19 +105,21 @@ size_flags_vertical = 2
 metadata/_edit_layout_mode = 1
 
 [node name="list" type="ItemList" parent="players"]
-offset_right = 1024.0
-offset_bottom = 558.0
+offset_right = 256.0
+offset_bottom = 600.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+metadata/_edit_group_ = true
+metadata/_edit_lock_ = true
 
 [node name="connect" type="VFlowContainer" parent="."]
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = 268.0
-offset_top = -33.0
-offset_right = -246.0
-offset_bottom = 28.0
+offset_left = 16.0
+offset_top = -236.0
+offset_right = -624.0
+offset_bottom = -172.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 2
@@ -197,9 +199,9 @@ text = "Join"
 
 [node name="error_label" type="Label" parent="connect"]
 offset_left = 337.0
-offset_top = 38.0
+offset_top = 41.0
 offset_right = 338.0
-offset_bottom = 61.0
+offset_bottom = 64.0
 size_flags_horizontal = 2
 size_flags_vertical = 0
 theme_override_colors/font_color = Color(0.820312, 0.291595, 0.291595, 1)
@@ -207,14 +209,11 @@ theme_override_colors/font_color = Color(0.820312, 0.291595, 0.291595, 1)
 [node name="debug_output" type="Label" parent="."]
 anchor_right = 0.446
 anchor_bottom = 1.0
-offset_top = 52.0
-offset_right = 53.296
-offset_bottom = 6.0
+offset_top = 160.0
+offset_right = 311.296
 theme_override_font_sizes/font_size = 16
 metadata/_edit_layout_mode = 1
 metadata/_edit_use_custom_anchors = true
-metadata/_edit_group_ = true
-metadata/_edit_lock_ = true
 
 [connection signal="pressed" from="connect/host" to="." method="_on_host_pressed"]
 [connection signal="pressed" from="connect/join" to="." method="_on_join_pressed"]
