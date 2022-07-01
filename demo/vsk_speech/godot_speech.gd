@@ -1,7 +1,7 @@
 extends Speech
 
-var blank_packet: PackedVector2Array = PackedVector2Array()
-var player_audio: Dictionary = {}
+var blank_packet: PackedVector2Array
+var player_audio: Dictionary
 
 @export var use_sample_stretching : bool = true
 
@@ -11,12 +11,12 @@ const STREAM_STANDARD_PITCH = 1.0
 const STREAM_SPEEDUP_PITCH = 1.5
 
 const MAX_JITTER_BUFFER_SIZE = 16
-const JITTER_BUFFER_SPEEDUP = 12
+const JITTER_BUFFER_SPEEDUP = 12s
 const JITTER_BUFFER_SLOWDOWN = 6
 
 const DEBUG = false
 
-var uncompressed_audio: PackedVector2Array = PackedVector2Array()
+var uncompressed_audio: PackedVector2Array
 
 # Debugging info
 var packets_received_this_frame: int = 0
@@ -42,7 +42,7 @@ class PlaybackStats:
 	var playback_ring_buffer_length: int = 0
 	var buffer_frame_count: int = 0
 
-	func get_playback_stats(outerscope) -> Dictionary:
+	func get_playback_stats() -> Dictionary:
 		var playback_pushed_frames: float = playback_pushed_calls * (buffer_frame_count * 1.0)
 		var playback_discarded_frames: float = playback_discarded_calls * (buffer_frame_count * 1.0)
 		return {
@@ -61,7 +61,6 @@ class PlaybackStats:
 		"playback_pushed_s": playback_pushed_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
 		"playback_discarded_s": playback_discarded_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
 		"playback_push_buffer_calls": floor(playback_push_buffer_calls),
-		#"playback_blank_push_calls": floor(playback_blank_push_calls),
 		"playback_blank_s": playback_blank_push_calls * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
 		"playback_blank_percent": 100.0 * playback_blank_push_calls / playback_push_buffer_calls,
 		"playback_skips": floor(playback_skips),
@@ -89,8 +88,6 @@ func get_playback_stats(speech_statdict: Dictionary) -> Dictionary:
 	statdict["capture_discard_percent"] = 100.0 * statdict["capture_discarded_s"] / statdict["capture_pushed_s"]
 	for key in player_audio.keys():
 		statdict[key] = player_audio[key]["playback_stats"].get_playback_stats(self)
-		#statdict[key]["playback_prev_ticks"] = player_audio[key]["playback_prev_time"] / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
-		#statdict[key]["playback_start_ticks"] = player_audio[key]["playback_start_time"] / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
 		statdict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
 		statdict[key]["excess_packets"] = player_audio[key]["excess_packets"]
 		statdict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
@@ -185,23 +182,22 @@ func on_received_audio_packet(p_peer_id: int, p_sequence_id: int, p_packet: Pack
 
 	var sequence_id_offset: int = p_sequence_id - current_sequence_id
 	if sequence_id_offset > 0:
-		# For skipped buffers, add empty packets
+		# For skipped buffers, add empty packets.
 		var skipped_packets = sequence_id_offset - 1
 		if skipped_packets:
 			var fill_packets = null
 
-			# If using stretching, fill with last received packet
+			# If using stretching, fill with last received packet.
 			if use_sample_stretching and jitter_buffer.size() > 0:
 				fill_packets = jitter_buffer.back()["packet"]
 
 			for _i in range(0, skipped_packets):
 				jitter_buffer.push_back({"packet": fill_packets, "valid": false})
-		# Add the new valid buffer
+		# Add the new valid buffer.
 		jitter_buffer.push_back({"packet": p_packet, "valid": true})
 
 		var excess_packet_count: int = jitter_buffer.size() - MAX_JITTER_BUFFER_SIZE
 		if excess_packet_count > 0:
-			# print("Excess packet count: %s" % str(excess_packet_count))
 			for _i in range(0, excess_packet_count):
 				player_audio[p_peer_id]["excess_packets"] += 1
 				jitter_buffer.pop_front()
@@ -211,7 +207,7 @@ func on_received_audio_packet(p_peer_id: int, p_sequence_id: int, p_packet: Pack
 		var sequence_id: int = jitter_buffer.size() - 1 + sequence_id_offset
 		vc_debug_print("Updating existing sequence_id: %s" % str(sequence_id))
 		if sequence_id >= 0:
-			# Update existing buffer
+			# Update the existing buffer.
 			if use_sample_stretching:
 				var jitter_buffer_size = jitter_buffer.size()
 				for i in range(sequence_id, jitter_buffer_size - 1):
@@ -280,9 +276,6 @@ func attempt_to_feed_stream(
 		p_playback_stats.playback_ring_current_size = playback_ring_buffer_length - playback.get_frames_available()
 		p_playback_stats.playback_ring_max_size = p_playback_stats.playback_ring_current_size if p_playback_stats.playback_ring_current_size > p_playback_stats.playback_ring_max_size else p_playback_stats.playback_ring_max_size
 		p_playback_stats.playback_ring_size_sum += 1.0 * p_playback_stats.playback_ring_current_size
-# TODO: iFire 2021-10-22 Submit upstream
-#		p_playback_stats.playback_position = playback.get_playback_position()
-#		p_playback_stats.playback_get_frames = playback.get_playback_position() * SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE
 		p_playback_stats.playback_push_buffer_calls += 1
 		if ! packet_pushed:
 			p_playback_stats.playback_blank_push_calls += 1
@@ -346,4 +339,4 @@ func _init():
 	blank_packet.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT)
 	blank_packet.fill(Vector2())
 	for i in range(0, SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT):
-		blank_packet[i] = Vector2(0.0, 0.0)
+		blank_packet[i] = Vector2()

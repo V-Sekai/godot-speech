@@ -214,13 +214,9 @@ func _ready() -> void:
 	lobby_scene = lobby_scene_const.instantiate()
 	add_child(lobby_scene, true)
 	debug_output = lobby_scene.get_node("debug_output")
-	debug_output.set_text("Ready!")
-
+	debug_output.set_text("Ready.")
 	var microphone_stream : AudioStreamPlayer = get_node("MicrophoneStreamAudio")
-
 	godot_speech.set_audio_input_stream_player(microphone_stream)
 	godot_speech.set_streaming_bus(MIC_BUS_NAME)
-
 	setup_connections()
-
 	set_process(true)
