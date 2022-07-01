@@ -56,9 +56,7 @@ func started() -> void:
 	if not godot_speech:
 		return
 	godot_speech.start_recording()
-
 	voice_recording_started = true
-
 	reset_voice_id()
 	reset_voice_timeslice()
 
@@ -76,7 +74,6 @@ func host(p_player_name : String, p_port : int, p_server_only : bool) -> void:
 			if network_layer.is_active_player():
 				started()
 			lobby_scene.refresh_lobby(network_layer.get_full_player_list())
-
 		confirm_connection()
 
 
@@ -131,7 +128,6 @@ func add_player_audio(p_id) -> void:
 	var audio_stream_player = AudioStreamPlayer.new()
 	audio_players[p_id] = audio_stream_player
 	audio_stream_player.set_name(str(p_id))
-
 	add_child(audio_stream_player, true)
 	audio_stream_player.owner = owner
 	godot_speech.add_player_audio(p_id, audio_stream_player)
@@ -183,6 +179,7 @@ func process_input_audio(_delta : float) -> void:
 				printerr("Voice buffer overrun!")
 				voice_buffers.pop_front()
 				voice_buffer_overrun_count += 1
+
 
 # This function increments the internal voice_id.
 # Make sure to get it before calling it.
