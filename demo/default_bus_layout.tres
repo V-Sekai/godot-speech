@@ -1,6 +1,6 @@
 [gd_resource type="AudioBusLayout" load_steps=2 format=3 uid="uid://bdisip03skrxl"]
 
-[sub_resource type="AudioEffectCapture" id="AudioEffectCapture_sq7dl"]
+[sub_resource type="AudioEffectCapture" id="AudioEffectCapture_wbf2o"]
 resource_name = "Stream"
 
 [resource]
@@ -10,5 +10,5 @@ bus/1/mute = true
 bus/1/bypass_fx = false
 bus/1/volume_db = 0.696087
 bus/1/send = &"Mute"
-bus/1/effect/0/effect = SubResource("AudioEffectCapture_sq7dl")
+bus/1/effect/0/effect = SubResource("AudioEffectCapture_wbf2o")
 bus/1/effect/0/enabled = true
