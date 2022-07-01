@@ -1,26 +1,17 @@
 extends Node
 
 const lobby_scene_const = preload("lobby.tscn")
-
 const PACKET_TICK_TIMESLICE = 10
 const MIC_BUS_NAME = "Mic"
-
 var lobby_scene : Node = null
 var debug_output : Label = null
-
 @onready var godot_speech = get_node("GodotSpeech")
-
 var is_connected : bool = false
-
-var audio_players : Dictionary = {}
-
+var audio_players : Dictionary
 var audio_mutex : Mutex = Mutex.new()
-
 const MAX_VOICE_BUFFERS = 16
 var voice_buffers : Array = []
-
 var audio_start_tick: int = 0
-
 var voice_buffer_overrun_count: int = 0
 var voice_id: int = 0
 var voice_timeslice: int = 0
@@ -43,18 +34,23 @@ func _exit_tree() -> void:
 		for n in nodes:
 			n.queue_free()
 
+
 func get_voice_timeslice() -> int:
 	return voice_timeslice
+
 
 func reset_voice_timeslice() -> void:
 	audio_start_tick = Time.get_ticks_msec()
 	voice_timeslice = 0
 
+
 func get_current_voice_id() -> int:
 	return voice_id
 
+
 func reset_voice_id() -> void:
 	voice_id = 0
+
 
 func started() -> void:
 	if not godot_speech:
@@ -66,11 +62,13 @@ func started() -> void:
 	reset_voice_id()
 	reset_voice_timeslice()
 
+
 func ended() -> void:
 	if not godot_speech:
 		return
 	godot_speech.end_recording()
 	voice_recording_started = false
+
 
 func host(p_player_name : String, p_port : int, p_server_only : bool) -> void:
 	if network_layer.host_game(p_player_name, p_port, p_server_only):
@@ -81,9 +79,11 @@ func host(p_player_name : String, p_port : int, p_server_only : bool) -> void:
 
 		confirm_connection()
 
+
 func confirm_connection() -> void:
 	is_connected = true
 	voice_id = 0
+
 
 func _on_connection_success() -> void:
 	if network_layer.is_active_player():
@@ -93,13 +93,16 @@ func _on_connection_success() -> void:
 		lobby_scene.refresh_lobby(network_layer.get_full_player_list())
 	confirm_connection()
 
+
 func _on_connection_failed() -> void:
 	if lobby_scene:
 		lobby_scene.on_connection_failed()
 
+
 func _player_list_changed() -> void:
 	if lobby_scene:
 		lobby_scene.refresh_lobby(network_layer.get_full_player_list())
+
 
 func _on_game_ended() -> void:
 	if network_layer.is_active_player():
@@ -108,17 +111,21 @@ func _on_game_ended() -> void:
 	if lobby_scene:
 		lobby_scene.on_game_ended()
 
+
 func _on_game_error(p_errtxt : String) -> void:
 	if not lobby_scene:
 		return
 	lobby_scene.on_game_error(p_errtxt)
 
+
 func _on_received_audio_packet(p_id : int, p_index : int, p_packet : PackedByteArray) -> void:
 	if network_layer.is_active_player():
 		godot_speech.on_received_audio_packet(p_id, p_index, p_packet)
 
+
 func get_ticks_since_recording_started() -> int:
 	return (Time.get_ticks_msec() - audio_start_tick)
+
 
 func add_player_audio(p_id) -> void:
 	var audio_stream_player = AudioStreamPlayer.new()
@@ -197,10 +204,10 @@ func _process(p_delta) -> void:
 	for buffer in buffers:
 		network_layer.send_audio_packet(index, buffer["byte_array"].slice(0, buffer["buffer_size"]))
 		index += 1
-	var speech_statdict = godot_speech.get_stats()
-	var statdict = godot_speech.get_playback_stats(speech_statdict)
-	var json = JSON.new()
-	debug_output.set_text(json.stringify(statdict, "\t"))
+	var speech_stat_dict : Dictionary = godot_speech.get_stats()
+	var stat_dict : Dictionary = godot_speech.get_playback_stats(speech_stat_dict)
+	var json : JSON = JSON.new()
+	debug_output.set_text(json.stringify(stat_dict, "\t"))
 
 
 func _ready() -> void:
