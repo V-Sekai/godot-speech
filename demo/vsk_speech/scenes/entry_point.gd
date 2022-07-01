@@ -5,7 +5,7 @@ const PACKET_TICK_TIMESLICE = 10
 const MIC_BUS_NAME = "Mic"
 var lobby_scene : Node = null
 var debug_output : Label = null
-@onready var godot_speech = get_node("GodotSpeech")
+@onready var godot_speech : Node = get_node("GodotSpeech")
 var is_connected : bool = false
 var audio_players : Dictionary
 var audio_mutex : Mutex = Mutex.new()
@@ -20,7 +20,7 @@ var voice_recording_started: bool = false
 func _init() -> void:
 	if godot_speech == null:
 		return
-	var nodes = godot_speech.get_children()
+	var nodes : Array = godot_speech.get_children()
 	if nodes != null and nodes.size():
 		for n in nodes:
 			n.queue_free()
@@ -29,7 +29,7 @@ func _init() -> void:
 func _exit_tree() -> void:
 	if godot_speech == null:
 		return
-	var nodes = godot_speech.get_children()
+	var nodes : Array = godot_speech.get_children()
 	if nodes != null and nodes.size():
 		for n in nodes:
 			n.queue_free()
@@ -125,7 +125,7 @@ func get_ticks_since_recording_started() -> int:
 
 
 func add_player_audio(p_id) -> void:
-	var audio_stream_player = AudioStreamPlayer.new()
+	var audio_stream_player : AudioStreamPlayer = AudioStreamPlayer.new()
 	audio_players[p_id] = audio_stream_player
 	audio_stream_player.set_name(str(p_id))
 	add_child(audio_stream_player, true)
@@ -136,7 +136,7 @@ func remove_player_audio(p_id) -> void:
 	if not godot_speech.get_property_list().has("voice_controller"):
 		return
 	godot_speech.voice_controller.remove_player_audio(p_id)
-	var audio_stream_player = audio_players[p_id]
+	var audio_stream_player : AudioStreamPlayer = audio_players[p_id]
 	audio_stream_player.queue_free()
 	audio_players.erase(p_id)
 
@@ -196,7 +196,7 @@ func _process(p_delta) -> void:
 	if not voice_recording_started:
 		return
 	process_input_audio(p_delta)
-	var index = get_current_voice_id()
+	var index : int = get_current_voice_id()
 	var buffers: Array = get_voice_buffers()
 	for buffer in buffers:
 		network_layer.send_audio_packet(index, buffer["byte_array"].slice(0, buffer["buffer_size"]))

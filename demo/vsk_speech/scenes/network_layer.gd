@@ -8,7 +8,7 @@ var is_server_only : bool = false
 var player_name : String = "Player"
 var players : Dictionary
 
-@export var debug_output_path: NodePath
+@export var debug_output_path : NodePath
 var debug_output: Label = null
 
 signal peer_connected(p_id)
@@ -196,7 +196,7 @@ func send_audio_packet(p_index : int, p_data : PackedByteArray) -> void:
 
 
 func get_full_player_list() -> Array:
-	var player_list = get_player_list()
+	var player_list : Array = get_player_list()
 	player_list.sort()
 	if is_active_player():
 		player_list.push_front(get_player_name() + " (You)")
