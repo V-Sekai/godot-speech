@@ -35,7 +35,7 @@ func _init() -> void:
 			n.queue_free()
 
 
-func _exit_tree():
+func _exit_tree() -> void:
 	if godot_speech == null:
 		return
 	var nodes = godot_speech.get_children()
@@ -56,7 +56,7 @@ func get_current_voice_id() -> int:
 func reset_voice_id() -> void:
 	voice_id = 0
 
-func started():
+func started() -> void:
 	if not godot_speech:
 		return
 	godot_speech.start_recording()
@@ -66,7 +66,7 @@ func started():
 	reset_voice_id()
 	reset_voice_timeslice()
 
-func ended():
+func ended() -> void:
 	if not godot_speech:
 		return
 	godot_speech.end_recording()
@@ -88,11 +88,9 @@ func confirm_connection() -> void:
 func _on_connection_success() -> void:
 	if network_layer.is_active_player():
 		started()
-
 	if lobby_scene:
 		lobby_scene.on_connection_success()
 		lobby_scene.refresh_lobby(network_layer.get_full_player_list())
-
 	confirm_connection()
 
 func _on_connection_failed() -> void:
@@ -122,7 +120,7 @@ func _on_received_audio_packet(p_id : int, p_index : int, p_packet : PackedByteA
 func get_ticks_since_recording_started() -> int:
 	return (Time.get_ticks_msec() - audio_start_tick)
 
-func add_player_audio(p_id):
+func add_player_audio(p_id) -> void:
 	var audio_stream_player = AudioStreamPlayer.new()
 	audio_players[p_id] = audio_stream_player
 	audio_stream_player.set_name(str(p_id))
@@ -131,7 +129,7 @@ func add_player_audio(p_id):
 	audio_stream_player.owner = owner
 	godot_speech.add_player_audio(p_id, audio_stream_player)
 
-func remove_player_audio(p_id):
+func remove_player_audio(p_id) -> void:
 	if not godot_speech.get_property_list().has("voice_controller"):
 		return
 	godot_speech.voice_controller.remove_player_audio(p_id)
@@ -156,46 +154,41 @@ func setup_connections() -> void:
 		printerr("peer_connected could not be connected!")
 	if network_layer.connect("peer_disconnected", self.remove_player_audio):
 		printerr("peer_disconnected could not be connected!")
-
 	if not lobby_scene:
 		return
 	if lobby_scene.connect("host_requested", self.host) != OK:
 		printerr("audio_packet_processed could not be connected!")
 
 
-func process_input_audio(_delta : float):
+func process_input_audio(_delta : float) -> void:
 	if not godot_speech:
 		return
 	var copied_voice_buffers : Array = godot_speech.copy_and_clear_buffers()
-
 	var current_skipped: int = godot_speech.get_skipped_audio_packets()
 	godot_speech.clear_skipped_audio_packets()
-
 	voice_id += current_skipped
-
 	voice_timeslice = int(float(get_ticks_since_recording_started()) / PACKET_TICK_TIMESLICE)\
 	- (copied_voice_buffers.size() + int(current_skipped))
-
 	if copied_voice_buffers.size() > 0:
 		for voice_buffer in copied_voice_buffers:
 			voice_buffers.push_back(voice_buffer)
-
 			if voice_buffers.size() > MAX_VOICE_BUFFERS:
 				printerr("Voice buffer overrun!")
 				voice_buffers.pop_front()
 				voice_buffer_overrun_count += 1
 
-# This function increments the internal voice_id
+# This function increments the internal voice_id.
 # Make sure to get it before calling it.
 func get_voice_buffers() -> Array:
-	# Increment the internal voice id
+	# Increment the internal voice id.
 	voice_id += voice_buffers.size()
 
 	var copied_voice_buffers : Array = voice_buffers
 	voice_buffers = []
 	return copied_voice_buffers
 
-func _process(p_delta):
+
+func _process(p_delta) -> void:
 	if not voice_recording_started:
 		return
 	process_input_audio(p_delta)
@@ -204,11 +197,11 @@ func _process(p_delta):
 	for buffer in buffers:
 		network_layer.send_audio_packet(index, buffer["byte_array"].slice(0, buffer["buffer_size"]))
 		index += 1
-
 	var speech_statdict = godot_speech.get_stats()
 	var statdict = godot_speech.get_playback_stats(speech_statdict)
 	var json = JSON.new()
 	debug_output.set_text(json.stringify(statdict, "\t"))
+
 
 func _ready() -> void:
 	lobby_scene = lobby_scene_const.instantiate()

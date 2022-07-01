@@ -123,7 +123,7 @@ func unregister_player(p_id : int) -> void:
 		printerr("unregister_player: invalid id " + str(remote_id))
 
 
-func is_network_server():
+func is_network_server() -> bool:
 	return get_tree().get_multiplayer().is_server()
 
 
@@ -203,7 +203,7 @@ func get_full_player_list() -> Array:
 	return player_list
 
 
-func _input(p_event : InputEvent):
+func _input(p_event : InputEvent) -> void:
 	if p_event is InputEventKey:
 		if p_event.keycode == KEY_X:
 			if p_event.pressed:
@@ -216,7 +216,7 @@ func _ready() -> void:
 	var connect_result : int = OK
 	if get_tree().get_multiplayer().connect("peer_connected", self._player_connected) != OK:
 		printerr("could not connect network_peer_connected!")
-	if get_tree().get_multiplayer().connect("peer_disconnected", self._player_disconnected) != OK:
+	if get_tree().get_multiplayer().connect("peer_disconnecsted", self._player_disconnected) != OK:
 		printerr("could not connect network_peer_disconnected!")
 	if get_tree().get_multiplayer().connect("connected_to_server", self._connected_ok) != OK:
 		printerr("could not connect connected_to_server!")
