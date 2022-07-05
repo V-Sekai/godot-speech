@@ -158,8 +158,8 @@ protected:
 
 	bool set_audio_input_stream_player(Node *p_audio_stream);
 	Dictionary get_stats();
-	Speech();;
-	~Speech();;
+	Speech();
+	~Speech();
 };
 
 #endif // SPEECH_H

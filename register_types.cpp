@@ -38,28 +38,28 @@
 
 extern "C"
 #ifdef __GNUC__
-    __attribute__((noreturn))
+		__attribute__((noreturn))
 #endif
-    void
-    celt_fatal(const char *str, const char *file, int line) {
-  ERR_PRINT(String(str));
+		void
+		celt_fatal(const char *str, const char *file, int line) {
+	ERR_PRINT(String(str));
 #if defined(_MSC_VER)
-  _set_abort_behavior(0, _WRITE_ABORT_MSG);
+	_set_abort_behavior(0, _WRITE_ABORT_MSG);
 #endif
-  abort();
+	abort();
 }
 
 void initialize_speech_module(ModuleInitializationLevel p_level) {
-  if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-    return;
-  }
-  GDREGISTER_CLASS(SpeechProcessor);
-  GDREGISTER_CLASS(SpeechDecoder);
-  GDREGISTER_CLASS(Speech);
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+	GDREGISTER_CLASS(SpeechProcessor);
+	GDREGISTER_CLASS(SpeechDecoder);
+	GDREGISTER_CLASS(Speech);
 }
 
 void uninitialize_speech_module(ModuleInitializationLevel p_level) {
-  if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-    return;
-  }
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
 }

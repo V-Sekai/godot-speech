@@ -36,25 +36,25 @@
 #include "thirdparty/opus/opus/opus.h"
 
 class SpeechDecoder : public RefCounted {
-  GDCLASS(SpeechDecoder, RefCounted);
+	GDCLASS(SpeechDecoder, RefCounted);
 
 private:
-  ::OpusDecoder *decoder = nullptr;
-  bool is_compressed = false;
+	::OpusDecoder *decoder = nullptr;
+	bool is_compressed = false;
 
 public:
-  SpeechDecoder() {}
-  ~SpeechDecoder() { set_decoder(nullptr); }
+	SpeechDecoder() {}
+	~SpeechDecoder() { set_decoder(nullptr); }
 
-  void set_decoder(::OpusDecoder *p_decoder);
+	void set_decoder(::OpusDecoder *p_decoder);
 
-  virtual bool process(const PackedByteArray *p_compressed_buffer,
-                       PackedByteArray *p_pcm_output_buffer,
-                       const int p_compressed_buffer_size,
-                       const int p_pcm_output_buffer_size,
-                       const int p_buffer_frame_count);
+	virtual bool process(const PackedByteArray *p_compressed_buffer,
+			PackedByteArray *p_pcm_output_buffer,
+			const int p_compressed_buffer_size,
+			const int p_pcm_output_buffer_size,
+			const int p_buffer_frame_count);
 
 protected:
-  static void _bind_methods();
+	static void _bind_methods();
 };
 #endif // SPEECH_DECODER_H
