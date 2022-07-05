@@ -312,7 +312,8 @@ void Speech::_bind_methods() {
 			&Speech::remove_player_audio);
 	ClassDB::bind_method(D_METHOD("clear_all_player_audio"),
 			&Speech::clear_all_player_audio);
-
+	ClassDB::bind_method(D_METHOD("attempt_to_feed_stream", "skip_count", "decoder", "audio_stream_player", "jitter_buffer", "playback_stats", "player_dict"),
+			&Speech::attempt_to_feed_stream);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
 			"get_buffer_delay_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_STANDARD_PITCH"), "set_stream_standard_pitch",
@@ -422,6 +423,7 @@ void Speech::_notification(int p_what) {
 			uncompressed_audio.resize(
 					SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT);
 			uncompressed_audio.fill(Vector2());
+			set_process_internal(true);
 			break;
 		}
 		case NOTIFICATION_POSTINITIALIZE: {
@@ -430,6 +432,45 @@ void Speech::_notification(int p_what) {
 			for (int32_t i = 0; i < SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT; i++) {
 				blank_packet.write[i] = Vector2();
 			}
+			break;
+		}
+		case NOTIFICATION_INTERNAL_PROCESS: {
+			Array keys = player_audio.keys();
+			for (int32_t i = 0; i < keys.size(); i++) {
+				Variant key = keys[i];
+				if (!player_audio.has(key)) {
+					continue;
+				}
+				Dictionary elem = player_audio[key];
+				if (!elem.has("speech_decoder")) {
+					continue;
+				}
+				Ref<SpeechDecoder> speech_decoder = elem["speech_decoder"];
+				if (!elem.has("audio_stream_player")) {
+					continue;
+				}
+				Node *audio_stream_player = cast_to<Node>(elem["audio_stream_player"]);
+				if (!elem.has("jitter_buffer")) {
+					continue;
+				}
+				Array jitter_buffer = elem["jitter_buffer"];
+				if (!elem.has("playback_stats")) {
+					continue;
+				}
+				// var playback_stats = elem["playback_stats"]
+				Variant playback_stats;
+				attempt_to_feed_stream(
+						0,
+						speech_decoder,
+						audio_stream_player,
+						jitter_buffer,
+						playback_stats,
+						elem);
+				Dictionary dict = player_audio[key];
+				dict["packets_received_this_frame"] = 0;
+				player_audio[key] = dict;
+			}
+			packets_received_this_frame = 0;
 			break;
 		}
 		default: {
@@ -631,4 +672,96 @@ void Speech::clear_all_player_audio() {
 	}
 
 	player_audio = Dictionary();
+}
+
+void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Array p_jitter_buffer, Variant p_playback_stats, Dictionary p_player_dict) {
+	if (!p_audio_stream_player) {
+		return;
+	}
+
+	for (int32_t skip_i = 0; skip_i < p_skip_count; skip_i++) {
+		p_jitter_buffer.pop_front();
+	}
+	if (!p_audio_stream_player->has_method("get_stream_playback")) {
+		return;
+	}
+
+	Ref<AudioStreamGeneratorPlayback> playback = p_audio_stream_player->call("get_stream_playback");
+	if (playback.is_null()) {
+		return;
+	}
+	if (int64_t(p_player_dict["playback_last_skips"]) != playback->get_skips()) {
+		p_player_dict["playback_prev_time"] = double(p_player_dict["playback_prev_time"]) - SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_PACKET;
+		p_player_dict["playback_last_skips"] = playback->get_skips();
+	}
+	int64_t to_fill = playback->get_frames_available();
+	int64_t required_packets = 0;
+	while (to_fill >= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
+		to_fill -= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
+		required_packets += 1;
+	}
+
+	Variant last_packet;
+	if (p_jitter_buffer.size() > 0) {
+		last_packet = p_jitter_buffer.back()["packet"];
+	}
+	while (p_jitter_buffer.size() < required_packets) {
+		Variant fill_packets;
+		// If using stretching, fill with last received packet
+		if (use_sample_stretching && p_jitter_buffer.size() > 0) {
+			fill_packets = last_packet;
+		}
+		Dictionary dict;
+		dict["packet"] = fill_packets;
+		dict["valid"] = false;
+		p_jitter_buffer.push_back(dict);
+	}
+
+	for (int32_t _i = 0; _i < required_packets; _i++) {
+		Dictionary packet = p_jitter_buffer.pop_front();
+		bool packet_pushed = false;
+		bool push_result = false;
+		PackedByteArray buffer = packet["packet"];
+		uncompressed_audio = decompress_buffer(p_decoder, buffer, buffer.size(), uncompressed_audio);
+		if (uncompressed_audio.size()) {
+			if (uncompressed_audio.size() == SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
+				push_result = playback->push_buffer(uncompressed_audio);
+			}
+		}
+		packet_pushed = true;
+		if (!packet_pushed) {
+			push_result = playback->push_buffer(blank_packet);
+		}
+		/*
+		#		p_playback_stats.playback_ring_current_size = playback_ring_buffer_length - playback.get_frames_available()
+		#		p_playback_stats.playback_ring_max_size = p_playback_stats.playback_ring_current_size if p_playback_stats.playback_ring_current_size > p_playback_stats.playback_ring_max_size else p_playback_stats.playback_ring_max_size
+		#		p_playback_stats.playback_ring_size_sum += 1.0 * p_playback_stats.playback_ring_current_size
+		#		p_playback_stats.playback_push_buffer_calls += 1
+		#		if ! packet_pushed:
+		#			p_playback_stats.playback_blank_push_calls += 1
+		#		if push_result:
+		#			p_playback_stats.playback_pushed_calls += 1
+		#		else:
+		#			p_playback_stats.playback_discarded_calls += 1
+		#		p_playback_stats.playback_skips = 1.0 * float(playback.get_skips())
+		*/
+	}
+	if (use_sample_stretching && p_jitter_buffer.size() == 0) {
+		Dictionary dict;
+		dict["packet"] = last_packet;
+		dict["valid"] = false;
+		p_jitter_buffer.push_back(dict);
+	}
+	/*
+#	p_playback_stats.jitter_buffer_size_sum += p_jitter_buffer.size()
+#	p_playback_stats.jitter_buffer_calls += 1
+#	p_playback_stats.jitter_buffer_max_size = p_jitter_buffer.size() if p_jitter_buffer.size() > p_playback_stats.jitter_buffer_max_size else p_playback_stats.jitter_buffer_max_size
+#	p_playback_stats.jitter_buffer_current_size = p_jitter_buffer.size()
+*/
+	// Speed up or slow down the audio stream to mitigate skipping
+	if (p_jitter_buffer.size() > JITTER_BUFFER_SPEEDUP) {
+		p_audio_stream_player->set_physics_process(STREAM_SPEEDUP_PITCH);
+	} else if (p_jitter_buffer.size() < JITTER_BUFFER_SLOWDOWN) {
+		p_audio_stream_player->call("set_pitch_scale", STREAM_STANDARD_PITCH);
+	}
 }
