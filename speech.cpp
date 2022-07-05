@@ -540,8 +540,7 @@ void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
 			dict["packets_received_this_frame"] = 0;
 			dict["excess_packets"] = 0;
 			dict["speech_decoder"] = speech_decoder;
-			//dict["playback_stats"] = pstats;
-			dict["playback_stats"] = Variant();
+			dict["playback_stats"] = pstats;
 			dict["playback_start_time"] = 0;
 			dict["playback_prev_time"] = -1;
 			player_audio[p_player_id] = dict;
