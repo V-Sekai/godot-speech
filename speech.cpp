@@ -209,6 +209,20 @@ void Speech::set_player_audio(Dictionary val) {
 	player_audio = val;
 }
 
+int Speech::nearest_shift(int p_number) {
+	for (int32_t i = 30; i-- > 0;) {
+		if (p_number & (1 << i)) {
+			return i + 1;
+		}
+	}
+	return 0;
+}
+
+int Speech::calc_playback_ring_buffer_length(Ref<AudioStreamGenerator> audio_stream_generator) {
+	int target_buffer_size = int(audio_stream_generator->get_mix_rate() * audio_stream_generator->get_buffer_length());
+	return (1 << nearest_shift(target_buffer_size));
+}
+
 void Speech::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_skipped_audio_packets"),
 			&Speech::get_skipped_audio_packets);
@@ -288,6 +302,8 @@ void Speech::_bind_methods() {
 			&Speech::get_use_sample_stretching);
 	ClassDB::bind_method(D_METHOD("set_use_sample_stretching", "use_sample_stretching"),
 			&Speech::set_use_sample_stretching);
+	ClassDB::bind_method(D_METHOD("calc_playback_ring_buffer_length", "generator"),
+			&Speech::calc_playback_ring_buffer_length);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
 			"get_buffer_delay_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_STANDARD_PITCH"), "set_stream_standard_pitch",

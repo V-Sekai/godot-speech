@@ -45,19 +45,6 @@ class PlaybackStats:
 		}
 
 
-func nearest_shift(p_number: int) -> int:
-	for i in range(30, -1, -1):
-		if (p_number & (1 << i)):
-			return i + 1
-
-	return 0
-
-
-func calc_playback_ring_buffer_length(audio_stream_generator: AudioStreamGenerator) -> int:
-	var target_buffer_size : int = int(audio_stream_generator.mix_rate * audio_stream_generator.buffer_length);
-	return (1 << nearest_shift(target_buffer_size));
-
-
 func get_playback_stats(speech_stat_dict: Dictionary) -> Dictionary:
 	var stat_dict : Dictionary = speech_stat_dict.duplicate(true)
 	stat_dict["capture_get_percent"] = 100.0 * stat_dict["capture_get_s"] / stat_dict["capture_pushed_s"]

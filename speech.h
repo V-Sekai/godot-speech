@@ -43,6 +43,7 @@
 #include "servers/audio_server.h"
 
 #include "speech_processor.h"
+#include "servers/audio/effects/audio_stream_generator.h"
 
 class Speech : public Node {
 	GDCLASS(Speech, Node)
@@ -102,6 +103,7 @@ private:
 
 	PackedVector2Array blank_packet;
 	Dictionary player_audio;
+	int nearest_shift(int p_number);
 
 public:
 	int get_jitter_buffer_speedup() const;
@@ -130,7 +132,7 @@ public:
 	void set_blank_packet(PackedVector2Array val);
 	Dictionary get_player_audio() const;
 	void set_player_audio(Dictionary val);
-
+	int calc_playback_ring_buffer_length(Ref<AudioStreamGenerator> audio_stream_generator);
 protected:
 	static void _bind_methods();
 
@@ -142,20 +144,14 @@ protected:
 	decompress_buffer(Ref<SpeechDecoder> p_speech_decoder,
 			PackedByteArray p_read_byte_array, const int p_read_size,
 			PackedVector2Array p_write_vec2_array);
-
-	// Copys all the input buffers to the output buffers
+	// Copiess all the input buffers to the output buffers
 	// Returns the amount of buffers
 	Array copy_and_clear_buffers();
 	Ref<SpeechDecoder> get_speech_decoder();
-
 	bool start_recording();
-
 	void end_recording();
-
 	void _notification(int p_what);
-
 	void set_streaming_bus(const String &p_name);
-
 	bool set_audio_input_stream_player(Node *p_audio_stream);
 	Dictionary get_stats();
 	Speech();
