@@ -45,18 +45,18 @@
 #include "servers/audio/effects/audio_stream_generator.h"
 #include "speech_processor.h"
 
-
 class PlaybackStats : public RefCounted {
 	GDCLASS(PlaybackStats, RefCounted);
-public:	
+
+public:
 	int64_t playback_ring_current_size = 0;
 	int64_t playback_ring_max_size = 0;
 	int64_t playback_ring_size_sum = 0;
-	double playback_get_frames  = 0.0;
-	int64_t playback_pushed_calls  = 0;
+	double playback_get_frames = 0.0;
+	int64_t playback_pushed_calls = 0;
 	int64_t playback_discarded_calls = 0;
-	int64_t playback_push_buffer_calls  = 0;
-	int64_t playback_blank_push_calls  = 0;
+	int64_t playback_push_buffer_calls = 0;
+	int64_t playback_blank_push_calls = 0;
 	double playback_position = 0.0;
 	double playback_skips = 0.0;
 
