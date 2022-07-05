@@ -403,13 +403,17 @@ bool Speech::start_recording() {
 	return false;
 }
 
-void Speech::end_recording() {
+bool Speech::end_recording() {
+	bool result = true;
 	if (speech_processor) {
 		speech_processor->stop();
+	} else {
+		result = false;
 	}
 	if (has_method("clear_all_player_audio")) {
 		call("clear_all_player_audio");
 	}
+	return result;
 }
 
 void Speech::_notification(int p_what) {
