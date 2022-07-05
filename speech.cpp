@@ -426,6 +426,12 @@ void Speech::_notification(int p_what) {
 			set_process_internal(true);
 			break;
 		}
+		case NOTIFICATION_EXIT_TREE: {
+			if (speech_processor) {
+				remove_child(speech_processor);
+			}
+			break;
+		}
 		case NOTIFICATION_POSTINITIALIZE: {
 			blank_packet.resize(SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT);
 			blank_packet.fill(Vector2());
