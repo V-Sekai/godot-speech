@@ -1,8 +1,5 @@
 extends Speech
 
-const JITTER_BUFFER_SPEEDUP = 12
-const JITTER_BUFFER_SLOWDOWN = 6
-
 const DEBUG = false
 
 @export var use_sample_stretching : bool = true

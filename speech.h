@@ -156,13 +156,13 @@ private:
   float STREAM_STANDARD_PITCH = 1.0;
   float STREAM_SPEEDUP_PITCH = 1.5;
   int MAX_JITTER_BUFFER_SIZE = 16;
-  // int JITTER_BUFFER_SPEEDUP = 12;
-  // int JITTER_BUFFER_SLOWDOWN = 6;
+  int JITTER_BUFFER_SPEEDUP = 12;
+  int JITTER_BUFFER_SLOWDOWN = 6;
   // bool DEBUG = false;
   // bool use_sample_stretching = true;
   // PackedVector2Array uncompressed_audio;
 
-  // int packetss_received_this_frame = 0;
+  // int packets_received_this_frame = 0;
   // int playback_ring_buffer_length = 0;
 
   // PackedVector2Array blank_packet;
@@ -182,6 +182,18 @@ private:
   //   }
   // }
 public:
+  int get_jitter_buffer_speedup() const {
+    return JITTER_BUFFER_SPEEDUP;
+  }
+  void set_jitter_buffer_speedup(int p_jitter_buffer_speedup) {
+    JITTER_BUFFER_SPEEDUP = p_jitter_buffer_speedup;
+  }
+  int get_jitter_buffer_slowdown() const {
+    return JITTER_BUFFER_SLOWDOWN;
+  }
+  void set_jitter_buffer_slowdown(int p_jitter_buffer_slowdown) {
+    JITTER_BUFFER_SLOWDOWN = p_jitter_buffer_slowdown;
+  }
   float get_stream_speedup_pitch() const {
     return STREAM_SPEEDUP_PITCH;
   }
@@ -247,14 +259,26 @@ protected:
                          &Speech::get_max_jitter_buffer_size);
     ClassDB::bind_method(D_METHOD("set_max_jitter_buffer_size", "max_jitter_buffer_size"),
                          &Speech::set_max_jitter_buffer_size);
+    ClassDB::bind_method(D_METHOD("get_jitter_buffer_speedup"),
+                         &Speech::get_jitter_buffer_speedup);
+    ClassDB::bind_method(D_METHOD("set_jitter_buffer_speedup", "jitter_buffer_speedup"),
+                         &Speech::set_jitter_buffer_speedup);
+    ClassDB::bind_method(D_METHOD("get_jitter_buffer_slowdown"),
+                         &Speech::get_jitter_buffer_slowdown);
+    ClassDB::bind_method(D_METHOD("set_jitter_buffer_slowdown", "jitter_buffer_slowdown"),
+                         &Speech::set_jitter_buffer_slowdown);
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
                 "get_buffer_delay_threshold");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_STANDARD_PITCH"), "set_stream_standard_pitch",
                 "get_stream_standard_pitch");
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_SPEEDUP_PITCH"), "set_stream_speedup_pitch",
-                "get_stream_speedup_pitch");
     ADD_PROPERTY(PropertyInfo(Variant::INT, "MAX_JITTER_BUFFER_SIZE"), "set_max_jitter_buffer_size",
                 "get_max_jitter_buffer_size");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "STREAM_SPEEDUP_PITCH"), "set_stream_speedup_pitch",
+                "get_stream_speedup_pitch");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "JITTER_BUFFER_SLOWDOWN"), "set_jitter_buffer_slowdown",
+                "get_jitter_buffer_slowdown");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "JITTER_BUFFER_SPEEDUP"), "set_jitter_buffer_speedup",
+                "get_jitter_buffer_speedup");
   }
 
   int get_skipped_audio_packets() { return skipped_audio_packets; }
