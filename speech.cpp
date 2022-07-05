@@ -306,6 +306,13 @@ void Speech::_bind_methods() {
 			&Speech::add_player_audio);
 	ClassDB::bind_method(D_METHOD("on_received_audio_packet", "peer_id", "sequence_id", "packet"),
 			&Speech::on_received_audio_packet);
+	ClassDB::bind_method(D_METHOD("get_playback_stats", "speech_stat"),
+			&Speech::get_playback_stats);
+	ClassDB::bind_method(D_METHOD("remove_player_audio", "player_id"),
+			&Speech::remove_player_audio);
+	ClassDB::bind_method(D_METHOD("clear_all_player_audio"),
+			&Speech::clear_all_player_audio);
+
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
 			"get_buffer_delay_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_STANDARD_PITCH"), "set_stream_standard_pitch",
@@ -515,11 +522,10 @@ void Speech::vc_debug_printerr(String p_str) const {
 void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedByteArray p_packet) {
 	vc_debug_print(
 			vformat("Received_audio_packet: peer_id: {%s} sequence_id: {%s}", itos(p_peer_id), itos(p_sequence_id)));
-	Dictionary new_player_audio = get_player_audio();
-	if (!new_player_audio.has(p_peer_id)) {
+	if (!player_audio.has(p_peer_id)) {
 		return;
 	}
-	Dictionary elem = new_player_audio[p_peer_id];
+	Dictionary elem = player_audio[p_peer_id];
 	// Detects if no audio packets have been received from this player yet.
 	if (int64_t(elem["sequence_id"]) == -1) {
 		elem["sequence_id"] = p_sequence_id - 1;
@@ -587,6 +593,42 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 		}
 	}
 	elem["jitter_buffer"] = jitter_buffer;
-	new_player_audio[p_peer_id] = elem;
-	set_player_audio(new_player_audio);
+	player_audio[p_peer_id] = elem;
+}
+
+Dictionary Speech::get_playback_stats(Dictionary speech_stat_dict) {
+	Dictionary stat_dict = speech_stat_dict.duplicate(true);
+	stat_dict["capture_get_percent"] = 100.0 * double(stat_dict["capture_get_s"]) / double(stat_dict["capture_pushed_s"]);
+	stat_dict["capture_discard_percent"] = 100.0 * double(stat_dict["capture_discarded_s"]) / double(stat_dict["capture_pushed_s"]);
+	//	for key in player_audio.keys():
+	//		stat_dict[key] = player_audio[key]["playback_stats"].get_playback_stats()
+	//		stat_dict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
+	//		stat_dict[key]["excess_packets"] = player_audio[key]["excess_packets"]
+	//		stat_dict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
+	return stat_dict;
+}
+
+void Speech::remove_player_audio(int p_player_id) {
+	if (player_audio.has(p_player_id)) {
+		if (player_audio.erase(p_player_id)) {
+			return;
+		}
+	}
+	print_error(vformat("Attempted to remove a non-existant player_audio entry (%s)", p_player_id));
+}
+
+void Speech::clear_all_player_audio() {
+	Array keys = player_audio.keys();
+	for (int32_t i = 0; i < keys.size(); i++) {
+		Variant key = keys[i];
+		if (player_audio[key]["audio_stream_player"]) {
+			Dictionary dict = player_audio[key];
+			Node *node = cast_to<Node>(dict["audio_stream_player"]);
+			if (node) {
+				node->queue_delete();
+			}
+		}
+	}
+
+	player_audio = Dictionary();
 }

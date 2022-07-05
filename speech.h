@@ -145,7 +145,7 @@ protected:
 	decompress_buffer(Ref<SpeechDecoder> p_speech_decoder,
 			PackedByteArray p_read_byte_array, const int p_read_size,
 			PackedVector2Array p_write_vec2_array);
-	// Copiess all the input buffers to the output buffers
+	// Copies all the input buffers to the output buffers
 	// Returns the amount of buffers
 	Array copy_and_clear_buffers();
 	Ref<SpeechDecoder> get_speech_decoder();
@@ -160,11 +160,11 @@ protected:
 
 public:
 	void add_player_audio(int p_player_id, Node *p_audio_stream_player);
-
 	void vc_debug_print(String p_str) const;
-
 	void vc_debug_printerr(String p_str) const;
-
 	void on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedByteArray p_packet);
+	Dictionary get_playback_stats(Dictionary speech_stat_dict);
+	void remove_player_audio(int p_player_id);
+	void clear_all_player_audio();
 };
 #endif // SPEECH_H

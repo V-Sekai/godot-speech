@@ -45,34 +45,6 @@ class PlaybackStats:
 		}
 
 
-func get_playback_stats(speech_stat_dict: Dictionary) -> Dictionary:
-	var stat_dict : Dictionary = speech_stat_dict.duplicate(true)
-	stat_dict["capture_get_percent"] = 100.0 * stat_dict["capture_get_s"] / stat_dict["capture_pushed_s"]
-	stat_dict["capture_discard_percent"] = 100.0 * stat_dict["capture_discarded_s"] / stat_dict["capture_pushed_s"]
-#	for key in player_audio.keys():
-#		stat_dict[key] = player_audio[key]["playback_stats"].get_playback_stats()
-#		stat_dict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
-#		stat_dict[key]["excess_packets"] = player_audio[key]["excess_packets"]
-#		stat_dict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
-	return stat_dict
-
-
-func remove_player_audio(p_player_id: int) -> void:
-	if player_audio.has(p_player_id):
-		if player_audio.erase(p_player_id):
-			return
-
-	printerr("Attempted to remove non-existant player_audio entry (%s)" % p_player_id)
-
-
-func clear_all_player_audio() -> void:
-	for key in player_audio.keys():
-		if player_audio[key]["audio_stream_player"]:
-			player_audio[key]["audio_stream_player"].queue_free()
-
-	player_audio = {}
-
-
 func attempt_to_feed_stream(
 	p_skip_count: int, p_decoder: RefCounted, p_audio_stream_player: Node, p_jitter_buffer: Array, p_playback_stats: PlaybackStats, p_player_dict: Dictionary
 ) -> void:
