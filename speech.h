@@ -138,9 +138,9 @@ private:
       // Lock
       MutexLock mutex_lock(audio_mutex);
 
-	  int64_t size = compressed_buffer_input.buffer_size;
-	  ERR_FAIL_COND(size > SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
-	  // Find the next valid input packet in the queue
+      int64_t size = compressed_buffer_input.buffer_size;
+      ERR_FAIL_COND(size > SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
+      // Find the next valid input packet in the queue
       InputPacket *input_packet = get_next_valid_input_packet();
       // Copy the buffer size from the compressed_buffer_input back into the
       // input packet
@@ -150,6 +150,49 @@ private:
       input_packet->buffer_size = size;
       input_packet->loudness = p_mic_input->volume;
     }
+  }
+private:
+  float BUFFER_DELAY_THRESHOLD = 0.1;
+  float STREAM_STANDARD_PITCH = 1.0;
+  // float STREAM_SPEEDUP_PITCH = 1.5;
+  // int MAX_JITTER_BUFFER_SIZE = 16;
+  // int JITTER_BUFFER_SPEEDUP = 12;
+  // int JITTER_BUFFER_SLOWDOWN = 6;
+  // bool DEBUG = false;
+  // bool use_sample_stretching = true;
+  // PackedVector2Array uncompressed_audio;
+
+  // int packetss_received_this_frame = 0;
+  // int playback_ring_buffer_length = 0;
+
+  // PackedVector2Array blank_packet;
+  // Dictionary player_audio;
+
+  // void _ready() {
+  //   uncompressed_audio.resize(
+  //       SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT);
+  //   uncompressed_audio.fill(Vector2());
+  // }
+  // void _init() {
+  //   blank_packet.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT);
+  //   blank_packet.fill(Vector2());
+  //   for (int32_t i : SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT) {
+
+  //     blank_packet[i] = Vector2();
+  //   }
+  // }
+public:
+  float get_buffer_delay_threshold() const {
+    return BUFFER_DELAY_THRESHOLD;
+  }
+  void set_buffer_delay_threshold(float p_buffer_delay_threshold) {
+    BUFFER_DELAY_THRESHOLD = p_buffer_delay_threshold;
+  }
+  float get_stream_standard_pitch() const {
+    return STREAM_STANDARD_PITCH;
+  }
+  void set_stream_standard_pitch(float p_stream_standard_pitch) {
+    STREAM_STANDARD_PITCH = p_stream_standard_pitch;
   }
 
 protected:
@@ -176,6 +219,18 @@ protected:
                          &Speech::set_streaming_bus);
     ClassDB::bind_method(D_METHOD("set_audio_input_stream_player", "player"),
                          &Speech::set_audio_input_stream_player);
+    ClassDB::bind_method(D_METHOD("set_buffer_delay_threshold", "buffer_delay_threshold"),
+                         &Speech::set_buffer_delay_threshold);
+    ClassDB::bind_method(D_METHOD("get_buffer_delay_threshold"),
+                         &Speech::get_buffer_delay_threshold);
+    ClassDB::bind_method(D_METHOD("get_stream_standard_pitch"),
+                         &Speech::get_stream_standard_pitch);
+    ClassDB::bind_method(D_METHOD("set_stream_standard_pitch", "stream_standard_pitch"),
+                         &Speech::set_stream_standard_pitch);
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
+                "get_buffer_delay_threshold");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_STANDARD_PITCH"), "set_stream_standard_pitch",
+                "get_stream_standard_pitch");
   }
 
   int get_skipped_audio_packets() { return skipped_audio_packets; }
@@ -293,4 +348,5 @@ protected:
   };
   ~Speech(){};
 };
+
 #endif
