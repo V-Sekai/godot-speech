@@ -203,7 +203,7 @@ void Speech::set_blank_packet(PackedVector2Array val) {
 	blank_packet = val;
 }
 
-Dictionary Speech::get_player_audio() const {
+Dictionary Speech::get_player_audio() {
 	return player_audio;
 }
 
@@ -276,10 +276,6 @@ void Speech::_bind_methods() {
 			&Speech::get_debug);
 	ClassDB::bind_method(D_METHOD("set_debug", "debug"),
 			&Speech::set_debug);
-	ClassDB::bind_method(D_METHOD("get_debug"),
-			&Speech::get_debug);
-	ClassDB::bind_method(D_METHOD("set_debug", "debug"),
-			&Speech::set_debug);
 	ClassDB::bind_method(D_METHOD("get_uncompressed_audio"),
 			&Speech::get_uncompressed_audio);
 	ClassDB::bind_method(D_METHOD("set_uncompressed_audio", "uncompressed_audio"),
@@ -308,6 +304,8 @@ void Speech::_bind_methods() {
 			&Speech::calc_playback_ring_buffer_length);
 	ClassDB::bind_method(D_METHOD("add_player_audio", "player_id", "audio_stream_player"),
 			&Speech::add_player_audio);
+	ClassDB::bind_method(D_METHOD("on_received_audio_packet", "peer_id", "sequence_id", "packet"),
+			&Speech::on_received_audio_packet);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
 			"get_buffer_delay_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_STANDARD_PITCH"), "set_stream_standard_pitch",
@@ -498,4 +496,97 @@ void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
 			print_error(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
 		}
 	}
+}
+
+void Speech::vc_debug_print(String p_str) const {
+	if (!DEBUG) {
+		return;
+	}
+	print_line(p_str);
+}
+
+void Speech::vc_debug_printerr(String p_str) const {
+	if (!DEBUG) {
+		return;
+	}
+	print_error(p_str);
+}
+
+void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedByteArray p_packet) {
+	vc_debug_print(
+			vformat("Received_audio_packet: peer_id: {%s} sequence_id: {%s}", itos(p_peer_id), itos(p_sequence_id)));
+	Dictionary new_player_audio = get_player_audio();
+	if (!new_player_audio.has(p_peer_id)) {
+		return;
+	}
+	Dictionary elem = new_player_audio[p_peer_id];
+	// Detects if no audio packets have been received from this player yet.
+	if (int64_t(elem["sequence_id"]) == -1) {
+		elem["sequence_id"] = p_sequence_id - 1;
+	}
+
+	elem["packets_received_this_frame"] = int64_t(elem["packets_received_this_frame"]) + 1;
+	packets_received_this_frame += 1;
+	int64_t current_sequence_id = elem["sequence_id"];
+	Array jitter_buffer = elem["jitter_buffer"];
+	int64_t sequence_id_offset = p_sequence_id - current_sequence_id;
+	if (sequence_id_offset > 0) {
+		// For skipped buffers, add empty packets.
+		int64_t skipped_packets = sequence_id_offset - 1;
+		if (skipped_packets) {
+			Variant fill_packets;
+			// If using stretching, fill with last received packet.
+			if (use_sample_stretching && jitter_buffer.size() > 0) {
+				fill_packets = jitter_buffer.back()["packet"];
+			}
+			for (int32_t _i = 0; _i < skipped_packets; _i++) {
+				Dictionary dict;
+				dict["packet"] = fill_packets;
+				dict["valid"] = false;
+				jitter_buffer.push_back(dict);
+			}
+		}
+		{
+			// Add the new valid buffer.
+			Dictionary dict;
+			dict["packet"] = p_packet;
+			dict["valid"] = true;
+			jitter_buffer.push_back(dict);
+		}
+		int64_t excess_packet_count = jitter_buffer.size() - MAX_JITTER_BUFFER_SIZE;
+		if (excess_packet_count > 0) {
+			for (int32_t _i = 0; _i < excess_packet_count; _i++) {
+				elem["excess_packets"] = (int64_t)elem["excess_packets"] + 1;
+				jitter_buffer.pop_front();
+			}
+		}
+		elem["sequence_id"] = int64_t(elem["sequence_id"]) + sequence_id_offset;
+	} else {
+		int64_t sequence_id = jitter_buffer.size() - 1 + sequence_id_offset;
+		vc_debug_print(vformat("Updating existing sequence_id: %s", itos(sequence_id)));
+		if (sequence_id >= 0) {
+			// Update the existing buffer.
+			if (use_sample_stretching) {
+				int32_t jitter_buffer_size = jitter_buffer.size();
+				for (int32_t i = sequence_id; i < jitter_buffer_size - 1; i++) {
+					if (jitter_buffer[i]["valid"]) {
+						break;
+					}
+					Dictionary dict;
+					dict["packet"] = p_packet;
+					dict["valid"] = false;
+					jitter_buffer[i] = dict;
+				}
+			}
+			Dictionary dict;
+			dict["packet"] = p_packet;
+			dict["valid"] = true;
+			jitter_buffer[sequence_id] = dict;
+		} else {
+			vc_debug_printerr("Invalid repair sequence_id.");
+		}
+	}
+	elem["jitter_buffer"] = jitter_buffer;
+	new_player_audio[p_peer_id] = elem;
+	set_player_audio(new_player_audio);
 }

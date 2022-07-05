@@ -42,8 +42,8 @@
 #include "scene/main/node.h"
 #include "servers/audio_server.h"
 
-#include "speech_processor.h"
 #include "servers/audio/effects/audio_stream_generator.h"
+#include "speech_processor.h"
 
 class Speech : public Node {
 	GDCLASS(Speech, Node)
@@ -130,9 +130,10 @@ public:
 	void set_playback_ring_buffer_length(int val);
 	PackedVector2Array get_blank_packet() const;
 	void set_blank_packet(PackedVector2Array val);
-	Dictionary get_player_audio() const;
+	Dictionary get_player_audio();
 	void set_player_audio(Dictionary val);
 	int calc_playback_ring_buffer_length(Ref<AudioStreamGenerator> audio_stream_generator);
+
 protected:
 	static void _bind_methods();
 
@@ -156,7 +157,14 @@ protected:
 	Dictionary get_stats();
 	Speech();
 	~Speech();
+
 public:
 	void add_player_audio(int p_player_id, Node *p_audio_stream_player);
+
+	void vc_debug_print(String p_str) const;
+
+	void vc_debug_printerr(String p_str) const;
+
+	void on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedByteArray p_packet);
 };
 #endif // SPEECH_H

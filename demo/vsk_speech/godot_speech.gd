@@ -57,18 +57,6 @@ func get_playback_stats(speech_stat_dict: Dictionary) -> Dictionary:
 	return stat_dict
 
 
-func vc_debug_print(p_str) -> void:
-	if not DEBUG:
-		return
-	print(p_str)
-
-
-func vc_debug_printerr(p_str) -> void:
-	if not DEBUG:
-		return
-	printerr(p_str)
-
-
 func remove_player_audio(p_player_id: int) -> void:
 	if player_audio.has(p_player_id):
 		if player_audio.erase(p_player_id):
@@ -83,68 +71,6 @@ func clear_all_player_audio() -> void:
 			player_audio[key]["audio_stream_player"].queue_free()
 
 	player_audio = {}
-
-func on_received_audio_packet(p_peer_id: int, p_sequence_id: int, p_packet: PackedByteArray) -> void:
-	vc_debug_print(
-		"received_audio_packet: peer_id: {id} sequence_id: {sequence_id}".format(
-			{"id": str(p_peer_id), "sequence_id": str(p_sequence_id)}
-		)
-	)
-
-	if not player_audio.has(p_peer_id):
-		return
-
-	# Detects if no audio packets have been received from this player yet.
-	if player_audio[p_peer_id]["sequence_id"] == -1:
-		player_audio[p_peer_id]["sequence_id"] = p_sequence_id - 1
-
-	player_audio[p_peer_id]["packets_received_this_frame"] += 1
-	packets_received_this_frame += 1
-
-	var current_sequence_id: int = player_audio[p_peer_id]["sequence_id"]
-	var jitter_buffer: Array = player_audio[p_peer_id]["jitter_buffer"]
-
-	var sequence_id_offset: int = p_sequence_id - current_sequence_id
-	if sequence_id_offset > 0:
-		# For skipped buffers, add empty packets.
-		var skipped_packets = sequence_id_offset - 1
-		if skipped_packets:
-			var fill_packets = null
-
-			# If using stretching, fill with last received packet.
-			if use_sample_stretching and jitter_buffer.size() > 0:
-				fill_packets = jitter_buffer.back()["packet"]
-
-			for _i in range(0, skipped_packets):
-				jitter_buffer.push_back({"packet": fill_packets, "valid": false})
-		# Add the new valid buffer.
-		jitter_buffer.push_back({"packet": p_packet, "valid": true})
-
-		var excess_packet_count: int = jitter_buffer.size() - MAX_JITTER_BUFFER_SIZE
-		if excess_packet_count > 0:
-			for _i in range(0, excess_packet_count):
-				player_audio[p_peer_id]["excess_packets"] += 1
-				jitter_buffer.pop_front()
-
-		player_audio[p_peer_id]["sequence_id"] = player_audio[p_peer_id]["sequence_id"] + sequence_id_offset
-	else:
-		var sequence_id: int = jitter_buffer.size() - 1 + sequence_id_offset
-		vc_debug_print("Updating existing sequence_id: %s" % str(sequence_id))
-		if sequence_id >= 0:
-			# Update the existing buffer.
-			if use_sample_stretching:
-				var jitter_buffer_size = jitter_buffer.size()
-				for i in range(sequence_id, jitter_buffer_size - 1):
-					if jitter_buffer[i]["valid"]:
-						break
-
-					jitter_buffer[i] = {"packet": p_packet, "valid": false}
-
-			jitter_buffer[sequence_id] = {"packet": p_packet, "valid": true}
-		else:
-			vc_debug_printerr("invalid repair sequence_id!")
-
-	player_audio[p_peer_id]["jitter_buffer"] = jitter_buffer
 
 
 func attempt_to_feed_stream(
