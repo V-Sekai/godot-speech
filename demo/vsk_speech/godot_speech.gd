@@ -49,11 +49,11 @@ func get_playback_stats(speech_stat_dict: Dictionary) -> Dictionary:
 	var stat_dict : Dictionary = speech_stat_dict.duplicate(true)
 	stat_dict["capture_get_percent"] = 100.0 * stat_dict["capture_get_s"] / stat_dict["capture_pushed_s"]
 	stat_dict["capture_discard_percent"] = 100.0 * stat_dict["capture_discarded_s"] / stat_dict["capture_pushed_s"]
-	for key in player_audio.keys():
-		stat_dict[key] = player_audio[key]["playback_stats"].get_playback_stats()
-		stat_dict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
-		stat_dict[key]["excess_packets"] = player_audio[key]["excess_packets"]
-		stat_dict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
+#	for key in player_audio.keys():
+#		stat_dict[key] = player_audio[key]["playback_stats"].get_playback_stats()
+#		stat_dict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
+#		stat_dict[key]["excess_packets"] = player_audio[key]["excess_packets"]
+#		stat_dict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
 	return stat_dict
 
 
@@ -67,45 +67,6 @@ func vc_debug_printerr(p_str) -> void:
 	if not DEBUG:
 		return
 	printerr(p_str)
-
-
-func add_player_audio(p_player_id: int, p_audio_stream_player: Node) -> void:
-	if (
-		p_audio_stream_player is AudioStreamPlayer
-		or p_audio_stream_player is AudioStreamPlayer2D
-		or p_audio_stream_player is AudioStreamPlayer3D
-	):
-		if ! player_audio.has(p_player_id):
-			var new_generator: AudioStreamGenerator = AudioStreamGenerator.new()
-			new_generator.set_mix_rate(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE)
-			new_generator.set_buffer_length(BUFFER_DELAY_THRESHOLD)
-			playback_ring_buffer_length = calc_playback_ring_buffer_length(new_generator)
-
-			p_audio_stream_player.set_stream(new_generator)
-			p_audio_stream_player.bus = "VoiceOutput"
-			p_audio_stream_player.autoplay = true
-			p_audio_stream_player.play()
-
-			var speech_decoder: RefCounted = get_speech_decoder()
-
-			var pstats = PlaybackStats.new()
-			pstats.playback_ring_buffer_length = playback_ring_buffer_length
-			pstats.buffer_frame_count = SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT
-			player_audio[p_player_id] = {
-				"audio_stream_player": p_audio_stream_player,
-				"jitter_buffer": [],
-				"sequence_id": -1,
-				"last_update": Time.get_ticks_msec(),
-				"packets_received_this_frame": 0,
-				"excess_packets": 0,
-				"speech_decoder": speech_decoder,
-				"playback_stats": pstats,
-				"playback_start_time": 0,
-				"playback_prev_time": -1,
-				"playback_last_skips": 0,
-			}
-		else:
-			printerr("Attempted to duplicate player_audio entry (%s)!" % p_player_id)
 
 
 func remove_player_audio(p_player_id: int) -> void:
@@ -236,25 +197,25 @@ func attempt_to_feed_stream(
 		if !packet_pushed:
 			push_result = playback.push_buffer(blank_packet)
 
-		p_playback_stats.playback_ring_current_size = playback_ring_buffer_length - playback.get_frames_available()
-		p_playback_stats.playback_ring_max_size = p_playback_stats.playback_ring_current_size if p_playback_stats.playback_ring_current_size > p_playback_stats.playback_ring_max_size else p_playback_stats.playback_ring_max_size
-		p_playback_stats.playback_ring_size_sum += 1.0 * p_playback_stats.playback_ring_current_size
-		p_playback_stats.playback_push_buffer_calls += 1
-		if ! packet_pushed:
-			p_playback_stats.playback_blank_push_calls += 1
-		if push_result:
-			p_playback_stats.playback_pushed_calls += 1
-		else:
-			p_playback_stats.playback_discarded_calls += 1
-		p_playback_stats.playback_skips = 1.0 * float(playback.get_skips())
+#		p_playback_stats.playback_ring_current_size = playback_ring_buffer_length - playback.get_frames_available()
+#		p_playback_stats.playback_ring_max_size = p_playback_stats.playback_ring_current_size if p_playback_stats.playback_ring_current_size > p_playback_stats.playback_ring_max_size else p_playback_stats.playback_ring_max_size
+#		p_playback_stats.playback_ring_size_sum += 1.0 * p_playback_stats.playback_ring_current_size
+#		p_playback_stats.playback_push_buffer_calls += 1
+#		if ! packet_pushed:
+#			p_playback_stats.playback_blank_push_calls += 1
+#		if push_result:
+#			p_playback_stats.playback_pushed_calls += 1
+#		else:
+#			p_playback_stats.playback_discarded_calls += 1
+#		p_playback_stats.playback_skips = 1.0 * float(playback.get_skips())
 
 	if use_sample_stretching and p_jitter_buffer.size() == 0:
 		p_jitter_buffer.push_back({"packet": last_packet, "valid": false})
 
-	p_playback_stats.jitter_buffer_size_sum += p_jitter_buffer.size()
-	p_playback_stats.jitter_buffer_calls += 1
-	p_playback_stats.jitter_buffer_max_size = p_jitter_buffer.size() if p_jitter_buffer.size() > p_playback_stats.jitter_buffer_max_size else p_playback_stats.jitter_buffer_max_size
-	p_playback_stats.jitter_buffer_current_size = p_jitter_buffer.size()
+#	p_playback_stats.jitter_buffer_size_sum += p_jitter_buffer.size()
+#	p_playback_stats.jitter_buffer_calls += 1
+#	p_playback_stats.jitter_buffer_max_size = p_jitter_buffer.size() if p_jitter_buffer.size() > p_playback_stats.jitter_buffer_max_size else p_playback_stats.jitter_buffer_max_size
+#	p_playback_stats.jitter_buffer_current_size = p_jitter_buffer.size()
 
 	# Speed up or slow down the audio stream to mitigate skipping
 	if p_jitter_buffer.size() > JITTER_BUFFER_SPEEDUP:

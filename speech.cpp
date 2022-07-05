@@ -29,6 +29,8 @@
 /*************************************************************************/
 
 #include "speech.h"
+#include "scene/2d/audio_stream_player_2d.h"
+#include "scene/3d/audio_stream_player_3d.h"
 
 void Speech::preallocate_buffers() {
 	input_byte_array.resize(SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
@@ -304,6 +306,8 @@ void Speech::_bind_methods() {
 			&Speech::set_use_sample_stretching);
 	ClassDB::bind_method(D_METHOD("calc_playback_ring_buffer_length", "generator"),
 			&Speech::calc_playback_ring_buffer_length);
+	ClassDB::bind_method(D_METHOD("add_player_audio", "player_id", "audio_stream_player"),
+			&Speech::add_player_audio);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
 			"get_buffer_delay_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_STANDARD_PITCH"), "set_stream_standard_pitch",
@@ -458,4 +462,40 @@ Speech::Speech() {
 }
 
 Speech::~Speech() {
+}
+
+void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
+	if (cast_to<AudioStreamPlayer>(p_audio_stream_player) || cast_to<AudioStreamPlayer2D>(p_audio_stream_player) || cast_to<AudioStreamPlayer3D>(p_audio_stream_player)) {
+		if (!player_audio.has(p_player_id)) {
+			Ref<AudioStreamGenerator> new_generator;
+			new_generator.instantiate();
+			new_generator->set_mix_rate(SpeechProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+			new_generator->set_buffer_length(BUFFER_DELAY_THRESHOLD);
+			playback_ring_buffer_length = calc_playback_ring_buffer_length(new_generator);
+			p_audio_stream_player->call("set_stream", new_generator);
+			p_audio_stream_player->call("set_bus", "VoiceOutput");
+			p_audio_stream_player->call("set_autoplay", true);
+			p_audio_stream_player->call("play");
+			Ref<SpeechDecoder> speech_decoder = get_speech_decoder();
+			//var pstats = PlaybackStats.new();
+			//pstats.playback_ring_buffer_length = playback_ring_buffer_length;
+			//pstats.buffer_frame_count = SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
+			Dictionary dict;
+			dict["playback_last_skips"] = 0;
+			dict["audio_stream_player"] = p_audio_stream_player;
+			dict["jitter_buffer"] = Array();
+			dict["sequence_id"] = -1;
+			dict["last_update"] = OS::get_singleton()->get_ticks_msec();
+			dict["packets_received_this_frame"] = 0;
+			dict["excess_packets"] = 0;
+			dict["speech_decoder"] = speech_decoder;
+			//dict["playback_stats"] = pstats;
+			dict["playback_stats"] = Variant();
+			dict["playback_start_time"] = 0;
+			dict["playback_prev_time"] = -1;
+			player_audio[p_player_id] = dict;
+		} else {
+			print_error(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
+		}
+	}
 }

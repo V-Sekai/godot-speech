@@ -156,6 +156,7 @@ protected:
 	Dictionary get_stats();
 	Speech();
 	~Speech();
+public:
+	void add_player_audio(int p_player_id, Node *p_audio_stream_player);
 };
-
 #endif // SPEECH_H
