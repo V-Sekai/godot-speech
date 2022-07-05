@@ -28,8 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef STREAM_AUDIO_OPUS_H
-#define STREAM_AUDIO_OPUS_H
+#ifndef SPEECH_H
+#define SPEECH_H
 
 #include "core/error/error_macros.h"
 #include "thirdparty/libsamplerate/src/samplerate.h"
@@ -457,4 +457,4 @@ protected:
 	~Speech() {};
 };
 
-#endif
+#endif // SPEECH_H
