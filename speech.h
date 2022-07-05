@@ -45,8 +45,33 @@
 #include "servers/audio/effects/audio_stream_generator.h"
 #include "speech_processor.h"
 
+
+class PlaybackStats : public RefCounted {
+	GDCLASS(PlaybackStats, RefCounted);
+public:	
+	int64_t playback_ring_current_size = 0;
+	int64_t playback_ring_max_size = 0;
+	int64_t playback_ring_size_sum = 0;
+	double playback_get_frames  = 0.0;
+	int64_t playback_pushed_calls  = 0;
+	int64_t playback_discarded_calls = 0;
+	int64_t playback_push_buffer_calls  = 0;
+	int64_t playback_blank_push_calls  = 0;
+	double playback_position = 0.0;
+	double playback_skips = 0.0;
+
+	double jitter_buffer_size_sum = 0.0;
+	int64_t jitter_buffer_calls = 0;
+	int64_t jitter_buffer_max_size = 0;
+	int64_t jitter_buffer_current_size = 0;
+
+	int64_t playback_ring_buffer_length = 0;
+	int64_t buffer_frame_count = 0;
+	Dictionary get_playback_stats();
+};
+
 class Speech : public Node {
-	GDCLASS(Speech, Node)
+	GDCLASS(Speech, Node);
 
 	static const int MAX_AUDIO_BUFFER_ARRAY_SIZE = 10;
 
@@ -166,54 +191,6 @@ public:
 	Dictionary get_playback_stats(Dictionary speech_stat_dict);
 	void remove_player_audio(int p_player_id);
 	void clear_all_player_audio();
-
-	/*
-
-	class PlaybackStats:
-		var playback_ring_current_size: int = 0
-		var playback_ring_max_size: int = 0
-		var playback_ring_size_sum: float = 0.0
-		var playback_get_frames: float = 0.0
-		var playback_pushed_calls: int = 0
-		var playback_discarded_calls: int = 0
-		var playback_push_buffer_calls: int = 0
-		var playback_blank_push_calls: int = 0
-		var playback_position: float = 0.0
-		var playback_skips: float = 0.0
-
-		var jitter_buffer_size_sum: float = 0.0
-		var jitter_buffer_calls: int = 0
-		var jitter_buffer_max_size: int = 0
-		var jitter_buffer_current_size: int = 0
-
-		var playback_ring_buffer_length: int = 0
-		var buffer_frame_count: int = 0
-
-		func get_playback_stats() -> Dictionary:
-			var playback_pushed_frames: float = playback_pushed_calls * (buffer_frame_count * 1.0)
-			var playback_discarded_frames: float = playback_discarded_calls * (buffer_frame_count * 1.0)
-			return {
-			"playback_ring_limit_s": playback_ring_buffer_length / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
-			"playback_ring_current_size_s": playback_ring_current_size / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
-			"playback_ring_max_size_s": playback_ring_max_size / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
-			"playback_ring_mean_size_s": playback_ring_size_sum / playback_push_buffer_calls / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
-			"jitter_buffer_current_size_s": float(jitter_buffer_current_size) * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
-			"jitter_buffer_max_size_s": float(jitter_buffer_max_size) * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
-			"jitter_buffer_mean_size_s": float(jitter_buffer_size_sum) / jitter_buffer_calls * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
-			"jitter_buffer_calls": jitter_buffer_calls,
-			"playback_position_s": playback_position,
-			"playback_get_percent": 100.0 * playback_get_frames / playback_pushed_frames,
-			"playback_discard_percent": 100.0 * playback_discarded_frames / playback_pushed_frames,
-			"playback_get_s": playback_get_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
-			"playback_pushed_s": playback_pushed_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
-			"playback_discarded_s": playback_discarded_frames / float(SpeechProcessor.SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE),
-			"playback_push_buffer_calls": floor(playback_push_buffer_calls),
-			"playback_blank_s": playback_blank_push_calls * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME,
-			"playback_blank_percent": 100.0 * playback_blank_push_calls / playback_push_buffer_calls,
-			"playback_skips": floor(playback_skips),
-			}
-	*/
-
-	void attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Array p_jitter_buffer, Variant p_playback_stats, Dictionary p_player_dict);
+	void attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Array p_jitter_buffer, Ref<PlaybackStats> p_playback_stats, Dictionary p_player_dict);
 };
 #endif // SPEECH_H

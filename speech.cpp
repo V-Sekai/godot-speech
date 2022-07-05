@@ -463,8 +463,7 @@ void Speech::_notification(int p_what) {
 				if (!elem.has("playback_stats")) {
 					continue;
 				}
-				// var playback_stats = elem["playback_stats"]
-				Variant playback_stats;
+				Ref<PlaybackStats> playback_stats = elem["playback_stats"];
 				attempt_to_feed_stream(
 						0,
 						speech_decoder,
@@ -529,9 +528,9 @@ void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
 			p_audio_stream_player->call("set_autoplay", true);
 			p_audio_stream_player->call("play");
 			Ref<SpeechDecoder> speech_decoder = get_speech_decoder();
-			//var pstats = PlaybackStats.new();
-			//pstats.playback_ring_buffer_length = playback_ring_buffer_length;
-			//pstats.buffer_frame_count = SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
+			Ref<PlaybackStats> pstats = memnew(PlaybackStats);
+			pstats->playback_ring_buffer_length = playback_ring_buffer_length;
+			pstats->buffer_frame_count = SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
 			Dictionary dict;
 			dict["playback_last_skips"] = 0;
 			dict["audio_stream_player"] = p_audio_stream_player;
@@ -647,11 +646,20 @@ Dictionary Speech::get_playback_stats(Dictionary speech_stat_dict) {
 	Dictionary stat_dict = speech_stat_dict.duplicate(true);
 	stat_dict["capture_get_percent"] = 100.0 * double(stat_dict["capture_get_s"]) / double(stat_dict["capture_pushed_s"]);
 	stat_dict["capture_discard_percent"] = 100.0 * double(stat_dict["capture_discarded_s"]) / double(stat_dict["capture_pushed_s"]);
-	//	for key in player_audio.keys():
-	//		stat_dict[key] = player_audio[key]["playback_stats"].get_playback_stats()
-	//		stat_dict[key]["playback_total_time"] = (Time.get_ticks_msec() - player_audio[key]["playback_start_time"]) / float(SpeechProcessor.SPEECH_SETTING_MILLISECONDS_PER_SECOND)
-	//		stat_dict[key]["excess_packets"] = player_audio[key]["excess_packets"]
-	//		stat_dict[key]["excess_s"] = player_audio[key]["excess_packets"] * SpeechProcessor.SPEECH_SETTING_PACKET_DELTA_TIME
+	Array keys = player_audio.keys();
+	for (int32_t key_i = 0; key_i < keys.size(); key_i++) {
+		Variant key = keys[key_i];
+		Dictionary elem = player_audio[key];
+		Ref<PlaybackStats> playback_stats = elem["playback_stats"];
+		if (playback_stats.is_null()) {
+			continue;
+		}
+		Dictionary stats = playback_stats->get_playback_stats();
+		stats["playback_total_time"] = (OS::get_singleton()->get_ticks_msec() - int64_t(elem["playback_start_time"])) / double(SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND);
+		stats["excess_packets"] = elem["excess_packets"];
+		stats["excess_s"] = int64_t(elem["excess_packets"]) * SpeechProcessor::SPEECH_SETTING_PACKET_DELTA_TIME;
+		stat_dict[key] = stats;
+	}
 	return stat_dict;
 }
 
@@ -680,7 +688,7 @@ void Speech::clear_all_player_audio() {
 	player_audio = Dictionary();
 }
 
-void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Array p_jitter_buffer, Variant p_playback_stats, Dictionary p_player_dict) {
+void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Array p_jitter_buffer, Ref<PlaybackStats> p_playback_stats, Dictionary p_player_dict) {
 	if (!p_audio_stream_player) {
 		return;
 	}
@@ -738,19 +746,22 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		if (!packet_pushed) {
 			push_result = playback->push_buffer(blank_packet);
 		}
-		/*
-		#		p_playback_stats.playback_ring_current_size = playback_ring_buffer_length - playback.get_frames_available()
-		#		p_playback_stats.playback_ring_max_size = p_playback_stats.playback_ring_current_size if p_playback_stats.playback_ring_current_size > p_playback_stats.playback_ring_max_size else p_playback_stats.playback_ring_max_size
-		#		p_playback_stats.playback_ring_size_sum += 1.0 * p_playback_stats.playback_ring_current_size
-		#		p_playback_stats.playback_push_buffer_calls += 1
-		#		if ! packet_pushed:
-		#			p_playback_stats.playback_blank_push_calls += 1
-		#		if push_result:
-		#			p_playback_stats.playback_pushed_calls += 1
-		#		else:
-		#			p_playback_stats.playback_discarded_calls += 1
-		#		p_playback_stats.playback_skips = 1.0 * float(playback.get_skips())
-		*/
+		if (p_playback_stats.is_null()) {
+			continue;
+		}
+		p_playback_stats->playback_ring_current_size = playback_ring_buffer_length - playback->get_frames_available();
+		p_playback_stats->playback_ring_max_size = p_playback_stats->playback_ring_current_size ? p_playback_stats->playback_ring_current_size > p_playback_stats->playback_ring_max_size : p_playback_stats->playback_ring_max_size;
+		p_playback_stats->playback_ring_size_sum += 1.0 * p_playback_stats->playback_ring_current_size;
+		p_playback_stats->playback_push_buffer_calls += 1;
+		if (!packet_pushed) {
+			p_playback_stats->playback_blank_push_calls += 1;
+		}
+		if (push_result) {
+			p_playback_stats->playback_pushed_calls += 1;
+		} else {
+			p_playback_stats->playback_discarded_calls += 1;
+		}
+		p_playback_stats->playback_skips = 1.0 * double(playback->get_skips());
 	}
 	if (use_sample_stretching && p_jitter_buffer.size() == 0) {
 		Dictionary dict;
@@ -758,16 +769,41 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		dict["valid"] = false;
 		p_jitter_buffer.push_back(dict);
 	}
-	/*
-#	p_playback_stats.jitter_buffer_size_sum += p_jitter_buffer.size()
-#	p_playback_stats.jitter_buffer_calls += 1
-#	p_playback_stats.jitter_buffer_max_size = p_jitter_buffer.size() if p_jitter_buffer.size() > p_playback_stats.jitter_buffer_max_size else p_playback_stats.jitter_buffer_max_size
-#	p_playback_stats.jitter_buffer_current_size = p_jitter_buffer.size()
-*/
+	if (p_playback_stats.is_valid()) {
+		p_playback_stats->jitter_buffer_size_sum += p_jitter_buffer.size();
+		p_playback_stats->jitter_buffer_calls += 1;
+		p_playback_stats->jitter_buffer_max_size = p_jitter_buffer.size() ? p_jitter_buffer.size() > p_playback_stats->jitter_buffer_max_size : p_playback_stats->jitter_buffer_max_size;
+		p_playback_stats->jitter_buffer_current_size = p_jitter_buffer.size();
+	}
 	// Speed up or slow down the audio stream to mitigate skipping
 	if (p_jitter_buffer.size() > JITTER_BUFFER_SPEEDUP) {
 		p_audio_stream_player->set_physics_process(STREAM_SPEEDUP_PITCH);
 	} else if (p_jitter_buffer.size() < JITTER_BUFFER_SLOWDOWN) {
 		p_audio_stream_player->call("set_pitch_scale", STREAM_STANDARD_PITCH);
 	}
+}
+
+Dictionary PlaybackStats::get_playback_stats() {
+	double playback_pushed_frames = playback_pushed_calls * (buffer_frame_count * 1.0);
+	double playback_discarded_frames = playback_discarded_calls * (buffer_frame_count * 1.0);
+	Dictionary dict;
+	dict["playback_ring_limit_s"] = playback_ring_buffer_length / double(SpeechProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+	dict["playback_ring_current_size_s"] = playback_ring_current_size / double(SpeechProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+	dict["playback_ring_max_size_s"] = playback_ring_max_size / double(SpeechProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+	dict["playback_ring_mean_size_s"] = playback_ring_size_sum / playback_push_buffer_calls / double(SpeechProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+	dict["jitter_buffer_current_size_s"] = float(jitter_buffer_current_size) * SpeechProcessor::SPEECH_SETTING_PACKET_DELTA_TIME;
+	dict["jitter_buffer_max_size_s"] = float(jitter_buffer_max_size) * SpeechProcessor::SPEECH_SETTING_PACKET_DELTA_TIME;
+	dict["jitter_buffer_mean_size_s"] = float(jitter_buffer_size_sum) / jitter_buffer_calls * SpeechProcessor::SPEECH_SETTING_PACKET_DELTA_TIME;
+	dict["jitter_buffer_calls"] = jitter_buffer_calls;
+	dict["playback_position_s"] = playback_position;
+	dict["playback_get_percent"] = 100.0 * playback_get_frames / playback_pushed_frames;
+	dict["playback_discard_percent"] = 100.0 * playback_discarded_frames / playback_pushed_frames;
+	dict["playback_get_s"] = playback_get_frames / double(SpeechProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+	dict["playback_pushed_s"] = playback_pushed_frames / double(SpeechProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+	dict["playback_discarded_s"] = playback_discarded_frames / double(SpeechProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+	dict["playback_push_buffer_calls"] = floor(playback_push_buffer_calls);
+	dict["playback_blank_s"] = playback_blank_push_calls * SpeechProcessor::SPEECH_SETTING_PACKET_DELTA_TIME;
+	dict["playback_blank_percent"] = 100.0 * playback_blank_push_calls / playback_push_buffer_calls;
+	dict["playback_skips"] = floor(playback_skips);
+	return dict;
 }
