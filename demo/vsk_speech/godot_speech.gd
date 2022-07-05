@@ -1,28 +1,5 @@
 extends Speech
 
-const DEBUG = false
-
-@export var use_sample_stretching : bool = true
-
-var uncompressed_audio: PackedVector2Array
-
-# Debugging info
-var packets_received_this_frame: int = 0
-var playback_ring_buffer_length: int = 0
-
-var blank_packet: PackedVector2Array
-var player_audio: Dictionary
-
-func _ready() -> void:
-	uncompressed_audio.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT)
-	uncompressed_audio.fill(Vector2())
-
-func _init() -> void:
-	blank_packet.resize(SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT)
-	blank_packet.fill(Vector2())
-	for i in range(0, SpeechProcessor.SPEECH_SETTING_BUFFER_FRAME_COUNT):
-		blank_packet[i] = Vector2()
-
 class PlaybackStats:
 	var playback_ring_current_size: int = 0
 	var playback_ring_max_size: int = 0
