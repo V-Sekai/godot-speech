@@ -16,19 +16,3 @@ bus = &"Mic"
 [node name="GodotSpeech" type="Speech" parent="."]
 use_sample_stretching = false
 script = ExtResource("2_aken5")
-
-[node name="SpeechProcessor" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="SpeechProcessor2" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="SpeechProcessor3" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="SpeechProcessor4" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="SpeechProcessor5" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="SpeechProcessor6" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="SpeechProcessor7" type="SpeechProcessor" parent="GodotSpeech"]
-
-[node name="SpeechProcessor8" type="SpeechProcessor" parent="GodotSpeech"]
