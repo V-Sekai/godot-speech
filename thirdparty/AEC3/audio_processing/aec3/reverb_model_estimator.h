@@ -13,6 +13,7 @@
 
 #include <array>
 #include <vector>
+#include <memory>
 
 #include "absl/types/optional.h"
 #include "rtc_base/array_view.h"

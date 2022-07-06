@@ -14,11 +14,9 @@
 // clang-format off
 // clang formating would change include order.
 #if defined(WEBRTC_WIN)
-// Include winsock2.h before including <windows.h> to maintain consistency with
-// win32.h. To include win32.h directly, it must be broken out into its own
-// build target.
-#include <winsock2.h>
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
 #elif defined(WEBRTC_FUCHSIA)
 #include <zircon/types.h>
 #include <zircon/process.h>

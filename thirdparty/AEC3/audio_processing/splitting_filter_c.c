@@ -14,6 +14,7 @@
  */
 
 #include "rtc_base/checks.h"
+#include <stddef.h>
 #include <stdint.h>
 
 // Maximum number of samples in a low/high-band frame.

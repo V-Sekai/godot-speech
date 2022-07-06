@@ -57,7 +57,8 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
 }
 
 void SetCurrentThreadName(const char* name) {
-#if defined(WEBRTC_WIN)
+// TODO: GODOT ENGINE // V-Sekai fire 2022-07-05 HACK  
+#if false && defined(WEBRTC_WIN)
   // For details see:
   // https://docs.microsoft.com/en-us/visualstudio/debugger/how-to-set-a-thread-name-in-native-code
 #pragma pack(push, 8)

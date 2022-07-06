@@ -1,11 +1,26 @@
 Import("env")
 
 module_env = env.Clone()
-module_env.Append(CPPDEFINES=["HAVE_CONFIG_H", "PACKAGE=", "VERSION=", "CPU_CLIPS_POSITIVE=0", "CPU_CLIPS_NEGATIVE=0", "WEBRTC_APM_DEBUG_DUMP=0", "WEBRTC_WIN"])
-if env["platform"] == "windows":
+module_env.Append(CPPDEFINES=["HAVE_CONFIG_H", "PACKAGE=", "VERSION=", "CPU_CLIPS_POSITIVE=0", "CPU_CLIPS_NEGATIVE=0", "WEBRTC_APM_DEBUG_DUMP=0"])
+
+enable_webrtc_logging = env["target"] == "debug"
+
+if not enable_webrtc_logging:
+    module_env.Append(CPPDEFINES=["RTC_DISABLE_LOGGING", "RTC_DISABLE_METRICS"])
+
+if env["platform"] == "windows" or env["platform"] == "uwp":
     module_env.Append(CPPDEFINES=["WEBRTC_WIN"])
-else:
+elif env["platform"] == "iphone":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_IOS"])
+elif env["platform"] == "osx":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_MAC"])
+elif env["platform"] == "linuxbsd":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_LINUX"])
+elif env["platform"] == "android":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_ANDROID"])
+else: # including if env["platform"] == "javascript":
     module_env.Append(CPPDEFINES=["WEBRTC_POSIX"])
+
 module_env.Prepend(CPPPATH=["thirdparty/libsamplerate/src"])
 module_env.Prepend(CPPPATH=["thirdparty/opus"])
 module_env.Prepend(CPPPATH=["include"])
@@ -19,6 +34,7 @@ module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/include"])
 module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/logging"])
 module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/resampler"])
 module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/utility"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/base/jsoncpp/include"])
 
 env_thirdparty = module_env.Clone()
 env_thirdparty.disable_warnings()
@@ -285,7 +301,48 @@ aec3_sources = [
     "AEC3/audio_processing/utility/ooura_fft_mips.cc",
     "AEC3/audio_processing/utility/ooura_fft_neon.cc",
     "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
+    "AEC3/api/echo_canceller3_config.cc",
+    "AEC3/api/echo_canceller3_config_json.cc",
+    "AEC3/api/echo_canceller3_factory.cc",
+    "AEC3/base/system_wrappers/source/cpu_features.cc",
+    "AEC3/base/system_wrappers/source/field_trial.cc",
+    "AEC3/base/abseil/absl/base/internal/throw_delegate.cc",
+    "AEC3/base/abseil/absl/strings/ascii.cc",
+    "AEC3/base/abseil/absl/strings/charconv.cc",
+    "AEC3/base/abseil/absl/strings/escaping.cc",
+    "AEC3/base/abseil/absl/strings/internal/charconv_bigint.cc",
+    "AEC3/base/abseil/absl/strings/internal/charconv_parse.cc",
+    "AEC3/base/abseil/absl/strings/internal/memutil.cc",
+    "AEC3/base/abseil/absl/strings/match.cc",
+    "AEC3/base/abseil/absl/strings/numbers.cc",
+    "AEC3/base/abseil/absl/strings/string_view.cc",
+    "AEC3/base/abseil/absl/strings/str_cat.cc",
+    "AEC3/base/abseil/absl/strings/str_replace.cc",
+    "AEC3/base/abseil/absl/strings/str_split.cc",
+    "AEC3/base/abseil/absl/strings/substitute.cc",
+    "AEC3/base/abseil/absl/types/bad_optional_access.cc",
+    # "AEC3/base/jsoncpp/src/lib_json/json_reader.cpp",
+    # "AEC3/base/jsoncpp/src/lib_json/json_value.cpp",
+    # "AEC3/base/jsoncpp/src/lib_json/json_writer.cpp",
+    "AEC3/base/rtc_base/checks.cc",
+    "AEC3/base/rtc_base/memory/aligned_malloc.cc",
+    "AEC3/base/rtc_base/platform_thread_types.cc",
+    "AEC3/base/rtc_base/race_checker.cc",
+    "AEC3/base/rtc_base/strings/json.cc",
+    "AEC3/base/rtc_base/strings/string_builder.cc",
+    "AEC3/base/rtc_base/string_encode.cc",
+    "AEC3/base/rtc_base/string_to_number.cc",
+    "AEC3/base/rtc_base/string_utils.cc",
+    "AEC3/base/rtc_base/system/file_wrapper.cc",
+    "AEC3/base/rtc_base/time_utils.cc",
 ]
+if enable_webrtc_logging:
+    aec3_sources += ([
+        "AEC3/base/system_wrappers/source/metrics.cc",
+        "AEC3/base/rtc_base/critical_section.cc",
+        "AEC3/base/rtc_base/logging.cc",
+    ])
+
 thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources + opus_sources_silk] + ["thirdparty/" + file for file in aec3_sources]
 
 env_thirdparty.Prepend(CPPPATH=["#thirdparty/libogg"])

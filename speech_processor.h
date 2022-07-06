@@ -46,9 +46,14 @@
 #include <stdlib.h>
 #include <functional>
 
-
 #include "thirdparty/libsamplerate/src/samplerate.h"
 #include "thirdparty/opus/opus/opus.h"
+
+#include "thirdparty/AEC3/api/echo_canceller3_factory.h"
+#include "thirdparty/AEC3/api/echo_canceller3_config.h"
+#include "thirdparty/AEC3/audio_processing/include/audio_processing.h"
+#include "thirdparty/AEC3/audio_processing/audio_buffer.h"
+#include "thirdparty/AEC3/audio_processing/high_pass_filter.h"
 
 #include <stdint.h>
 
@@ -167,14 +172,18 @@ private:
 	OpusEncoder *encoder = nullptr;
 	AudioServer *audio_server = nullptr;
 	AudioStreamPlayer *audio_input_stream_player = nullptr;
-	Ref<AudioEffectCapture> audio_effect_capture = nullptr;
-
+	Ref<AudioEffectCapture> audio_effect_capture;
+	Ref<AudioEffectCapture> audio_effect_error_cancellation_capture;
 	uint32_t mix_rate = 0;
 	PackedByteArray mix_byte_array;
+	Vector<int16_t> mix_reference_buffer;
+	Vector<int16_t> mix_capture_buffer;
 
-	PackedFloat32Array mono_real_array;
-	PackedFloat32Array resampled_real_array;
-	uint32_t resampled_real_array_offset = 0;
+	PackedFloat32Array mono_capture_real_array;
+	PackedFloat32Array mono_reference_real_array;
+	PackedFloat32Array capture_real_array;
+	PackedFloat32Array reference_real_array;
+	uint32_t capture_real_array_offset = 0;
 
 	PackedByteArray pcm_byte_array_cache;
 
@@ -190,6 +199,23 @@ private:
 	int64_t capture_ring_size_sum = 0;
 	int32_t capture_get_calls = 0;
 	int64_t capture_get_frames = 0;
+
+	int64_t capture_error_cancellation_discarded_frames = 0;
+	int64_t capture_error_cancellation_pushed_frames = 0;
+	int32_t capture_error_cancellation_ring_limit = 0;
+	int32_t capture_error_cancellation_ring_current_size = 0;
+	int32_t capture_error_cancellation_ring_max_size = 0;
+	int64_t capture_error_cancellation_ring_size_sum = 0;
+	int32_t capture_error_cancellation_get_calls = 0;
+	int64_t capture_error_cancellation_get_frames = 0;
+
+	webrtc::EchoCanceller3Config aec_config;
+	std::unique_ptr<webrtc::AudioBuffer> reference_audio;
+	std::unique_ptr<webrtc::AudioBuffer> capture_audio;
+	const int kLinearOutputRateHz = 16000;
+	std::unique_ptr<webrtc::EchoControl> echo_controller;
+	std::unique_ptr<webrtc::HighPassFilter> hp_filter;
+	webrtc::AudioFrame ref_frame, capture_frame;
 
 public:
 	struct SpeechInput {
@@ -208,6 +234,20 @@ public:
 		speech_processed = callback;
 	}
 
+	void set_error_cancellation_bus(const String &p_name) {
+		if (!audio_server) {
+			return;
+		}
+
+		int index = audio_server->get_bus_index(p_name);
+		if (index != -1) {
+			int effect_count = audio_server->get_bus_effect_count(index);
+			for (int i = 0; i < effect_count; i++) {
+				audio_effect_error_cancellation_capture = audio_server->get_bus_effect(index, i);
+			}
+		}
+	}
+
 	uint32_t _resample_audio_buffer(const float *p_src,
 			const uint32_t p_src_frame_count,
 			const uint32_t p_src_samplerate,
@@ -222,7 +262,7 @@ public:
 			const Vector2 *p_process_buffer_in,
 			float *p_process_buffer_out);
 
-	void _mix_audio(const Vector2 *p_process_buffer_in);
+	void _mix_audio(const Vector2 *p_process_buffer_in, const Vector2 *p_error_cancellation_buffer);
 
 	static bool _16_pcm_mono_to_real_stereo(const PackedByteArray *p_src_buffer,
 			PackedVector2Array *p_dst_buffer);
