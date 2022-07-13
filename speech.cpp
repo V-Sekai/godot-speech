@@ -592,7 +592,8 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 			Variant fill_packets;
 			// If using stretching, fill with last received packet.
 			if (use_sample_stretching && jitter_buffer.size() > 0) {
-				fill_packets = jitter_buffer.back()["packet"];
+				Dictionary new_jitter_buffer = jitter_buffer.back();
+				fill_packets = new_jitter_buffer["packet"];
 			}
 			for (int32_t _i = 0; _i < skipped_packets; _i++) {
 				Dictionary dict;
@@ -624,7 +625,8 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 			if (use_sample_stretching) {
 				int32_t jitter_buffer_size = jitter_buffer.size();
 				for (int32_t i = sequence_id; i < jitter_buffer_size - 1; i++) {
-					if (jitter_buffer[i]["valid"]) {
+					Dictionary buffer = jitter_buffer[i];
+					if (buffer["valid"]) {
 						break;
 					}
 					Dictionary dict;
@@ -679,13 +681,20 @@ void Speech::clear_all_player_audio() {
 	Array keys = player_audio.keys();
 	for (int32_t i = 0; i < keys.size(); i++) {
 		Variant key = keys[i];
-		if (player_audio[key]["audio_stream_player"]) {
-			Dictionary dict = player_audio[key];
-			Node *node = cast_to<Node>(dict["audio_stream_player"]);
-			if (node) {
-				node->queue_delete();
-			}
+		Variant element = player_audio[key];
+		if (element.get_type() != Variant::DICTIONARY) {
+			continue;
 		}
+		Dictionary elem = element;
+		if (!elem.has("audio_stream_player")) {
+			continue;
+		}
+		Dictionary dict = player_audio[key];
+		Node *node = cast_to<Node>(dict["audio_stream_player"]);
+		if (!node) {
+			continue;
+		}
+		node->queue_delete();
 	}
 
 	player_audio = Dictionary();
@@ -718,9 +727,10 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		required_packets += 1;
 	}
 
-	Variant last_packet;
+	Dictionary last_packet;
 	if (p_jitter_buffer.size() > 0) {
-		last_packet = p_jitter_buffer.back()["packet"];
+		Dictionary jitter_buffer = p_jitter_buffer.back();
+		last_packet = jitter_buffer["packet"];
 	}
 	while (p_jitter_buffer.size() < required_packets) {
 		Variant fill_packets;
