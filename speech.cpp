@@ -823,5 +823,5 @@ Dictionary PlaybackStats::get_playback_stats() {
 
 void PlaybackStats::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_playback_stats"),
-			&Speech::get_playback_stats);
+			&PlaybackStats::get_playback_stats);
 }
