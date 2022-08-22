@@ -49,7 +49,7 @@ class PlaybackStats : public RefCounted {
 	GDCLASS(PlaybackStats, RefCounted);
 
 protected:
-	void _bind_methods();
+	static void _bind_methods();
 
 public:
 	int64_t playback_ring_current_size = 0;
