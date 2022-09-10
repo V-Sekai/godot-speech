@@ -400,8 +400,6 @@ SpeechProcessor::SpeechProcessor() {
 			SPEECH_SETTING_APPLICATION, &error);
 	if (error != OPUS_OK) {
 		ERR_PRINT("OpusCodec: could not create Opus encoder!");
-	}
-	if (error != OPUS_OK) {
 		print_opus_error(error);
 	}
 	capture_discarded_frames = 0;
