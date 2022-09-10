@@ -402,15 +402,6 @@ SpeechProcessor::SpeechProcessor() {
 		ERR_PRINT("OpusCodec: could not create Opus encoder!");
 		print_opus_error(error);
 	}
-	capture_discarded_frames = 0;
-	capture_pushed_frames = 0;
-	capture_ring_limit = 0;
-	capture_ring_current_size = 0;
-	capture_ring_max_size = 0;
-	capture_ring_size_sum = 0;
-	capture_get_calls = 0;
-	capture_get_frames = 0;
-
 	mono_real_array.resize(RECORD_MIX_FRAMES);
 	mono_real_array.fill(0);
 	resampled_real_array.resize(RECORD_MIX_FRAMES * RESAMPLED_BUFFER_FACTOR);
