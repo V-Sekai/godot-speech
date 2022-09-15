@@ -9,25 +9,25 @@
 	<methods>
 		<method name="add_player_audio">
 			<return type="void" />
-			<argument index="0" name="player_id" type="int" />
-			<argument index="1" name="audio_stream_player" type="Node" />
+			<param index="0" name="player_id" type="int" />
+			<param index="1" name="audio_stream_player" type="Node" />
 			<description>
 			</description>
 		</method>
 		<method name="attempt_to_feed_stream">
 			<return type="void" />
-			<argument index="0" name="skip_count" type="int" />
-			<argument index="1" name="decoder" type="SpeechDecoder" />
-			<argument index="2" name="audio_stream_player" type="Node" />
-			<argument index="3" name="jitter_buffer" type="Array" />
-			<argument index="4" name="playback_stats" type="PlaybackStats" />
-			<argument index="5" name="player_dict" type="Dictionary" />
+			<param index="0" name="skip_count" type="int" />
+			<param index="1" name="decoder" type="SpeechDecoder" />
+			<param index="2" name="audio_stream_player" type="Node" />
+			<param index="3" name="jitter_buffer" type="Array" />
+			<param index="4" name="playback_stats" type="PlaybackStats" />
+			<param index="5" name="player_dict" type="Dictionary" />
 			<description>
 			</description>
 		</method>
 		<method name="calc_playback_ring_buffer_length">
 			<return type="int" />
-			<argument index="0" name="generator" type="AudioStreamGenerator" />
+			<param index="0" name="generator" type="AudioStreamGenerator" />
 			<description>
 			</description>
 		</method>
@@ -48,10 +48,10 @@
 		</method>
 		<method name="decompress_buffer">
 			<return type="PackedVector2Array" />
-			<argument index="0" name="decoder" type="SpeechDecoder" />
-			<argument index="1" name="read_array" type="PackedByteArray" />
-			<argument index="2" name="read_size" type="int" />
-			<argument index="3" name="write_array" type="PackedVector2Array" />
+			<param index="0" name="decoder" type="SpeechDecoder" />
+			<param index="1" name="read_array" type="PackedByteArray" />
+			<param index="2" name="read_size" type="int" />
+			<param index="3" name="write_array" type="PackedVector2Array" />
 			<description>
 			</description>
 		</method>
@@ -62,7 +62,7 @@
 		</method>
 		<method name="get_playback_stats">
 			<return type="Dictionary" />
-			<argument index="0" name="speech_stat" type="Dictionary" />
+			<param index="0" name="speech_stat" type="Dictionary" />
 			<description>
 			</description>
 		</method>
@@ -83,27 +83,27 @@
 		</method>
 		<method name="on_received_audio_packet">
 			<return type="void" />
-			<argument index="0" name="peer_id" type="int" />
-			<argument index="1" name="sequence_id" type="int" />
-			<argument index="2" name="packet" type="PackedByteArray" />
+			<param index="0" name="peer_id" type="int" />
+			<param index="1" name="sequence_id" type="int" />
+			<param index="2" name="packet" type="PackedByteArray" />
 			<description>
 			</description>
 		</method>
 		<method name="remove_player_audio">
 			<return type="void" />
-			<argument index="0" name="player_id" type="int" />
+			<param index="0" name="player_id" type="int" />
 			<description>
 			</description>
 		</method>
 		<method name="set_audio_input_stream_player">
 			<return type="bool" />
-			<argument index="0" name="player" type="Node" />
+			<param index="0" name="player" type="Node" />
 			<description>
 			</description>
 		</method>
 		<method name="set_streaming_bus">
 			<return type="void" />
-			<argument index="0" name="bus" type="String" />
+			<param index="0" name="bus" type="String" />
 			<description>
 			</description>
 		</method>
