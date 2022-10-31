@@ -694,7 +694,7 @@ void Speech::clear_all_player_audio() {
 		if (!node) {
 			continue;
 		}
-		node->queue_delete();
+		node->queue_free();
 	}
 
 	player_audio = Dictionary();
