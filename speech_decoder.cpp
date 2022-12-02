@@ -19,10 +19,12 @@ bool SpeechDecoder::process(const PackedByteArray *p_compressed_buffer,
 					output_buffer_pointer, p_buffer_frame_count, 0);
 	return ret_value;
 }
+
 void SpeechDecoder::set_decoder(::OpusDecoder *p_decoder) {
 	if (!decoder) {
 		opus_decoder_destroy(decoder);
 	}
 	decoder = p_decoder;
 }
+
 void SpeechDecoder::_bind_methods() {}

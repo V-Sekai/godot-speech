@@ -28,9 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "speech.h"
 #include "scene/2d/audio_stream_player_2d.h"
 #include "scene/3d/audio_stream_player_3d.h"
+
+#include "speech.h"
+#include "speech_processor.h"
 
 void Speech::preallocate_buffers() {
 	input_byte_array.resize(SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
