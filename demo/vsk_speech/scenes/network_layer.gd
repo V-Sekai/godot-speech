@@ -190,7 +190,7 @@ func decode_voice_packet(p_voice_buffer : PackedByteArray) -> Array:
 func send_audio_packet(p_index : int, p_data : PackedByteArray) -> void:
 	if not blocking_sending_audio_packets:
 		var compressed_audio_packet : PackedByteArray = encode_voice_packet(p_index , p_data)
-		var e = get_tree().get_multiplayer().send_bytes(compressed_audio_packet, 0, TRANSFER_MODE_UNRELIABLE, 1)
+		var e = get_tree().get_multiplayer().send_bytes(compressed_audio_packet, 0, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 1)
 		if (e & 0xffffffff) != OK:
 			printerr("send_audio_packet: send_bytes failed! %s" % e)
 
