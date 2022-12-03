@@ -110,3 +110,16 @@ index 1c48aa4..0744cf9 100644
  #include <stdint.h>
  
  // Maximum number of samples in a low/high-band frame.
+diff --git a/thirdparty/AEC3/audio_processing/aec3/clockdrift_detector.h b/thirdparty/AEC3/audio_processing/aec3/clockdrift_detector.h
+index 22528c9..7af1969 100644
+--- a/thirdparty/AEC3/audio_processing/aec3/clockdrift_detector.h
++++ b/thirdparty/AEC3/audio_processing/aec3/clockdrift_detector.h
+@@ -31,7 +31,7 @@ class ClockdriftDetector {
+  private:
+   std::array<int, 3> delay_history_;
+   Level level_;
+-  size_t stability_counter_;
++  std::size_t stability_counter_;
+ };
+ }  // namespace webrtc
+ 

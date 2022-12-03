@@ -31,7 +31,7 @@ class ClockdriftDetector {
  private:
   std::array<int, 3> delay_history_;
   Level level_;
-  size_t stability_counter_;
+  std::size_t stability_counter_;
 };
 }  // namespace webrtc
 

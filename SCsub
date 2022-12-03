@@ -10,9 +10,9 @@ if not enable_webrtc_logging:
 
 if env["platform"] == "windows" or env["platform"] == "uwp":
     module_env.Append(CPPDEFINES=["WEBRTC_WIN"])
-elif env["platform"] == "iphone":
+elif env["platform"] == "ios":
     module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_IOS"])
-elif env["platform"] == "osx":
+elif env["platform"] == "macos":
     module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_MAC"])
 elif env["platform"] == "linuxbsd":
     module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_LINUX"])
