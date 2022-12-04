@@ -342,7 +342,7 @@ if env["arch"] == "arm64":
     aec3_sources += ([
     "AEC3/audio_processing/utility/ooura_fft_neon.cc",
     "AEC3/audio_processing/resampler/sinc_resampler_neon.cc"])
-elif env["arch"] == "x86_64" env["platform"] != "ios": 
+elif env["arch"] == "x86_64" and env["platform"] != "ios": 
     aec3_sources += ([
     "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
     "AEC3/audio_processing/resampler/sinc_resampler_sse.cc"])
