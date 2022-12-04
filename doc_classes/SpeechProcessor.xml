@@ -29,6 +29,12 @@
 			<description>
 			</description>
 		</method>
+		<method name="set_error_cancellation_bus">
+			<return type="void" />
+			<param index="0" name="_unnamed_arg0" type="String" />
+			<description>
+			</description>
+		</method>
 		<method name="set_streaming_bus">
 			<return type="void" />
 			<param index="0" name="_unnamed_arg0" type="String" />
@@ -74,11 +80,11 @@
 		</constant>
 		<constant name="SPEECH_SETTING_PCM_BUFFER_SIZE" value="960">
 		</constant>
-		<constant name="SPEECH_SETTING_PACKET_DELTA_TIME" value="0">
-		</constant>
 		<constant name="SPEECH_SETTING_MILLISECONDS_PER_SECOND" value="1000">
 		</constant>
 		<constant name="SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE" value="48000">
+		</constant>
+		<constant name="SPEECH_SETTING_PACKET_DELTA_TIME" value="0">
 		</constant>
 	</constants>
 </class>
