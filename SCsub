@@ -296,9 +296,7 @@ aec3_sources = [
     "AEC3/audio_processing/three_band_filter_bank.cc",
     "AEC3/audio_processing/utility/cascaded_biquad_filter.cc",
     "AEC3/audio_processing/utility/ooura_fft.cc",
-    "AEC3/audio_processing/utility/ooura_fft_mips.cc",
-    "AEC3/audio_processing/utility/ooura_fft_neon.cc",
-    "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
+    -- "AEC3/audio_processing/utility/ooura_fft_mips.cc",    
     "AEC3/api/echo_canceller3_config.cc",
     "AEC3/api/echo_canceller3_config_json.cc",
     "AEC3/api/echo_canceller3_factory.cc",
@@ -340,12 +338,14 @@ if enable_webrtc_logging:
         "AEC3/base/rtc_base/critical_section.cc",
         "AEC3/base/rtc_base/logging.cc",
     ])
-    
+
 if env["arch"] == "arm64":
     aec3_sources += ([
+    "AEC3/audio_processing/utility/ooura_fft_neon.cc",
     "AEC3/audio_processing/resampler/sinc_resampler_neon.cc"])
 elif env["arch"] == "x86_64":
     aec3_sources += ([
+    "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
     "AEC3/audio_processing/resampler/sinc_resampler_sse.cc"])
 
 thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources + opus_sources_silk] + ["thirdparty/" + file for file in aec3_sources]
