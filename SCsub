@@ -290,8 +290,6 @@ aec3_sources = [
     "AEC3/audio_processing/logging/wav_header.cc",
     "AEC3/audio_processing/resampler/push_sinc_resampler.cc",
     "AEC3/audio_processing/resampler/sinc_resampler.cc",
-    "AEC3/audio_processing/resampler/sinc_resampler_neon.cc",
-    "AEC3/audio_processing/resampler/sinc_resampler_sse.cc",
     "AEC3/audio_processing/sparse_fir_filter.cc",
     "AEC3/audio_processing/splitting_filter_c.c",
     "AEC3/audio_processing/splitting_filter.cc",
@@ -342,6 +340,13 @@ if enable_webrtc_logging:
         "AEC3/base/rtc_base/critical_section.cc",
         "AEC3/base/rtc_base/logging.cc",
     ])
+    
+if env["arch"] == "arm64":
+    aec3_sources += ([
+    "AEC3/audio_processing/resampler/sinc_resampler_neon.cc"])
+elif env["arch"] == "x86_64":
+    aec3_sources += ([
+    "AEC3/audio_processing/resampler/sinc_resampler_sse.cc"])
 
 thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources + opus_sources_silk] + ["thirdparty/" + file for file in aec3_sources]
 
