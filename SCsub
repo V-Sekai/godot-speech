@@ -295,8 +295,7 @@ aec3_sources = [
     "AEC3/audio_processing/splitting_filter.cc",
     "AEC3/audio_processing/three_band_filter_bank.cc",
     "AEC3/audio_processing/utility/cascaded_biquad_filter.cc",
-    "AEC3/audio_processing/utility/ooura_fft.cc",
-    -- "AEC3/audio_processing/utility/ooura_fft_mips.cc",    
+    "AEC3/audio_processing/utility/ooura_fft.cc", 
     "AEC3/api/echo_canceller3_config.cc",
     "AEC3/api/echo_canceller3_config_json.cc",
     "AEC3/api/echo_canceller3_factory.cc",
@@ -342,6 +341,9 @@ if env["arch"] == "arm64":
     aec3_sources += ([
     "AEC3/audio_processing/utility/ooura_fft_neon.cc",
     "AEC3/audio_processing/resampler/sinc_resampler_neon.cc"])
+elif env["arch"] == "mips64": # Check if supported.
+    aec3_sources += ([
+    "AEC3/audio_processing/resampler/ooura_fft_mips.cc"])
 elif env["arch"] == "x86_64" and env["platform"] != "ios": 
     aec3_sources += ([
     "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
