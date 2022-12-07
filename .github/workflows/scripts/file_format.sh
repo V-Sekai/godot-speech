@@ -25,6 +25,8 @@ while IFS= read -rd '' f; do
         continue
     elif [[ "$f" == "build"* ]]; then
         continue
+    elif [[ "$f" == "thirdparty"* ]]; then
+        continue
     elif [[ "$f" == "android"* ]]; then
         continue
     elif [[ "$f" == "api.json" ]]; then
