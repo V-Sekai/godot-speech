@@ -2,9 +2,7 @@
 
 Speech processor and compressor addon for Godot.
 
-## Instructions to use
-
-This is a Godot Engine 4 c++ module
+This is a Godot Engine 4 c++ module.
 
 ```
 scons custom_module=../speech
