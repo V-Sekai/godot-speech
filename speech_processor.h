@@ -170,7 +170,7 @@ private:
 	AudioStreamPlayer *audio_input_stream_player = nullptr;
 	Ref<AudioEffectCapture> audio_effect_capture;
 	Ref<AudioEffectCapture> audio_effect_error_cancellation_capture;
-	uint32_t mix_rate = 0;
+	uint32_t mix_rate = SPEECH_SETTING_SAMPLE_RATE;
 	PackedByteArray mix_byte_array;
 	Vector<int16_t> mix_reference_buffer;
 	Vector<int16_t> mix_capture_buffer;
