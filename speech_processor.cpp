@@ -434,17 +434,27 @@ void SpeechProcessor::_notification(int p_what) {
 
 Dictionary SpeechProcessor::get_stats() const {
 	Dictionary stats;
-	stats["capture_discarded_s"] = capture_discarded_frames / (double)mix_rate;
-	stats["capture_pushed_s"] = capture_pushed_frames / (double)mix_rate;
-	stats["capture_ring_limit_s"] = capture_ring_limit / (double)mix_rate;
-	stats["capture_ring_current_size_s"] =
-			capture_ring_current_size / (double)mix_rate;
-	stats["capture_ring_max_size_s"] = capture_ring_max_size / (double)mix_rate;
-	stats["capture_ring_mean_size_s"] = ((double)capture_ring_size_sum) /
-			((double)capture_get_calls) /
-			(double)mix_rate;
+	stats["capture_discarded_s"] = 0;
+	stats["capture_pushed_s"] = 0;
+	stats["capture_ring_limit_s"] = 0;
+	stats["capture_ring_current_size_s"] = 0;
+	stats["capture_ring_max_size_s"] = 0;
+	stats["capture_get_s"] = 0;
+	if (mix_rate > 0) {
+		stats["capture_discarded_s"] = capture_discarded_frames / (double)mix_rate;
+		stats["capture_pushed_s"] = capture_pushed_frames / (double)mix_rate;
+		stats["capture_ring_limit_s"] = capture_ring_limit / (double)mix_rate;
+		stats["capture_ring_current_size_s"] = capture_ring_current_size / (double)mix_rate;
+		stats["capture_ring_max_size_s"] = capture_ring_max_size / (double)mix_rate;
+		stats["capture_get_s"] = capture_get_frames / (double)mix_rate;
+	}
+	stats["capture_ring_mean_size_s"] = 0;
+	if (capture_get_calls > 0 && mix_rate > 0) {
+		stats["capture_ring_mean_size_s"] = ((double)capture_ring_size_sum) /
+				((double)capture_get_calls) /
+				(double)mix_rate;
+	}
 	stats["capture_get_calls"] = capture_get_calls;
-	stats["capture_get_s"] = capture_get_frames / (double)mix_rate;
 	stats["capture_mix_rate"] = mix_rate;
 	return stats;
 }
