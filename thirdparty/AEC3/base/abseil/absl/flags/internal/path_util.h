@@ -16,7 +16,7 @@
 #ifndef ABSL_FLAGS_INTERNAL_PATH_UTIL_H_
 #define ABSL_FLAGS_INTERNAL_PATH_UTIL_H_
 
-#include "absl/strings/match.h"
+#include "absl/base/config.h"
 #include "absl/strings/string_view.h"
 
 namespace absl {

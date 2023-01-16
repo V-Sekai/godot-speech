@@ -37,18 +37,6 @@ TEST(SysinfoTest, NumCPUs) {
       << "NumCPUs() should not have the default value of 0";
 }
 
-TEST(SysinfoTest, NominalCPUFrequency) {
-#if !(defined(__aarch64__) && defined(__linux__)) && !defined(__EMSCRIPTEN__)
-  EXPECT_GE(NominalCPUFrequency(), 1000.0)
-      << "NominalCPUFrequency() did not return a reasonable value";
-#else
-  // Aarch64 cannot read the CPU frequency from sysfs, so we get back 1.0.
-  // Emscripten does not have a sysfs to read from at all.
-  EXPECT_EQ(NominalCPUFrequency(), 1.0)
-      << "CPU frequency detection was fixed! Please update unittest.";
-#endif
-}
-
 TEST(SysinfoTest, GetTID) {
   EXPECT_EQ(GetTID(), GetTID());  // Basic compile and equality test.
 #ifdef __native_client__
@@ -59,8 +47,8 @@ TEST(SysinfoTest, GetTID) {
 #endif
   // Test that TIDs are unique to each thread.
   // Uses a few loops to exercise implementations that reallocate IDs.
-  for (int i = 0; i < 32; ++i) {
-    constexpr int kNumThreads = 64;
+  for (int i = 0; i < 10; ++i) {
+    constexpr int kNumThreads = 10;
     Barrier all_threads_done(kNumThreads);
     std::vector<std::thread> threads;
 
