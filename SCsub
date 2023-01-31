@@ -23,6 +23,7 @@ else: # including if env["platform"] == "javascript":
 
 module_env.Prepend(CPPPATH=["thirdparty/libsamplerate/src"])
 module_env.Prepend(CPPPATH=["thirdparty/opus"])
+module_env.Prepend(CPPPATH=["thirdparty/opus/opus"])
 module_env.Prepend(CPPPATH=["include"])
 module_env.Prepend(CPPPATH=["include"])
 module_env.Prepend(CPPPATH=["thirdparty/AEC3"])
@@ -348,6 +349,7 @@ elif env["arch"] == "x86_64" and env["platform"] != "ios":
     "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
     "AEC3/audio_processing/resampler/sinc_resampler_sse.cc"])
 
+env_thirdparty.disable_warnings()
 thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources + opus_sources_silk] + ["thirdparty/" + file for file in aec3_sources]
 
 env_thirdparty.Prepend(CPPPATH=["#thirdparty/libogg"])
