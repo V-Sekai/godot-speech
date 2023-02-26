@@ -99,7 +99,7 @@ func _network_peer_packet(p_id : int, packet : PackedByteArray) -> void:
 
 
 # Functions to manage the lobby.
-@rpc(any_peer)
+@rpc("any_peer")
 func register_player(id : int, new_player_name : String) -> void:
 	if get_tree().get_multiplayer().is_server():
 		var remote_id: int = get_tree().get_multiplayer().get_remote_sender_id()
@@ -112,7 +112,7 @@ func register_player(id : int, new_player_name : String) -> void:
 	emit_signal("player_list_changed")
 
 
-@rpc(any_peer)
+@rpc("any_peer")
 func unregister_player(p_id : int) -> void:
 	var remote_id: int = p_id
 	if get_tree().get_multiplayer().is_server():
