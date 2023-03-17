@@ -726,7 +726,7 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 	if (!p_audio_stream_player->has_method("get_stream_playback")) {
 		return;
 	}
-	
+
 	p_audio_stream_player->call("play", p_audio_stream_player->call("get_playback_position"));
 
 	Ref<AudioStreamGeneratorPlayback> playback = p_audio_stream_player->call("get_stream_playback");
