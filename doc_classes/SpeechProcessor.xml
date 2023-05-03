@@ -9,35 +9,35 @@
 	<methods>
 		<method name="compress_buffer">
 			<return type="Dictionary" />
-			<param index="0" name="_unnamed_arg0" type="PackedByteArray" />
-			<param index="1" name="_unnamed_arg1" type="Dictionary" />
+			<param index="0" name="pcm_byte_array" type="PackedByteArray" />
+			<param index="1" name="output_buffer" type="Dictionary" />
 			<description>
 			</description>
 		</method>
 		<method name="decompress_buffer">
 			<return type="PackedVector2Array" />
-			<param index="0" name="_unnamed_arg0" type="SpeechDecoder" />
-			<param index="1" name="_unnamed_arg1" type="PackedByteArray" />
-			<param index="2" name="_unnamed_arg2" type="int" />
-			<param index="3" name="_unnamed_arg3" type="PackedVector2Array" />
+			<param index="0" name="speech_decoder" type="SpeechDecoder" />
+			<param index="1" name="read_byte_buffer" type="PackedByteArray" />
+			<param index="2" name="read_size" type="int" />
+			<param index="3" name="write_vec2_array" type="PackedVector2Array" />
 			<description>
 			</description>
 		</method>
 		<method name="set_audio_input_stream_player">
 			<return type="bool" />
-			<param index="0" name="_unnamed_arg0" type="Node" />
+			<param index="0" name="stream_player" type="Node" />
 			<description>
 			</description>
 		</method>
 		<method name="set_error_cancellation_bus">
 			<return type="void" />
-			<param index="0" name="_unnamed_arg0" type="String" />
+			<param index="0" name="name" type="String" />
 			<description>
 			</description>
 		</method>
 		<method name="set_streaming_bus">
 			<return type="void" />
-			<param index="0" name="_unnamed_arg0" type="String" />
+			<param index="0" name="name" type="String" />
 			<description>
 			</description>
 		</method>

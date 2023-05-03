@@ -45,16 +45,15 @@
 void SpeechProcessor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("start"), &SpeechProcessor::start);
 	ClassDB::bind_method(D_METHOD("stop"), &SpeechProcessor::stop);
-	ClassDB::bind_method(D_METHOD("compress_buffer"),
+	ClassDB::bind_method(D_METHOD("compress_buffer", "pcm_byte_array", "output_buffer"),
 			&SpeechProcessor::compress_buffer);
-	ClassDB::bind_method(D_METHOD("decompress_buffer"),
+	ClassDB::bind_method(D_METHOD("decompress_buffer", "speech_decoder", "read_byte_buffer", "read_size", "write_vec2_array"),
 			&SpeechProcessor::decompress_buffer);
-
-	ClassDB::bind_method(D_METHOD("set_streaming_bus"),
+	ClassDB::bind_method(D_METHOD("set_streaming_bus", "name"),
 			&SpeechProcessor::set_streaming_bus);
-	ClassDB::bind_method(D_METHOD("set_error_cancellation_bus"),
+	ClassDB::bind_method(D_METHOD("set_error_cancellation_bus", "name"),
 			&SpeechProcessor::set_error_cancellation_bus);
-	ClassDB::bind_method(D_METHOD("set_audio_input_stream_player"),
+	ClassDB::bind_method(D_METHOD("set_audio_input_stream_player", "stream_player"),
 			&SpeechProcessor::set_audio_input_stream_player);
 	ADD_SIGNAL(MethodInfo("speech_processed",
 			PropertyInfo(Variant::DICTIONARY, "packet")));
