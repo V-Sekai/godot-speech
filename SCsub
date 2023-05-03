@@ -1,7 +1,16 @@
 Import("env")
 
 module_env = env.Clone()
-module_env.Append(CPPDEFINES=["HAVE_CONFIG_H", "PACKAGE=", "VERSION=", "CPU_CLIPS_POSITIVE=0", "CPU_CLIPS_NEGATIVE=0", "WEBRTC_APM_DEBUG_DUMP=0"])
+module_env.Append(
+    CPPDEFINES=[
+        "HAVE_CONFIG_H",
+        "PACKAGE=",
+        "VERSION=",
+        "CPU_CLIPS_POSITIVE=0",
+        "CPU_CLIPS_NEGATIVE=0",
+        "WEBRTC_APM_DEBUG_DUMP=0",
+    ]
+)
 
 enable_webrtc_logging = env["target"] == "debug"
 
@@ -18,7 +27,7 @@ elif env["platform"] == "linuxbsd":
     module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_LINUX"])
 elif env["platform"] == "android":
     module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_ANDROID"])
-else: # including if env["platform"] == "javascript":
+else:  # including if env["platform"] == "javascript":
     module_env.Append(CPPDEFINES=["WEBRTC_POSIX"])
 
 module_env.Prepend(CPPPATH=["thirdparty/libsamplerate/src"])
@@ -332,25 +341,28 @@ aec3_sources = [
     "AEC3/base/rtc_base/time_utils.cc",
 ]
 if enable_webrtc_logging:
-    aec3_sources += ([
+    aec3_sources += [
         "AEC3/base/system_wrappers/source/metrics.cc",
         "AEC3/base/rtc_base/critical_section.cc",
         "AEC3/base/rtc_base/logging.cc",
-    ])
+    ]
 if env["arch"] == "arm64":
-    aec3_sources += ([
-    "AEC3/audio_processing/utility/ooura_fft_neon.cc",
-    "AEC3/audio_processing/resampler/sinc_resampler_neon.cc"])
-elif env["arch"] == "mips64": # Check if supported.
-    aec3_sources += ([
-    "AEC3/audio_processing/resampler/ooura_fft_mips.cc"])
+    aec3_sources += [
+        "AEC3/audio_processing/utility/ooura_fft_neon.cc",
+        "AEC3/audio_processing/resampler/sinc_resampler_neon.cc",
+    ]
+elif env["arch"] == "mips64":  # Check if supported.
+    aec3_sources += ["AEC3/audio_processing/resampler/ooura_fft_mips.cc"]
 elif env["arch"] == "x86_64" and env["platform"] != "ios":
-    aec3_sources += ([
-    "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
-    "AEC3/audio_processing/resampler/sinc_resampler_sse.cc"])
+    aec3_sources += [
+        "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
+        "AEC3/audio_processing/resampler/sinc_resampler_sse.cc",
+    ]
 
 env_thirdparty.disable_warnings()
-thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources + opus_sources_silk] + ["thirdparty/" + file for file in aec3_sources]
+thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources + opus_sources_silk] + [
+    "thirdparty/" + file for file in aec3_sources
+]
 
 env_thirdparty.Prepend(CPPPATH=["#thirdparty/libogg"])
 env_thirdparty.Append(CPPDEFINES=["HAVE_CONFIG_H"])

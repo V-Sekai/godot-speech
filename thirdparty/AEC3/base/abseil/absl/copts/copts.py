@@ -138,41 +138,39 @@ MSVC_DEFINES = [
 
 
 def GccStyleFilterAndCombine(default_flags, test_flags):
-  """Merges default_flags and test_flags for GCC and LLVM.
+    """Merges default_flags and test_flags for GCC and LLVM.
 
-  Args:
-    default_flags: A list of default compiler flags
-    test_flags: A list of flags that are only used in tests
+    Args:
+      default_flags: A list of default compiler flags
+      test_flags: A list of flags that are only used in tests
 
-  Returns:
-    A combined list of default_flags and test_flags, but with all flags of the
-    form '-Wwarning' removed if test_flags contains a flag of the form
-    '-Wno-warning'
-  """
-  remove = set(["-W" + f[5:] for f in test_flags if f[:5] == "-Wno-"])
-  return [f for f in default_flags if f not in remove] + test_flags
+    Returns:
+      A combined list of default_flags and test_flags, but with all flags of the
+      form '-Wwarning' removed if test_flags contains a flag of the form
+      '-Wno-warning'
+    """
+    remove = set(["-W" + f[5:] for f in test_flags if f[:5] == "-Wno-"])
+    return [f for f in default_flags if f not in remove] + test_flags
+
 
 COPT_VARS = {
     "ABSL_GCC_FLAGS": ABSL_GCC_FLAGS,
-    "ABSL_GCC_TEST_FLAGS": GccStyleFilterAndCombine(
-        ABSL_GCC_FLAGS, ABSL_GCC_TEST_ADDITIONAL_FLAGS),
+    "ABSL_GCC_TEST_FLAGS": GccStyleFilterAndCombine(ABSL_GCC_FLAGS, ABSL_GCC_TEST_ADDITIONAL_FLAGS),
     "ABSL_LLVM_FLAGS": ABSL_LLVM_FLAGS,
-    "ABSL_LLVM_TEST_FLAGS": GccStyleFilterAndCombine(
-        ABSL_LLVM_FLAGS, ABSL_LLVM_TEST_ADDITIONAL_FLAGS),
-    "ABSL_CLANG_CL_FLAGS":
-        MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES,
-    "ABSL_CLANG_CL_TEST_FLAGS":
-        MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES + ABSL_LLVM_TEST_ADDITIONAL_FLAGS,
-    "ABSL_MSVC_FLAGS":
-        MSVC_BIG_WARNING_FLAGS + MSVC_WARNING_FLAGS + MSVC_DEFINES,
-    "ABSL_MSVC_TEST_FLAGS":
-        MSVC_BIG_WARNING_FLAGS + MSVC_WARNING_FLAGS + MSVC_DEFINES + [
-            "/wd4018",  # signed/unsigned mismatch
-            "/wd4101",  # unreferenced local variable
-            "/wd4503",  # decorated name length exceeded, name was truncated
-            "/wd4996",  # use of deprecated symbol
-            "/DNOMINMAX",  # disable the min() and max() macros from <windows.h>
-        ],
+    "ABSL_LLVM_TEST_FLAGS": GccStyleFilterAndCombine(ABSL_LLVM_FLAGS, ABSL_LLVM_TEST_ADDITIONAL_FLAGS),
+    "ABSL_CLANG_CL_FLAGS": MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES,
+    "ABSL_CLANG_CL_TEST_FLAGS": MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES + ABSL_LLVM_TEST_ADDITIONAL_FLAGS,
+    "ABSL_MSVC_FLAGS": MSVC_BIG_WARNING_FLAGS + MSVC_WARNING_FLAGS + MSVC_DEFINES,
+    "ABSL_MSVC_TEST_FLAGS": MSVC_BIG_WARNING_FLAGS
+    + MSVC_WARNING_FLAGS
+    + MSVC_DEFINES
+    + [
+        "/wd4018",  # signed/unsigned mismatch
+        "/wd4101",  # unreferenced local variable
+        "/wd4503",  # decorated name length exceeded, name was truncated
+        "/wd4996",  # use of deprecated symbol
+        "/DNOMINMAX",  # disable the min() and max() macros from <windows.h>
+    ],
     "ABSL_MSVC_LINKOPTS": [
         # Object file doesn't export any previously undefined symbols
         "-ignore:4221",

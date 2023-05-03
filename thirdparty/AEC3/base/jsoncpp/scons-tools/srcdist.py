@@ -52,7 +52,7 @@ import targz
 ##
 ##      last_token = token
 ##      token = lex.get_token()
-##      
+##
 ##      if last_token == '\\' and token != '\n':
 ##         new_data = False
 ##         append_data( data, key, new_data, '\\' )
@@ -124,56 +124,59 @@ import targz
 ##   """Check if we should scan this file"""
 ##   return os.path.isfile(node.path)
 
+
 def srcDistEmitter(source, target, env):
-##   """Doxygen Doxyfile emitter"""
-##   # possible output formats and their default values and output locations
-##   output_formats = {
-##      "HTML": ("YES", "html"),
-##      "LATEX": ("YES", "latex"),
-##      "RTF": ("NO", "rtf"),
-##      "MAN": ("YES", "man"),
-##      "XML": ("NO", "xml"),
-##   }
-##
-##   data = DoxyfileParse(source[0].get_contents())
-##
-##   targets = []
-##   out_dir = data.get("OUTPUT_DIRECTORY", ".")
-##
-##   # add our output locations
-##   for (k, v) in output_formats.items():
-##      if data.get("GENERATE_" + k, v[0]) == "YES":
-##         targets.append(env.Dir( os.path.join(out_dir, data.get(k + "_OUTPUT", v[1]))) )
-##
-##   # don't clobber targets
-##   for node in targets:
-##      env.Precious(node)
-##
-##   # set up cleaning stuff
-##   for node in targets:
-##      env.Clean(node, node)
-##
-##   return (targets, source)
-   return (target,source)
+    ##   """Doxygen Doxyfile emitter"""
+    ##   # possible output formats and their default values and output locations
+    ##   output_formats = {
+    ##      "HTML": ("YES", "html"),
+    ##      "LATEX": ("YES", "latex"),
+    ##      "RTF": ("NO", "rtf"),
+    ##      "MAN": ("YES", "man"),
+    ##      "XML": ("NO", "xml"),
+    ##   }
+    ##
+    ##   data = DoxyfileParse(source[0].get_contents())
+    ##
+    ##   targets = []
+    ##   out_dir = data.get("OUTPUT_DIRECTORY", ".")
+    ##
+    ##   # add our output locations
+    ##   for (k, v) in output_formats.items():
+    ##      if data.get("GENERATE_" + k, v[0]) == "YES":
+    ##         targets.append(env.Dir( os.path.join(out_dir, data.get(k + "_OUTPUT", v[1]))) )
+    ##
+    ##   # don't clobber targets
+    ##   for node in targets:
+    ##      env.Precious(node)
+    ##
+    ##   # set up cleaning stuff
+    ##   for node in targets:
+    ##      env.Clean(node, node)
+    ##
+    ##   return (targets, source)
+    return (target, source)
+
 
 def generate(env):
-   """
-   Add builders and construction variables for the
-   SrcDist tool.
-   """
-##   doxyfile_scanner = env.Scanner(
-##      DoxySourceScan,
-##      "DoxySourceScan",
-##      scan_check = DoxySourceScanCheck,
-##   )
+    """
+    Add builders and construction variables for the
+    SrcDist tool.
+    """
+    ##   doxyfile_scanner = env.Scanner(
+    ##      DoxySourceScan,
+    ##      "DoxySourceScan",
+    ##      scan_check = DoxySourceScanCheck,
+    ##   )
 
-   if targz.exists(env):
-      srcdist_builder = targz.makeBuilder( srcDistEmitter )
+    if targz.exists(env):
+        srcdist_builder = targz.makeBuilder(srcDistEmitter)
 
-      env['BUILDERS']['SrcDist'] = srcdist_builder
+        env["BUILDERS"]["SrcDist"] = srcdist_builder
+
 
 def exists(env):
-   """
-   Make sure srcdist exists.
-   """
-   return targz.exists(env)
+    """
+    Make sure srcdist exists.
+    """
+    return targz.exists(env)
