@@ -103,7 +103,7 @@
 		</method>
 		<method name="set_error_cancellation_bus">
 			<return type="void" />
-			<param index="0" name="_unnamed_arg0" type="String" />
+			<param index="0" name="name" type="String" />
 			<description>
 			</description>
 		</method>

@@ -316,7 +316,7 @@ void Speech::_bind_methods() {
 			&Speech::clear_all_player_audio);
 	ClassDB::bind_method(D_METHOD("attempt_to_feed_stream", "skip_count", "decoder", "audio_stream_player", "jitter_buffer", "playback_stats", "player_dict"),
 			&Speech::attempt_to_feed_stream);
-	ClassDB::bind_method(D_METHOD("set_error_cancellation_bus"),
+	ClassDB::bind_method(D_METHOD("set_error_cancellation_bus", "name"),
 			&Speech::set_error_cancellation_bus);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
 			"get_buffer_delay_threshold");
