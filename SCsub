@@ -2,7 +2,8 @@ Import("env")
 
 module_env = env.Clone()
 
-module_env.Append(CCFLAGS=["-Wno-error=non-virtual-dtor"])
+if not env.msvc:
+    module_env.Append(CCFLAGS=["-Wno-error=non-virtual-dtor"])
 
 module_env.Append(
     CPPDEFINES=[
