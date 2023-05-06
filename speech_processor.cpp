@@ -460,7 +460,6 @@ Dictionary SpeechProcessor::get_stats() const {
 }
 
 Ref<SpeechDecoder> SpeechProcessor::get_speech_decoder() {
-
 	Ref<SpeechDecoder> speech_decoder;
 	speech_decoder.instantiate();
 	return speech_decoder;
