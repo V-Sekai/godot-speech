@@ -310,11 +310,6 @@ public:
 	void _notification(int p_what);
 
 	SpeechProcessor();
-	~SpeechProcessor() {
-		libresample_state = src_delete(libresample_state);
-		if (encoder) {
-			encoder = nullptr;
-		}
-	}
+	~SpeechProcessor();
 };
 #endif // SPEECH_PROCESSOR_H

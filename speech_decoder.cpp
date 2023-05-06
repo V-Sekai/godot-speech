@@ -1,13 +1,14 @@
 #include "speech_decoder.h"
+#include "speech_processor.h"
 
-bool SpeechDecoder::process(const PackedByteArray *p_compressed_buffer,
+int32_t SpeechDecoder::process(const PackedByteArray *p_compressed_buffer,
 		PackedByteArray *p_pcm_output_buffer,
 		const int p_compressed_buffer_size,
 		const int p_pcm_output_buffer_size,
 		const int p_buffer_frame_count) {
 	*p_pcm_output_buffer->ptrw() = 0;
 	if (!decoder) {
-		return false;
+		return OPUS_INVALID_STATE;
 	}
 	opus_int16 *output_buffer_pointer =
 			reinterpret_cast<opus_int16 *>(p_pcm_output_buffer->ptrw());
@@ -20,11 +21,15 @@ bool SpeechDecoder::process(const PackedByteArray *p_compressed_buffer,
 	return ret_value;
 }
 
-void SpeechDecoder::set_decoder(::OpusDecoder *p_decoder) {
-	if (!decoder) {
-		opus_decoder_destroy(decoder);
+SpeechDecoder::SpeechDecoder() {
+	int error = OPUS_INVALID_STATE;
+	decoder = opus_decoder_create(
+			SpeechProcessor::SPEECH_SETTING_SAMPLE_RATE, SpeechProcessor::SPEECH_SETTING_CHANNEL_COUNT, &error);
+	if (error != OPUS_OK) {
+		ERR_PRINT("OpusCodec: could not create Opus decoder!");
 	}
-	decoder = p_decoder;
 }
 
-void SpeechDecoder::_bind_methods() {}
+SpeechDecoder::~SpeechDecoder() {
+	opus_decoder_destroy(decoder);
+}

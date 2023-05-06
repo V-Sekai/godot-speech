@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include "speech_processor.h"
+#include "opus_custom.h"
 
 #include <algorithm>
 
@@ -458,6 +459,13 @@ Dictionary SpeechProcessor::get_stats() const {
 	return stats;
 }
 
+Ref<SpeechDecoder> SpeechProcessor::get_speech_decoder() {
+
+	Ref<SpeechDecoder> speech_decoder;
+	speech_decoder.instantiate();
+	return speech_decoder;
+}
+
 SpeechProcessor::SpeechProcessor() {
 	int error = 0;
 	encoder = opus_encoder_create(SPEECH_SETTING_SAMPLE_RATE,
@@ -491,18 +499,7 @@ SpeechProcessor::SpeechProcessor() {
 	audio_server = AudioServer::get_singleton();
 }
 
-Ref<SpeechDecoder> SpeechProcessor::get_speech_decoder() {
-	int error;
-	::OpusDecoder *decoder = opus_decoder_create(
-			SPEECH_SETTING_SAMPLE_RATE, SPEECH_SETTING_CHANNEL_COUNT, &error);
-	if (error != OPUS_OK) {
-		ERR_PRINT("OpusCodec: could not create Opus decoder!");
-		return nullptr;
-	}
-
-	Ref<SpeechDecoder> speech_decoder;
-	speech_decoder.instantiate();
-	speech_decoder->set_decoder(decoder);
-
-	return speech_decoder;
+SpeechProcessor::~SpeechProcessor() {
+	libresample_state = src_delete(libresample_state);
+	opus_encoder_destroy(encoder);
 }
