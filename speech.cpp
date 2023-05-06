@@ -527,6 +527,7 @@ Speech::Speech() {
 }
 
 Speech::~Speech() {
+	memdelete(speech_processor);
 }
 
 void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
