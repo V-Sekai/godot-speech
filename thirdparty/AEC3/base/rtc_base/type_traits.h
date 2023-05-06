@@ -16,6 +16,12 @@
 
 namespace rtc {
 
+// Silence warnings
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
+
 // Determines if the given class has zero-argument .data() and .size() methods
 // whose return values are convertible to T* and size_t, respectively.
 template <typename DS, typename T>
@@ -63,6 +69,12 @@ struct Test3 {
 };
 static_assert(!HasDataAndSize<Test3, int>::value, ".size() is missing");
 
+// Silence warnings
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
+
 class Test4 {
   int* data();
   size_t size();
@@ -73,6 +85,12 @@ static_assert(!HasDataAndSize<Test4, int>::value,
 }  // namespace test_has_data_and_size
 
 namespace type_traits_impl {
+
+// Silence warnings
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
 
 // Determines if the given type is an enum that converts implicitly to
 // an integral type.
