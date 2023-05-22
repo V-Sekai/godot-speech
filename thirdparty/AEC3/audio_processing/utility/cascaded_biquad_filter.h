@@ -42,8 +42,8 @@ class CascadedBiQuadFilter {
   };
 
   struct BiQuad {
-    explicit BiQuad(const BiQuadCoefficients& coefficients)
-        : coefficients(coefficients), x(), y() {}
+    explicit BiQuad(const BiQuadCoefficients& bi_quad_coefficients)
+        : coefficients(bi_quad_coefficients), x(), y() {}
     explicit BiQuad(const CascadedBiQuadFilter::BiQuadParam& param);
     void Reset();
     BiQuadCoefficients coefficients;
