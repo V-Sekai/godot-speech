@@ -4,6 +4,7 @@ module_env = env.Clone()
 
 if not env.msvc:
     module_env.Append(CCFLAGS=["-Wno-error=non-virtual-dtor"])
+    module_env.Append(CCFLAGS=["-Wno-error=ctor-dtor-privacy"])
 
 module_env.Append(
     CPPDEFINES=[
