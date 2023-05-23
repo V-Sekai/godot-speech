@@ -35,7 +35,7 @@ public:
 	void generic_jitter_init(int frame_size);
 	~GenericJitter();
 	void generic_jitter_put(PackedByteArray packet, int len, int timestamp);
-	PackedByteArray generic_jitter_get();
+	PackedByteArray generic_jitter_get(Dictionary r_metadata);
 	int generic_jitter_get_pointer_timestamp();
 
 protected:

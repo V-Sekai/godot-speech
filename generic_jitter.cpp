@@ -28,7 +28,7 @@ void GenericJitter::generic_jitter_put(PackedByteArray packet, int len, int time
 	ring_buffer.write(p);
 }
 
-PackedByteArray GenericJitter::generic_jitter_get() {
+PackedByteArray GenericJitter::generic_jitter_get(Dictionary r_metadata) {
 	int ret = OK;
 	PackedByteArray data;
 	JitterBufferPacket packet;
@@ -63,6 +63,7 @@ PackedByteArray GenericJitter::generic_jitter_get() {
 			}
 			current_packet = static_cast<uint8_t *>(malloc(packet.len));
 			memcpy(current_packet, packet.data.ptrw(), packet.len);
+			r_metadata["current_timestamp"] = packet.timestamp;
 		} else {
 			// Error while decoding
 			memset(out.ptrw(), 0, frame_size);
