@@ -285,43 +285,7 @@ public:
 	int get_lost_count() const { return lost_count; }
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_pointer_timestamp", "p_pointer_timestamp"), &JitterBuffer::set_pointer_timestamp);
-		ClassDB::bind_method(D_METHOD("set_last_returned_timestamp", "p_last_returned_timestamp"), &JitterBuffer::set_last_returned_timestamp);
-		ClassDB::bind_method(D_METHOD("set_next_stop", "p_next_stop"), &JitterBuffer::set_next_stop);
-		ClassDB::bind_method(D_METHOD("set_buffered", "p_buffered"), &JitterBuffer::set_buffered);
-		ClassDB::bind_method(D_METHOD("set_delay_step", "p_delay_step"), &JitterBuffer::set_delay_step);
-		ClassDB::bind_method(D_METHOD("set_concealment_size", "p_concealment_size"), &JitterBuffer::set_concealment_size);
-		ClassDB::bind_method(D_METHOD("set_reset_state", "p_reset_state"), &JitterBuffer::set_reset_state);
-		ClassDB::bind_method(D_METHOD("set_buffer_margin", "p_buffer_margin"), &JitterBuffer::set_buffer_margin);
-		ClassDB::bind_method(D_METHOD("set_late_cutoff", "p_late_cutoff"), &JitterBuffer::set_late_cutoff);
-		ClassDB::bind_method(D_METHOD("set_interp_requested", "p_interp_requested"), &JitterBuffer::set_interp_requested);
-		ClassDB::bind_method(D_METHOD("set_auto_adjust", "p_auto_adjust"), &JitterBuffer::set_auto_adjust);
-		ClassDB::bind_method(D_METHOD("set_window_size", "p_window_size"), &JitterBuffer::set_window_size);
-		ClassDB::bind_method(D_METHOD("set_subwindow_size", "p_subwindow_size"), &JitterBuffer::set_subwindow_size);
-		ClassDB::bind_method(D_METHOD("set_max_late_rate", "p_max_late_rate"), &JitterBuffer::set_max_late_rate);
-		ClassDB::bind_method(D_METHOD("set_latency_tradeoff", "p_latency_tradeoff"), &JitterBuffer::set_latency_tradeoff);
-		ClassDB::bind_method(D_METHOD("set_auto_tradeoff", "p_auto_tradeoff"), &JitterBuffer::set_auto_tradeoff);
-		ClassDB::bind_method(D_METHOD("set_lost_count", "p_lost_count"), &JitterBuffer::set_lost_count);
-
-		ClassDB::bind_method(D_METHOD("get_pointer_timestamp"), &JitterBuffer::get_pointer_timestamp);
-		ClassDB::bind_method(D_METHOD("get_last_returned_timestamp"), &JitterBuffer::get_last_returned_timestamp);
-		ClassDB::bind_method(D_METHOD("get_next_stop"), &JitterBuffer::get_next_stop);
-		ClassDB::bind_method(D_METHOD("get_buffered"), &JitterBuffer::get_buffered);
-		ClassDB::bind_method(D_METHOD("get_delay_step"), &JitterBuffer::get_delay_step);
-		ClassDB::bind_method(D_METHOD("get_concealment_size"), &JitterBuffer::get_concealment_size);
-		ClassDB::bind_method(D_METHOD("get_reset_state"), &JitterBuffer::get_reset_state);
-		ClassDB::bind_method(D_METHOD("get_buffer_margin"), &JitterBuffer::get_buffer_margin);
-		ClassDB::bind_method(D_METHOD("get_late_cutoff"), &JitterBuffer::get_late_cutoff);
-		ClassDB::bind_method(D_METHOD("get_interp_requested"), &JitterBuffer::get_interp_requested);
-		ClassDB::bind_method(D_METHOD("get_auto_adjust"), &JitterBuffer::get_auto_adjust);
-		ClassDB::bind_method(D_METHOD("get_window_size"), &JitterBuffer::get_window_size);
-		ClassDB::bind_method(D_METHOD("get_subwindow_size"), &JitterBuffer::get_subwindow_size);
-		ClassDB::bind_method(D_METHOD("get_max_late_rate"), &JitterBuffer::get_max_late_rate);
-		ClassDB::bind_method(D_METHOD("get_latency_tradeoff"), &JitterBuffer::get_latency_tradeoff);
-		ClassDB::bind_method(D_METHOD("get_auto_tradeoff"), &JitterBuffer::get_auto_tradeoff);
-		ClassDB::bind_method(D_METHOD("get_lost_count"), &JitterBuffer::get_lost_count);
-	}
+	static void _bind_methods();
 };
 
 class VoipJitterBuffer : public RefCounted {

@@ -765,3 +765,59 @@ void VoipJitterBuffer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("jitter_buffer_tick", "jitter"), &VoipJitterBuffer::jitter_buffer_tick);
 	ClassDB::bind_method(D_METHOD("jitter_buffer_remaining_span", "jitter", "rem"), &VoipJitterBuffer::jitter_buffer_remaining_span);
 }
+
+void JitterBuffer::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_pointer_timestamp", "p_pointer_timestamp"), &JitterBuffer::set_pointer_timestamp);
+	ClassDB::bind_method(D_METHOD("set_last_returned_timestamp", "p_last_returned_timestamp"), &JitterBuffer::set_last_returned_timestamp);
+	ClassDB::bind_method(D_METHOD("set_next_stop", "p_next_stop"), &JitterBuffer::set_next_stop);
+	ClassDB::bind_method(D_METHOD("set_buffered", "p_buffered"), &JitterBuffer::set_buffered);
+	ClassDB::bind_method(D_METHOD("set_delay_step", "p_delay_step"), &JitterBuffer::set_delay_step);
+	ClassDB::bind_method(D_METHOD("set_concealment_size", "p_concealment_size"), &JitterBuffer::set_concealment_size);
+	ClassDB::bind_method(D_METHOD("set_reset_state", "p_reset_state"), &JitterBuffer::set_reset_state);
+	ClassDB::bind_method(D_METHOD("set_buffer_margin", "p_buffer_margin"), &JitterBuffer::set_buffer_margin);
+	ClassDB::bind_method(D_METHOD("set_late_cutoff", "p_late_cutoff"), &JitterBuffer::set_late_cutoff);
+	ClassDB::bind_method(D_METHOD("set_interp_requested", "p_interp_requested"), &JitterBuffer::set_interp_requested);
+	ClassDB::bind_method(D_METHOD("set_auto_adjust", "p_auto_adjust"), &JitterBuffer::set_auto_adjust);
+	ClassDB::bind_method(D_METHOD("set_window_size", "p_window_size"), &JitterBuffer::set_window_size);
+	ClassDB::bind_method(D_METHOD("set_subwindow_size", "p_subwindow_size"), &JitterBuffer::set_subwindow_size);
+	ClassDB::bind_method(D_METHOD("set_max_late_rate", "p_max_late_rate"), &JitterBuffer::set_max_late_rate);
+	ClassDB::bind_method(D_METHOD("set_latency_tradeoff", "p_latency_tradeoff"), &JitterBuffer::set_latency_tradeoff);
+	ClassDB::bind_method(D_METHOD("set_auto_tradeoff", "p_auto_tradeoff"), &JitterBuffer::set_auto_tradeoff);
+	ClassDB::bind_method(D_METHOD("set_lost_count", "p_lost_count"), &JitterBuffer::set_lost_count);
+
+	ClassDB::bind_method(D_METHOD("get_pointer_timestamp"), &JitterBuffer::get_pointer_timestamp);
+	ClassDB::bind_method(D_METHOD("get_last_returned_timestamp"), &JitterBuffer::get_last_returned_timestamp);
+	ClassDB::bind_method(D_METHOD("get_next_stop"), &JitterBuffer::get_next_stop);
+	ClassDB::bind_method(D_METHOD("get_buffered"), &JitterBuffer::get_buffered);
+	ClassDB::bind_method(D_METHOD("get_delay_step"), &JitterBuffer::get_delay_step);
+	ClassDB::bind_method(D_METHOD("get_concealment_size"), &JitterBuffer::get_concealment_size);
+	ClassDB::bind_method(D_METHOD("get_reset_state"), &JitterBuffer::get_reset_state);
+	ClassDB::bind_method(D_METHOD("get_buffer_margin"), &JitterBuffer::get_buffer_margin);
+	ClassDB::bind_method(D_METHOD("get_late_cutoff"), &JitterBuffer::get_late_cutoff);
+	ClassDB::bind_method(D_METHOD("get_interp_requested"), &JitterBuffer::get_interp_requested);
+	ClassDB::bind_method(D_METHOD("get_auto_adjust"), &JitterBuffer::get_auto_adjust);
+	ClassDB::bind_method(D_METHOD("get_window_size"), &JitterBuffer::get_window_size);
+	ClassDB::bind_method(D_METHOD("get_subwindow_size"), &JitterBuffer::get_subwindow_size);
+	ClassDB::bind_method(D_METHOD("get_max_late_rate"), &JitterBuffer::get_max_late_rate);
+	ClassDB::bind_method(D_METHOD("get_latency_tradeoff"), &JitterBuffer::get_latency_tradeoff);
+	ClassDB::bind_method(D_METHOD("get_auto_tradeoff"), &JitterBuffer::get_auto_tradeoff);
+	ClassDB::bind_method(D_METHOD("get_lost_count"), &JitterBuffer::get_lost_count);
+
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "pointer_timestamp"), "set_pointer_timestamp", "get_pointer_timestamp");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "last_returned_timestamp"), "set_last_returned_timestamp", "get_last_returned_timestamp");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "next_stop"), "set_next_stop", "get_next_stop");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "buffered"), "set_buffered", "get_buffered");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "delay_step"), "set_delay_step", "get_delay_step");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "concealment_size"), "set_concealment_size", "get_concealment_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "reset_state"), "set_reset_state", "get_reset_state");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "buffer_margin"), "set_buffer_margin", "get_buffer_margin");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "late_cutoff"), "set_late_cutoff", "get_late_cutoff");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "interpolation_requested"), "set_interp_requested", "get_interp_requested");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "auto_adjust"), "set_auto_adjust", "get_auto_adjust");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "window_size"), "set_window_size", "get_window_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "subwindow_size"), "set_subwindow_size", "get_subwindow_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "maximum_late_rate"), "set_max_late_rate", "get_max_late_rate");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "latency_tradeoff"), "set_latency_tradeoff", "get_latency_tradeoff");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "auto_tradeoff"), "set_auto_tradeoff", "get_auto_tradeoff");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "lost_count"), "set_lost_count", "get_lost_count");
+}
