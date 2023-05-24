@@ -35,6 +35,7 @@
 
 #ifndef JITTER_H
 #define JITTER_H
+
 /** @defgroup JitterBuffer JitterBuffer: Adaptive jitter buffer
  *  This is the jitter buffer that reorders UDP/RTP packets and adjusts the buffer size
  * to maintain good quality and low latency.
