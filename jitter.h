@@ -243,7 +243,8 @@ public:
 	~JitterBuffer() {
 		for (int i = 0; i < MAX_BUFFERS; ++i) {
 			memdelete_notnull(_tb[i]);
-			memdelete_notnull(timeBuffers[i]);
+			_tb[i] = nullptr;
+			timeBuffers[i] = nullptr;
 		}
 	}
 	void set_pointer_timestamp(int64_t p_pointer_timestamp) { pointer_timestamp = p_pointer_timestamp; }
