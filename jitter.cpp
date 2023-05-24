@@ -395,7 +395,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet) {
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
 			/* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
 			if (!jitter->packets[i].data.is_empty() && LE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp)) {
-				/*fprintf (stderr, "cleaned (not played)\n");*/			
+				/*fprintf (stderr, "cleaned (not played)\n");*/
 				jitter->packets[i].data.clear();
 			}
 		}

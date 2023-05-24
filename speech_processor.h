@@ -55,7 +55,6 @@
 #include "thirdparty/AEC3/audio_processing/high_pass_filter.h"
 #include "thirdparty/AEC3/audio_processing/include/audio_processing.h"
 
-
 #include <stdint.h>
 
 #include "speech_decoder.h"
