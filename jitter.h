@@ -116,17 +116,6 @@
 #define MAX_BUFFERS 3
 #define TOP_DELAY 40
 
-static inline void *speex_alloc(int size) {
-	/* WARNING: this is not equivalent to malloc(). If you want to use malloc()
-	   or your own allocator, YOU NEED TO CLEAR THE MEMORY ALLOCATED. Otherwise
-	   you will experience strange bugs */
-	return calloc(size, 1);
-}
-
-static inline void speex_free(void *ptr) {
-	free(ptr);
-}
-
 #include "core/variant/variant.h"
 
 typedef int16_t spx_int16_t;

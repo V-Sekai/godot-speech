@@ -132,7 +132,7 @@ int VoipJitterBuffer::jitter_buffer_ctl(JitterBuffer *jitter, int request, void 
 }
 
 JitterBuffer *VoipJitterBuffer::jitter_buffer_init(int step_size) {
-	JitterBuffer *jitter = (JitterBuffer *)speex_alloc(sizeof(JitterBuffer));
+	JitterBuffer *jitter = (JitterBuffer *)calloc(sizeof(JitterBuffer), 1);
 	if (jitter) {
 		int i;
 		spx_int32_t tmp;
@@ -156,7 +156,7 @@ JitterBuffer *VoipJitterBuffer::jitter_buffer_init(int step_size) {
 
 void VoipJitterBuffer::jitter_buffer_destroy(JitterBuffer *jitter) {
 	jitter_buffer_reset(jitter);
-	speex_free(jitter);
+	free(jitter);
 }
 
 void VoipJitterBuffer::jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet) {
