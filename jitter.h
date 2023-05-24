@@ -33,8 +33,8 @@
 
 */
 
-#ifndef SPEEX_JITTER_H
-#define SPEEX_JITTER_H
+#ifndef JITTER_H
+#define JITTER_H
 /** @defgroup JitterBuffer JitterBuffer: Adaptive jitter buffer
  *  This is the jitter buffer that reorders UDP/RTP packets and adjusts the buffer size
  * to maintain good quality and low latency.
@@ -401,4 +401,4 @@ public:
 	static void shift_timings(Ref<JitterBuffer> jitter, int16_t amount);
 };
 
-#endif
+#endif // JITTER_H
