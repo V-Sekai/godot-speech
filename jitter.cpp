@@ -80,7 +80,7 @@ static void tb_add(struct TimingBuffer *tb, spx_int16_t timing) {
 	spx_int32_t left = 0, right = tb->filled - 1;
 	while (left <= right) {
 		spx_int32_t mid = left + (right - left) / 2;
-		if (tb->timing[mid] > timing) {
+		if (tb->timing[mid] < timing) {
 			left = mid + 1;
 		} else {
 			right = mid - 1;
