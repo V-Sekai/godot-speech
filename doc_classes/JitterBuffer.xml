@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="JitterBuffer" inherits="RefCounted" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="auto_adjust" type="int" setter="set_auto_adjust" getter="get_auto_adjust" default="0">
+		</member>
+		<member name="auto_tradeoff" type="int" setter="set_auto_tradeoff" getter="get_auto_tradeoff" default="0">
+		</member>
+		<member name="buffer_margin" type="int" setter="set_buffer_margin" getter="get_buffer_margin" default="0">
+		</member>
+		<member name="buffered" type="int" setter="set_buffered" getter="get_buffered" default="0">
+		</member>
+		<member name="concealment_size" type="int" setter="set_concealment_size" getter="get_concealment_size" default="0">
+		</member>
+		<member name="delay_step" type="int" setter="set_delay_step" getter="get_delay_step" default="0">
+		</member>
+		<member name="interpolation_requested" type="int" setter="set_interp_requested" getter="get_interp_requested" default="0">
+		</member>
+		<member name="last_returned_timestamp" type="int" setter="set_last_returned_timestamp" getter="get_last_returned_timestamp" default="0">
+		</member>
+		<member name="late_cutoff" type="int" setter="set_late_cutoff" getter="get_late_cutoff" default="0">
+		</member>
+		<member name="latency_tradeoff" type="int" setter="set_latency_tradeoff" getter="get_latency_tradeoff" default="0">
+		</member>
+		<member name="lost_count" type="int" setter="set_lost_count" getter="get_lost_count" default="0">
+		</member>
+		<member name="maximum_late_rate" type="int" setter="set_max_late_rate" getter="get_max_late_rate" default="0">
+		</member>
+		<member name="next_stop" type="int" setter="set_next_stop" getter="get_next_stop" default="0">
+		</member>
+		<member name="pointer_timestamp" type="int" setter="set_pointer_timestamp" getter="get_pointer_timestamp" default="0">
+		</member>
+		<member name="reset_state" type="int" setter="set_reset_state" getter="get_reset_state" default="0">
+		</member>
+		<member name="subwindow_size" type="int" setter="set_subwindow_size" getter="get_subwindow_size" default="0">
+		</member>
+		<member name="window_size" type="int" setter="set_window_size" getter="get_window_size" default="0">
+		</member>
+	</members>
+</class>

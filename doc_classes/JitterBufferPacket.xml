@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="JitterBufferPacket" inherits="RefCounted" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="data" type="PackedByteArray" setter="set_data" getter="get_data" default="PackedByteArray()">
+		</member>
+		<member name="sequence" type="int" setter="set_sequence" getter="get_sequence" default="0">
+		</member>
+		<member name="span" type="int" setter="set_span" getter="get_span" default="0">
+		</member>
+		<member name="timestamp" type="int" setter="set_timestamp" getter="get_timestamp" default="0">
+		</member>
+		<member name="user_data" type="int" setter="set_user_data" getter="get_user_data" default="0">
+		</member>
+	</members>
+</class>

@@ -12,6 +12,9 @@ def get_doc_classes():
         "SpeechDecoder",
         "SpeechProcessor",
         "PlaybackStats",
+        "VoipJitterBuffer",
+        "JitterBuffer",
+        "JitterBufferPacket",
     ]
 
 
