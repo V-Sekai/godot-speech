@@ -657,3 +657,66 @@ int VoipJitterBuffer::_jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<
 
 	return opt;
 }
+
+
+void JitterBufferPacket::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_data", "data"), &JitterBufferPacket::set_data);
+	ClassDB::bind_method(D_METHOD("get_data"), &JitterBufferPacket::get_data);
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "data"), "set_data", "get_data");
+
+	ClassDB::bind_method(D_METHOD("set_timestamp", "timestamp"), &JitterBufferPacket::set_timestamp);
+	ClassDB::bind_method(D_METHOD("get_timestamp"), &JitterBufferPacket::get_timestamp);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "timestamp"), "set_timestamp", "get_timestamp");
+
+	ClassDB::bind_method(D_METHOD("set_span", "span"), &JitterBufferPacket::set_span);
+	ClassDB::bind_method(D_METHOD("get_span"), &JitterBufferPacket::get_span);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "span"), "set_span", "get_span");
+
+	ClassDB::bind_method(D_METHOD("set_sequence", "sequence"), &JitterBufferPacket::set_sequence);
+	ClassDB::bind_method(D_METHOD("get_sequence"), &JitterBufferPacket::get_sequence);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "sequence"), "set_sequence", "get_sequence");
+
+	ClassDB::bind_method(D_METHOD("set_user_data", "user_data"), &JitterBufferPacket::set_user_data);
+	ClassDB::bind_method(D_METHOD("get_user_data"), &JitterBufferPacket::get_user_data);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "user_data"), "set_user_data", "get_user_data");
+}
+
+void JitterBufferPacket::set_data(const PackedByteArray &p_data) {
+	data = p_data;
+}
+
+void JitterBufferPacket::set_timestamp(int64_t p_timestamp) {
+	timestamp = p_timestamp;
+}
+
+void JitterBufferPacket::set_span(int64_t p_span) {
+	span = p_span;
+}
+
+void JitterBufferPacket::set_sequence(int64_t p_sequence) {
+	sequence = p_sequence;
+}
+
+void JitterBufferPacket::set_user_data(int64_t p_user_data) {
+	user_data = p_user_data;
+}
+
+PackedByteArray JitterBufferPacket::get_data() const {
+	return data;
+}
+
+int64_t JitterBufferPacket::get_timestamp() const {
+	return timestamp;
+}
+
+int64_t JitterBufferPacket::get_span() const {
+	return span;
+}
+
+int64_t JitterBufferPacket::get_sequence() const {
+	return sequence;
+}
+
+int64_t JitterBufferPacket::get_user_data() const {
+	return user_data;
+}
