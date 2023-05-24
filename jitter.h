@@ -119,31 +119,40 @@
 
 #include "core/variant/variant.h"
 
-/** Buffer that keeps the time of arrival of the latest packets */
-class TimingBuffer : public RefCounted {
-	GDCLASS(TimingBuffer, RefCounted);
+/** Definition of an incoming packet */
+class JitterBufferPacket : public RefCounted {
+	GDCLASS(JitterBufferPacket, RefCounted);
 
+private:
+	PackedByteArray data;
+	int64_t timestamp = 0;
+	int64_t span = 0;
+	int64_t sequence = 0;
+	int64_t user_data = 0;
+
+protected:
+	static void _bind_methods();
+
+public:
+	void set_data(const PackedByteArray &p_data);
+	void set_timestamp(int64_t p_timestamp);
+	void set_span(int64_t p_span);
+	void set_sequence(int64_t p_sequence);
+	void set_user_data(int64_t p_user_data);
+
+	PackedByteArray get_data() const;
+	int64_t get_timestamp() const;
+	int64_t get_span() const;
+	int64_t get_sequence() const;
+	int64_t get_user_data() const;
+};
+
+/** Buffer that keeps the time of arrival of the latest packets */
+class TimingBuffer {
 	int filled = 0; /**< Number of entries occupied in "timing" and "counts"*/
 	int curr_count = 0; /**< Number of packet timings we got (including those we discarded) */
 	int32_t timing[MAX_TIMINGS] = {}; /**< Sorted list of all timings ("latest" packets first) */
 	int16_t counts[MAX_TIMINGS] = {}; /**< Order the packets were put in (will be used for short-term estimate) */
-
-protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_filled", "filled"), &TimingBuffer::set_filled);
-		ClassDB::bind_method(D_METHOD("get_filled"), &TimingBuffer::get_filled);
-		ADD_PROPERTY(PropertyInfo(Variant::INT, "filled"), "set_filled", "get_filled");
-
-		ClassDB::bind_method(D_METHOD("set_curr_count", "curr_count"), &TimingBuffer::set_curr_count);
-		ClassDB::bind_method(D_METHOD("get_curr_count"), &TimingBuffer::get_curr_count);
-		ADD_PROPERTY(PropertyInfo(Variant::INT, "curr_count"), "set_curr_count", "get_curr_count");
-
-		ClassDB::bind_method(D_METHOD("set_timing", "index", "value"), &TimingBuffer::set_timing);
-		ClassDB::bind_method(D_METHOD("get_timing", "index"), &TimingBuffer::get_timing);
-
-		ClassDB::bind_method(D_METHOD("set_counts", "index", "value"), &TimingBuffer::set_counts);
-		ClassDB::bind_method(D_METHOD("get_counts", "index"), &TimingBuffer::get_counts);
-	}
 
 public:
 	void set_filled(int p_filled) {
@@ -190,34 +199,6 @@ public:
 	}
 };
 
-/** Definition of an incoming packet */
-class JitterBufferPacket : public RefCounted {
-	GDCLASS(JitterBufferPacket, RefCounted);
-
-private:
-	PackedByteArray data;
-	int64_t timestamp = 0;
-	int64_t span = 0;
-	int64_t sequence = 0;
-	int64_t user_data = 0;
-
-protected:
-	static void _bind_methods();
-
-public:
-	void set_data(const PackedByteArray &p_data);
-	void set_timestamp(int64_t p_timestamp);
-	void set_span(int64_t p_span);
-	void set_sequence(int64_t p_sequence);
-	void set_user_data(int64_t p_user_data);
-
-	PackedByteArray get_data() const;
-	int64_t get_timestamp() const;
-	int64_t get_span() const;
-	int64_t get_sequence() const;
-	int64_t get_user_data() const;
-};
-
 /** Jitter buffer structure */
 class JitterBuffer : public RefCounted {
 	GDCLASS(JitterBuffer, RefCounted);
@@ -242,8 +223,8 @@ public:
 	int interp_requested = 0;
 	int auto_adjust = 0;
 
-	Ref<TimingBuffer> _tb[MAX_BUFFERS] = {};
-	Ref<TimingBuffer> timeBuffers[MAX_BUFFERS] = {};
+	TimingBuffer *_tb[MAX_BUFFERS] = {};
+	TimingBuffer *timeBuffers[MAX_BUFFERS] = {};
 	int window_size = 0;
 	int subwindow_size = 0;
 	int max_late_rate = 0;
@@ -255,8 +236,14 @@ public:
 public:
 	JitterBuffer() {
 		for (int i = 0; i < MAX_BUFFERS; ++i) {
-			_tb[i].instantiate();
+			_tb[i] = memnew(TimingBuffer);
 			timeBuffers[i] = _tb[i];
+		}
+	}
+	~JitterBuffer() {
+		for (int i = 0; i < MAX_BUFFERS; ++i) {
+			memdelete_notnull(_tb[i]);
+			memdelete_notnull(timeBuffers[i]);
 		}
 	}
 	void set_pointer_timestamp(int64_t p_pointer_timestamp) { pointer_timestamp = p_pointer_timestamp; }
@@ -339,11 +326,13 @@ protected:
 
 class VoipJitterBuffer : public RefCounted {
 	GDCLASS(VoipJitterBuffer, RefCounted);
+
+public:
 	/** Reset jitter buffer */
 	void jitter_buffer_reset(Ref<JitterBuffer> jitter);
 
 	/* Used like the ioctl function to control the jitter buffer parameters */
-	int jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, void *ptr);
+	int jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, int32_t *ptr);
 
 	/** Initialise jitter buffer */
 	Ref<JitterBuffer> jitter_buffer_init(int step_size);
@@ -369,23 +358,14 @@ class VoipJitterBuffer : public RefCounted {
 
 	void jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem);
 
-	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
-	static int _jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset = nullptr);
-
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_static_method("VoipJitterBuffer", D_METHOD("tb_init", "timing_buffer"), &VoipJitterBuffer::tb_init);
-		ClassDB::bind_static_method("VoipJitterBuffer", D_METHOD("tb_add", "timing_buffer", "timing"), &VoipJitterBuffer::tb_add);
-		ClassDB::bind_static_method("VoipJitterBuffer", D_METHOD("compute_opt_delay", "jitter"), &VoipJitterBuffer::compute_opt_delay);
-		ClassDB::bind_static_method("VoipJitterBuffer", D_METHOD("update_timings", "jitter", "timing"), &VoipJitterBuffer::update_timings);
-		ClassDB::bind_static_method("VoipJitterBuffer", D_METHOD("shift_timings", "jitter", "amount"), &VoipJitterBuffer::shift_timings);
-	}
+	static void _bind_methods();
 
 public:
-	static void tb_init(Ref<TimingBuffer>);
+	static void tb_init(TimingBuffer *buffer);
 
 	/* Add the timing of a new packet to the TimingBuffer */
-	static void tb_add(Ref<TimingBuffer>, int16_t timing);
+	static void tb_add(TimingBuffer *buffer, int16_t timing);
 
 	/** Based on available data, this computes the optimal delay for the jitter buffer.
 	   The optimised function is in timestamp units and is:
@@ -400,6 +380,9 @@ public:
 
 	/** Compensate all timings when we do an adjustment of the buffering */
 	static void shift_timings(Ref<JitterBuffer> jitter, int16_t amount);
+
+	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
+	static int _jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset = nullptr);
 };
 
 #endif // JITTER_H

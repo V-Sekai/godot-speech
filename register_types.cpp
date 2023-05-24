@@ -60,7 +60,6 @@ void initialize_speech_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(SpeechDecoder);
 	GDREGISTER_CLASS(Speech);
 	GDREGISTER_CLASS(JitterBuffer);
-	GDREGISTER_CLASS(TimingBuffer);
 	GDREGISTER_CLASS(JitterBufferPacket);
 	GDREGISTER_CLASS(VoipJitterBuffer);
 }

@@ -51,6 +51,7 @@ TODO:
 */
 
 #include "jitter.h"
+#include "core/error/error_macros.h"
 
 void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 	int i;
@@ -74,14 +75,14 @@ void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 	/*fprintf (stderr, "reset\n");*/
 }
 
-int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, void *ptr) {
+int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, int32_t *ptr) {
 	int count, i;
 	switch (request) {
 		case JITTER_BUFFER_SET_MARGIN:
-			jitter->buffer_margin = *(int32_t *)ptr;
+			jitter->buffer_margin = *ptr;
 			break;
 		case JITTER_BUFFER_GET_MARGIN:
-			*(int32_t *)ptr = jitter->buffer_margin;
+			*ptr = jitter->buffer_margin;
 			break;
 		case JITTER_BUFFER_GET_AVALIABLE_COUNT:
 			count = 0;
@@ -90,7 +91,7 @@ int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, v
 					count++;
 				}
 			}
-			*(int32_t *)ptr = count;
+			*ptr = count;
 			break;
 		case JITTER_BUFFER_SET_DESTROY_CALLBACK:
 			jitter->destroy = (void (*)(void *))ptr;
@@ -99,30 +100,30 @@ int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, v
 			*(void (**)(void *))ptr = jitter->destroy;
 			break;
 		case JITTER_BUFFER_SET_DELAY_STEP:
-			jitter->delay_step = *(int32_t *)ptr;
+			jitter->delay_step = *ptr;
 			break;
 		case JITTER_BUFFER_GET_DELAY_STEP:
-			*(int32_t *)ptr = jitter->delay_step;
+			*ptr = jitter->delay_step;
 			break;
 		case JITTER_BUFFER_SET_CONCEALMENT_SIZE:
-			jitter->concealment_size = *(int32_t *)ptr;
+			jitter->concealment_size = *ptr;
 			break;
 		case JITTER_BUFFER_GET_CONCEALMENT_SIZE:
-			*(int32_t *)ptr = jitter->concealment_size;
+			*ptr = jitter->concealment_size;
 			break;
 		case JITTER_BUFFER_SET_MAX_LATE_RATE:
-			jitter->max_late_rate = *(int32_t *)ptr;
+			jitter->max_late_rate = *ptr;
 			jitter->window_size = 100 * TOP_DELAY / jitter->max_late_rate;
 			jitter->subwindow_size = jitter->window_size / MAX_BUFFERS;
 			break;
 		case JITTER_BUFFER_GET_MAX_LATE_RATE:
-			*(int32_t *)ptr = jitter->max_late_rate;
+			*ptr = jitter->max_late_rate;
 			break;
 		case JITTER_BUFFER_SET_LATE_COST:
-			jitter->latency_tradeoff = *(int32_t *)ptr;
+			jitter->latency_tradeoff = *ptr;
 			break;
 		case JITTER_BUFFER_GET_LATE_COST:
-			*(int32_t *)ptr = jitter->latency_tradeoff;
+			*ptr = jitter->latency_tradeoff;
 			break;
 		default:
 			ERR_PRINT(vformat("Unknown jitter_buffer_ctl request: %d", request));
@@ -133,23 +134,23 @@ int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, v
 
 Ref<JitterBuffer> VoipJitterBuffer::jitter_buffer_init(int step_size) {
 	Ref<JitterBuffer> jitter;
-    jitter.instantiate();
-    int i;
-    int32_t tmp;
-    for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-        jitter->packets[i]->get_data().clear();
-    }
-    jitter->delay_step = step_size;
-    jitter->concealment_size = step_size;
-    /*FIXME: Should this be 0 or 1?*/
-    jitter->buffer_margin = 0;
-    jitter->late_cutoff = 50;
-    jitter->destroy = nullptr;
-    jitter->latency_tradeoff = 0;
-    jitter->auto_adjust = 1;
-    tmp = 4;
-    jitter_buffer_ctl(jitter, JITTER_BUFFER_SET_MAX_LATE_RATE, &tmp);
-    jitter_buffer_reset(jitter);
+	jitter.instantiate();
+	int i;
+	int32_t tmp;
+	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
+		jitter->packets[i]->get_data().clear();
+	}
+	jitter->delay_step = step_size;
+	jitter->concealment_size = step_size;
+	/*FIXME: Should this be 0 or 1?*/
+	jitter->buffer_margin = 0;
+	jitter->late_cutoff = 50;
+	jitter->destroy = nullptr;
+	jitter->latency_tradeoff = 0;
+	jitter->auto_adjust = 1;
+	tmp = 4;
+	jitter_buffer_ctl(jitter, JITTER_BUFFER_SET_MAX_LATE_RATE, &tmp);
+	jitter_buffer_reset(jitter);
 	return jitter;
 }
 
@@ -470,12 +471,14 @@ void VoipJitterBuffer::jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, ui
 	jitter->next_stop = jitter->pointer_timestamp - rem;
 }
 
-void VoipJitterBuffer::tb_init(Ref<TimingBuffer> tb) {
+void VoipJitterBuffer::tb_init(TimingBuffer *tb) {
+    ERR_FAIL_NULL(tb);
 	tb->set_filled(0);
 	tb->set_curr_count(0);
 }
 
-void VoipJitterBuffer::tb_add(Ref<TimingBuffer> tb, int16_t timing) {
+void VoipJitterBuffer::tb_add(TimingBuffer *tb, int16_t timing) {
+    ERR_FAIL_NULL(tb);
 	int pos;
 	/* Discard packet that won't make it into the list because they're too early */
 	if (tb->get_filled() >= MAX_TIMINGS && timing >= tb->get_timing(tb->get_filled() - 1)) {
@@ -620,7 +623,7 @@ void VoipJitterBuffer::update_timings(Ref<JitterBuffer> jitter, int32_t timing) 
 	if (jitter->timeBuffers[0]->get_curr_count() >= jitter->subwindow_size) {
 		int i;
 		/*fprintf(stderr, "Rotate buffer\n");*/
-		Ref<TimingBuffer> tmp = jitter->timeBuffers[MAX_BUFFERS - 1];
+		TimingBuffer *tmp = jitter->timeBuffers[MAX_BUFFERS - 1];
 		for (i = MAX_BUFFERS - 1; i >= 1; i--) {
 			jitter->timeBuffers[i] = jitter->timeBuffers[i - 1];
 		}
@@ -657,7 +660,6 @@ int VoipJitterBuffer::_jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<
 
 	return opt;
 }
-
 
 void JitterBufferPacket::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_data", "data"), &JitterBufferPacket::set_data);
@@ -719,4 +721,18 @@ int64_t JitterBufferPacket::get_sequence() const {
 
 int64_t JitterBufferPacket::get_user_data() const {
 	return user_data;
+}
+
+void VoipJitterBuffer::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("jitter_buffer_reset", "jitter"), &VoipJitterBuffer::jitter_buffer_reset);
+	// ClassDB::bind_method(D_METHOD("jitter_buffer_ctl", "jitter", "request", "value"), &VoipJitterBuffer::jitter_buffer_ctl);
+	ClassDB::bind_method(D_METHOD("jitter_buffer_init", "step_size"), &VoipJitterBuffer::jitter_buffer_init);
+	ClassDB::bind_method(D_METHOD("jitter_buffer_destroy", "jitter"), &VoipJitterBuffer::jitter_buffer_destroy);
+	ClassDB::bind_method(D_METHOD("jitter_buffer_put", "jitter", "packet"), &VoipJitterBuffer::jitter_buffer_put);
+	// ClassDB::bind_method(D_METHOD("jitter_buffer_get", "jitter", "packet", "desired_span", "start_offset"), &VoipJitterBuffer::jitter_buffer_get, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("jitter_buffer_get_another", "jitter", "packet"), &VoipJitterBuffer::jitter_buffer_get_another);
+	// ClassDB::bind_method(D_METHOD("jitter_buffer_update_delay", "jitter", "packet", "start_offset"), &VoipJitterBuffer::jitter_buffer_update_delay, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("jitter_buffer_get_pointer_timestamp", "jitter"), &VoipJitterBuffer::jitter_buffer_get_pointer_timestamp);
+	ClassDB::bind_method(D_METHOD("jitter_buffer_tick", "jitter"), &VoipJitterBuffer::jitter_buffer_tick);
+	ClassDB::bind_method(D_METHOD("jitter_buffer_remaining_span", "jitter", "rem"), &VoipJitterBuffer::jitter_buffer_remaining_span);
 }
