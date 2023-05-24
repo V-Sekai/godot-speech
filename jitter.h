@@ -94,12 +94,6 @@
 #define JITTER_BUFFER_SET_LATE_COST 12
 #define JITTER_BUFFER_GET_LATE_COST 13
 
-/** Copy n elements from src to dst, allowing overlapping regions. The 0* term
-	provides compile-time type checking */
-#ifndef OVERRIDE_SPEEX_MOVE
-#define SPEEX_MOVE(dst, src, n) (memmove((dst), (src), (n) * sizeof(*(dst)) + 0 * ((dst) - (src))))
-#endif
-
 #define speex_assert(cond)                           \
 	{                                                \
 		if (!(cond)) {                               \
@@ -141,11 +135,74 @@ typedef int32_t spx_int32_t;
 typedef uint32_t spx_uint32_t;
 
 /** Buffer that keeps the time of arrival of the latest packets */
-struct TimingBuffer {
+class TimingBuffer : public RefCounted {
+	GDCLASS(TimingBuffer, RefCounted);
+
 	int filled = 0; /**< Number of entries occupied in "timing" and "counts"*/
 	int curr_count = 0; /**< Number of packet timings we got (including those we discarded) */
 	spx_int32_t timing[MAX_TIMINGS] = {}; /**< Sorted list of all timings ("latest" packets first) */
 	spx_int16_t counts[MAX_TIMINGS] = {}; /**< Order the packets were put in (will be used for short-term estimate) */
+
+protected:
+	static void _bind_methods() {
+		ClassDB::bind_method(D_METHOD("set_filled", "filled"), &TimingBuffer::set_filled);
+		ClassDB::bind_method(D_METHOD("get_filled"), &TimingBuffer::get_filled);
+		ADD_PROPERTY(PropertyInfo(Variant::INT, "filled"), "set_filled", "get_filled");
+
+		ClassDB::bind_method(D_METHOD("set_curr_count", "curr_count"), &TimingBuffer::set_curr_count);
+		ClassDB::bind_method(D_METHOD("get_curr_count"), &TimingBuffer::get_curr_count);
+		ADD_PROPERTY(PropertyInfo(Variant::INT, "curr_count"), "set_curr_count", "get_curr_count");
+
+		ClassDB::bind_method(D_METHOD("set_timing", "index", "value"), &TimingBuffer::set_timing);
+		ClassDB::bind_method(D_METHOD("get_timing", "index"), &TimingBuffer::get_timing);
+
+		ClassDB::bind_method(D_METHOD("set_counts", "index", "value"), &TimingBuffer::set_counts);
+		ClassDB::bind_method(D_METHOD("get_counts", "index"), &TimingBuffer::get_counts);
+	}
+
+public:
+	void set_filled(int p_filled) {
+		filled = p_filled;
+	}
+
+	void set_curr_count(int p_curr_count) {
+		curr_count = p_curr_count;
+	}
+
+	void set_timing(int index, spx_int32_t value) {
+		ERR_FAIL_INDEX(index, MAX_TIMINGS);
+		timing[index] = value;
+	}
+
+	void set_counts(int index, spx_int16_t value) {
+		ERR_FAIL_INDEX(index, MAX_TIMINGS);
+		counts[index] = value;
+	}
+
+	int get_filled() const {
+		return filled;
+	}
+
+	int get_curr_count() const {
+		return curr_count;
+	}
+
+	spx_int32_t get_timing(int index) const {
+		ERR_FAIL_INDEX_V(index, MAX_TIMINGS, 0);
+		return timing[index];
+	}
+
+	spx_int16_t get_counts(int index) const {
+		ERR_FAIL_INDEX_V(index, MAX_TIMINGS, 0);
+		return counts[index];
+	}
+
+	TimingBuffer() {
+		for (int i = 0; i < MAX_TIMINGS; ++i) {
+			timing[i] = 0;
+			counts[i] = 0;
+		}
+	}
 };
 
 /** Definition of an incoming packet */
@@ -184,8 +241,8 @@ struct JitterBuffer_ {
 	int interp_requested = 0; /**< An interpolation is requested by speex_jitter_update_delay() */
 	int auto_adjust = 0; /**< Whether to automatically adjust the delay at any time */
 
-	struct TimingBuffer _tb[MAX_BUFFERS] = {}; /**< Don't use those directly */
-	struct TimingBuffer *timeBuffers[MAX_BUFFERS] = {}; /**< Storing arrival time of latest frames so we can compute some stats */
+	Ref<TimingBuffer> _tb[MAX_BUFFERS] = {}; /**< Don't use those directly */
+	Ref<TimingBuffer> timeBuffers[MAX_BUFFERS] = {}; /**< Storing arrival time of latest frames so we can compute some stats */
 	int window_size = 0; /**< Total window over which the late frames are counted */
 	int subwindow_size = 0; /**< Sub-window size for faster computation  */
 	int max_late_rate = 0; /**< Absolute maximum amount of late packets tolerable (in percent) */
@@ -193,6 +250,12 @@ struct JitterBuffer_ {
 	int auto_tradeoff = 0; /**< Latency equivalent of losing one percent of packets (automatic default) */
 
 	int lost_count = 0; /**< Number of consecutive lost packets  */
+	JitterBuffer_() {
+		for (int i = 0; i < MAX_BUFFERS; ++i) {
+			_tb[i].instantiate();
+			timeBuffers[i] = _tb[i];
+		}
+	}
 };
 
 class VoipJitterBuffer : RefCounted {
@@ -232,10 +295,10 @@ class VoipJitterBuffer : RefCounted {
 	void jitter_buffer_remaining_span(JitterBuffer *jitter, spx_uint32_t rem);
 
 public:
-	static void tb_init(struct TimingBuffer *tb);
+	static void tb_init(Ref<TimingBuffer>);
 
 	/* Add the timing of a new packet to the TimingBuffer */
-	static void tb_add(struct TimingBuffer *tb, spx_int16_t timing);
+	static void tb_add(Ref<TimingBuffer>, spx_int16_t timing);
 
 	/** Based on available data, this computes the optimal delay for the jitter buffer.
 	   The optimised function is in timestamp units and is:
