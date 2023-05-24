@@ -45,6 +45,8 @@
 #include <cstring>
 #include <cstdlib>
 
+#include "core/variant/variant.h"
+
 typedef int16_t spx_int16_t;
 typedef uint16_t spx_uint16_t;
 typedef int32_t spx_int32_t;
@@ -61,8 +63,7 @@ typedef struct _JitterBufferPacket JitterBufferPacket;
 
 /** Definition of an incoming packet */
 struct _JitterBufferPacket {
-	char *data; /**< Data bytes contained in the packet */
-	spx_uint32_t len; /**< Length of the packet in bytes */
+	PackedByteArray data; /**< Data bytes contained in the packet */
 	spx_uint32_t timestamp; /**< Timestamp for the packet */
 	spx_uint32_t span; /**< Time covered by the packet (same units as timestamp) */
 	spx_uint16_t sequence; /**< RTP Sequence number if available (0 otherwise) */

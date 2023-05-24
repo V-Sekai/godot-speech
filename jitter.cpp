@@ -145,13 +145,8 @@ struct JitterBuffer_ {
 void jitter_buffer_reset(JitterBuffer *jitter) {
 	int i;
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-		if (jitter->packets[i].data) {
-			if (jitter->destroy) {
-				jitter->destroy(jitter->packets[i].data);
-			} else {
-				speex_free(jitter->packets[i].data);
-			}
-			jitter->packets[i].data = NULL;
+		if (!jitter->packets[i].data.is_empty()) {
+			jitter->packets[i].data.clear();
 		}
 	}
 	/* Timestamp is actually undefined at this point */
@@ -282,7 +277,7 @@ int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr) {
 		case JITTER_BUFFER_GET_AVALIABLE_COUNT:
 			count = 0;
 			for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-				if (jitter->packets[i].data && LE32(jitter->pointer_timestamp, jitter->packets[i].timestamp)) {
+				if (!jitter->packets[i].data.is_empty() && LE32(jitter->pointer_timestamp, jitter->packets[i].timestamp)) {
 					count++;
 				}
 			}
@@ -334,7 +329,7 @@ JitterBuffer *jitter_buffer_init(int step_size) {
 		int i;
 		spx_int32_t tmp;
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			jitter->packets[i].data = nullptr;
+			jitter->packets[i].data.clear();
 		}
 		jitter->delay_step = step_size;
 		jitter->concealment_size = step_size;
@@ -399,14 +394,9 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet) {
 	if (!jitter->reset_state) {
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
 			/* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
-			if (jitter->packets[i].data && LE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp)) {
-				/*fprintf (stderr, "cleaned (not played)\n");*/
-				if (jitter->destroy) {
-					jitter->destroy(jitter->packets[i].data);
-				} else {
-					speex_free(jitter->packets[i].data);
-				}
-				jitter->packets[i].data = nullptr;
+			if (!jitter->packets[i].data.is_empty() && LE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp)) {
+				/*fprintf (stderr, "cleaned (not played)\n");*/			
+				jitter->packets[i].data.clear();
 			}
 		}
 	}
@@ -430,7 +420,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet) {
 	if (jitter->reset_state || GE32(packet->timestamp + packet->span + jitter->delay_step, jitter->pointer_timestamp)) {
 		/*Find an empty slot in the buffer*/
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			if (jitter->packets[i].data == nullptr) {
+			if (jitter->packets[i].data.is_empty()) {
 				break;
 			}
 		}
@@ -440,32 +430,20 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet) {
 			int earliest = jitter->packets[0].timestamp;
 			i = 0;
 			for (j = 1; j < SPEEX_JITTER_MAX_BUFFER_SIZE; j++) {
-				if (!jitter->packets[i].data || LT32(jitter->packets[j].timestamp, earliest)) {
+				if (jitter->packets[i].data.is_empty() || LT32(jitter->packets[j].timestamp, earliest)) {
 					earliest = jitter->packets[j].timestamp;
 					i = j;
 				}
 			}
-			if (jitter->destroy) {
-				jitter->destroy(jitter->packets[i].data);
-			} else {
-				speex_free(jitter->packets[i].data);
-			}
-			jitter->packets[i].data = nullptr;
+			jitter->packets[i].data.clear();
 			/*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/
 		}
 
 		/* Copy packet in buffer */
-		if (jitter->destroy) {
-			jitter->packets[i].data = packet->data;
-		} else {
-			jitter->packets[i].data = (char *)alloca(packet->len);
-			for (j = 0; j < packet->len; j++) {
-				jitter->packets[i].data[j] = packet->data[j];
-			}
-		}
+		jitter->packets[i].data = packet->data;
+
 		jitter->packets[i].timestamp = packet->timestamp;
 		jitter->packets[i].span = packet->span;
-		jitter->packets[i].len = packet->len;
 		jitter->packets[i].sequence = packet->sequence;
 		jitter->packets[i].user_data = packet->user_data;
 		if (jitter->reset_state || late) {
@@ -492,7 +470,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 		/* Find the oldest packet */
 		spx_uint32_t oldest = 0;
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			if (jitter->packets[i].data && (!found || LT32(jitter->packets[i].timestamp, oldest))) {
+			if (!jitter->packets[i].data.is_empty() && (!found || LT32(jitter->packets[i].timestamp, oldest))) {
 				oldest = jitter->packets[i].timestamp;
 				found = 1;
 			}
@@ -516,7 +494,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 
 		/* Increment the pointer because it got decremented in the delay update */
 		jitter->pointer_timestamp += jitter->interp_requested;
-		packet->len = 0;
+		packet->data.clear();
 		/*fprintf (stderr, "Deferred interpolate\n");*/
 
 		jitter->interp_requested = 0;
@@ -530,14 +508,14 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 
 	/* Search the buffer for a packet with the right timestamp and spanning the whole current chunk */
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-		if (jitter->packets[i].data && jitter->packets[i].timestamp == jitter->pointer_timestamp && GE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp + desired_span))
+		if (!jitter->packets[i].data.is_empty() && jitter->packets[i].timestamp == jitter->pointer_timestamp && GE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp + desired_span))
 			break;
 	}
 
 	/* If no match, try for an "older" packet that still spans (fully) the current chunk */
 	if (i == SPEEX_JITTER_MAX_BUFFER_SIZE) {
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			if (jitter->packets[i].data && LE32(jitter->packets[i].timestamp, jitter->pointer_timestamp) && GE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp + desired_span)) {
+			if (!jitter->packets[i].data.is_empty() && LE32(jitter->packets[i].timestamp, jitter->pointer_timestamp) && GE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp + desired_span)) {
 				break;
 			}
 		}
@@ -546,7 +524,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 	/* If still no match, try for an "older" packet that spans part of the current chunk */
 	if (i == SPEEX_JITTER_MAX_BUFFER_SIZE) {
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			if (jitter->packets[i].data && LE32(jitter->packets[i].timestamp, jitter->pointer_timestamp) && GT32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp)) {
+			if (!jitter->packets[i].data.is_empty() && LE32(jitter->packets[i].timestamp, jitter->pointer_timestamp) && GT32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp)) {
 				break;
 			}
 		}
@@ -560,7 +538,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 		int besti = 0;
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
 			/* check if packet starts within current chunk */
-			if (jitter->packets[i].data && LT32(jitter->packets[i].timestamp, jitter->pointer_timestamp + desired_span) && GE32(jitter->packets[i].timestamp, jitter->pointer_timestamp)) {
+			if (!jitter->packets[i].data.is_empty() && LT32(jitter->packets[i].timestamp, jitter->pointer_timestamp + desired_span) && GE32(jitter->packets[i].timestamp, jitter->pointer_timestamp)) {
 				if (!found || LT32(jitter->packets[i].timestamp, best_time) || (jitter->packets[i].timestamp == best_time && GT32(jitter->packets[i].span, best_span))) {
 					best_time = jitter->packets[i].timestamp;
 					best_span = jitter->packets[i].span;
@@ -588,22 +566,9 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 		}
 
 		/* Copy packet */
-		if (jitter->destroy) {
-			packet->data = jitter->packets[i].data;
-			packet->len = jitter->packets[i].len;
-		} else {
-			if (jitter->packets[i].len > packet->len) {
-				ERR_PRINT(vformat("jitter_buffer_get(): packet too large to fit. Size is %d", jitter->packets[i].len));
-			} else {
-				packet->len = jitter->packets[i].len;
-			}
-			for (j = 0; j < packet->len; j++) {
-				packet->data[j] = jitter->packets[i].data[j];
-			}
-			/* Remove packet */
-			speex_free(jitter->packets[i].data);
-		}
-		jitter->packets[i].data = nullptr;
+		packet->data = jitter->packets[i].data;
+		jitter->packets[i].data.clear();
+
 		/* Set timestamp and span (if requested) */
 		offset = (spx_int32_t)jitter->packets[i].timestamp - (spx_int32_t)jitter->pointer_timestamp;
 		if (start_offset != nullptr) {
@@ -649,7 +614,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 		packet->timestamp = jitter->pointer_timestamp;
 		packet->span = -opt;
 		/* Don't move the pointer_timestamp forward */
-		packet->len = 0;
+		packet->data.clear();
 
 		jitter->buffered = packet->span - desired_span;
 		return JITTER_BUFFER_INSERTION;
@@ -662,7 +627,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 		desired_span = ROUND_DOWN(desired_span, jitter->concealment_size);
 		packet->span = desired_span;
 		jitter->pointer_timestamp += desired_span;
-		packet->len = 0;
+		packet->data.clear();
 
 		jitter->buffered = packet->span - desired_span;
 		return JITTER_BUFFER_MISSING;
@@ -673,31 +638,21 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 int jitter_buffer_get_another(JitterBuffer *jitter, JitterBufferPacket *packet) {
 	int i, j;
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-		if (jitter->packets[i].data && jitter->packets[i].timestamp == jitter->last_returned_timestamp) {
+		if (!jitter->packets[i].data.is_empty() && jitter->packets[i].timestamp == jitter->last_returned_timestamp) {
 			break;
 		}
 	}
 	if (i != SPEEX_JITTER_MAX_BUFFER_SIZE) {
 		/* Copy packet */
-		packet->len = jitter->packets[i].len;
-		if (jitter->destroy) {
-			packet->data = jitter->packets[i].data;
-		} else {
-			for (j = 0; j < packet->len; j++) {
-				packet->data[j] = jitter->packets[i].data[j];
-			}
-			/* Remove packet */
-			speex_free(jitter->packets[i].data);
-		}
-		jitter->packets[i].data = nullptr;
+		packet->data = jitter->packets[i].data;
+		jitter->packets[i].data.clear();
 		packet->timestamp = jitter->packets[i].timestamp;
 		packet->span = jitter->packets[i].span;
 		packet->sequence = jitter->packets[i].sequence;
 		packet->user_data = jitter->packets[i].user_data;
 		return JITTER_BUFFER_OK;
 	} else {
-		packet->data = nullptr;
-		packet->len = 0;
+		packet->data.clear();
 		packet->span = 0;
 		return JITTER_BUFFER_MISSING;
 	}

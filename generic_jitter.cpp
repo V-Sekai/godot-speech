@@ -1,28 +1,25 @@
 #include "generic_jitter.h"
+#include "core/variant/variant.h"
 
-int GenericJitter::decode(uint8_t *packet, uint8_t *out) {
+Error GenericJitter::decode(const PackedByteArray &packet, PackedByteArray &out) {
 	// Implement your decoding logic here
 	// For now, let's return 0 as a placeholder
-	return 0;
+	return OK;
 }
 
 void GenericJitter::generic_jitter_init(int frame_size) {
 	this->frame_size = frame_size;
-
-	current_packet = nullptr;
+	current_packet.clear();
 	valid_data = 0;
 }
 
 GenericJitter::~GenericJitter() {
-	if (current_packet != nullptr) {
-		free(current_packet);
-	}
 }
 
 void GenericJitter::generic_jitter_put(PackedByteArray packet, int len, int timestamp) {
 	JitterBufferPacket p;
+	
 	p.data = packet;
-	p.len = len;
 	p.timestamp = timestamp;
 	p.span = frame_size;
 	ring_buffer.write(p);
@@ -30,21 +27,18 @@ void GenericJitter::generic_jitter_put(PackedByteArray packet, int len, int time
 
 PackedByteArray GenericJitter::generic_jitter_get(Dictionary r_metadata) {
 	int ret = OK;
-	PackedByteArray data;
 	JitterBufferPacket packet;
-	packet.len = 2048;
-	data.resize(packet.len);
+	PackedByteArray data;
+	data.resize(2048);
 	data.fill(0);
 	packet.data = data;
 
 	PackedByteArray out;
-	out.resize(packet.len);
-	out.fill(0);
 
 	if (valid_data) {
-		// Try decoding last received packet
-		ret = decode(current_packet, out.ptrw());
-		if (ret == 0) {
+		// Try decoding the last received packet.
+		ret = decode(current_packet, out);
+		if (ret == 0) {	
 			ring_buffer.advance_read(1);
 			return PackedByteArray();
 		} else {
@@ -54,17 +48,13 @@ PackedByteArray GenericJitter::generic_jitter_get(Dictionary r_metadata) {
 
 	if (!ring_buffer.read(&packet, sizeof(JitterBufferPacket))) {
 		// No packet found
-		decode(nullptr, out.ptrw());
+		decode(PackedByteArray(), out);
 	} else {
 		// Decode packet
-		ret = decode(packet.data.ptrw(), out.ptrw());
+		ret = decode(packet.data, out);
 		if (ret == 0) {
 			valid_data = 1;
-			if (current_packet != nullptr) {
-				free(current_packet);
-			}
-			current_packet = static_cast<uint8_t *>(malloc(packet.len));
-			memcpy(current_packet, packet.data.ptrw(), packet.len);
+			current_packet = packet.data;
 			r_metadata["current_timestamp"] = packet.timestamp;
 		} else {
 			// Error while decoding
