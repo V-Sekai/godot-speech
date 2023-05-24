@@ -24,18 +24,17 @@ public:
 			return;
 		}
 
-	
-        /* Find where the timing info goes in the sorted list using binary search */
-        int left = 0, right = tb->filled - 1;
-        while (left <= right) {
-            int mid = left + (right - left) / 2;
-            if (tb->timing[mid] > timing) {
-                left = mid + 1;
-            } else {
-                right = mid - 1;
-            }
-        }
-        pos = left;
+		/* Find where the timing info goes in the sorted list using binary search */
+		int left = 0, right = tb->filled - 1;
+		while (left <= right) {
+			int mid = left + (right - left) / 2;
+			if (tb->timing[mid] > timing) {
+				left = mid + 1;
+			} else {
+				right = mid - 1;
+			}
+		}
+		pos = left;
 
 		speex_assert(pos <= tb->filled && pos < MAX_TIMINGS);
 
@@ -100,7 +99,7 @@ public:
 		spx_int32_t best_cost = 0x7fffffff;
 		int late = 0;
 		int pos[MAX_BUFFERS];
-		int tot_count;
+		int tot_count = 0;
 		float late_factor;
 		int penalty_taken = 0;
 		int best = 0;
@@ -111,9 +110,10 @@ public:
 		tb = jitter->_tb;
 
 		/* Number of packet timings we have received (including those we didn't keep) */
-		tot_count = 0;
-		for (i = 0; i < MAX_BUFFERS; i++)
-			tot_count += tb[i].curr_count;
+		for (const auto &t : tb) {
+			tot_count += t.curr_count;
+		}
+
 		if (tot_count == 0)
 			return 0;
 
@@ -123,23 +123,22 @@ public:
 		else
 			late_factor = jitter->auto_tradeoff * jitter->window_size / tot_count;
 
-		/*fprintf(stderr, "late_factor = %f\n", late_factor);*/
-		for (i = 0; i < MAX_BUFFERS; i++)
-			pos[i] = 0;
+		std::fill(pos, pos + MAX_BUFFERS, 0);
 
 		/* Pick the TOP_DELAY "latest" packets (doesn't need to actually be late
 		   for the current settings) */
 		for (i = 0; i < TOP_DELAY; i++) {
-			int j;
 			int next = -1;
 			int latest = 32767;
+
 			/* Pick latest among all sub-windows */
-			for (j = 0; j < MAX_BUFFERS; j++) {
+			for (int j = 0; j < MAX_BUFFERS; j++) {
 				if (pos[j] < tb[j].filled && tb[j].timing[pos[j]] < latest) {
 					next = j;
 					latest = tb[j].timing[pos[j]];
 				}
 			}
+
 			if (next != -1) {
 				spx_int32_t cost;
 
@@ -151,7 +150,6 @@ public:
 
 				/* Actual cost function that tells us how bad using this delay would be */
 				cost = -latest + late_factor * late;
-				/*fprintf(stderr, "cost %d = %d + %f * %d\n", cost, -latest, late_factor, late);*/
 				if (cost < best_cost) {
 					best_cost = cost;
 					opt = latest;
@@ -172,9 +170,6 @@ public:
 		deltaT = best - worst;
 		/* This is a default "automatic latency tradeoff" when none is provided */
 		jitter->auto_tradeoff = 1 + deltaT / TOP_DELAY;
-		/*fprintf(stderr, "auto_tradeoff = %d (%d %d %d)\n", jitter->auto_tradeoff, best, worst, i);*/
-
-		/* FIXME: Compute a short-term estimate too and combine with the long-term one */
 
 		/* Prevents reducing the buffer size when we haven't really had much data */
 		if (tot_count < TOP_DELAY && opt > 0)
