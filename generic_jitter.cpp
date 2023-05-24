@@ -38,6 +38,8 @@ PackedByteArray GenericJitter::generic_jitter_get(Dictionary r_metadata) {
 	packet.data = data;
 
 	PackedByteArray out;
+	out.resize(packet.len);
+	out.fill(0);
 
 	if (valid_data) {
 		// Try decoding last received packet
@@ -71,6 +73,7 @@ PackedByteArray GenericJitter::generic_jitter_get(Dictionary r_metadata) {
 	}
 
 	ring_buffer.advance_read(1);
+	return out;
 }
 
 int GenericJitter::generic_jitter_get_pointer_timestamp() {
