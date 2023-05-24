@@ -230,7 +230,6 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 
 int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span, int32_t *start_offset) {
 	int i;
-	unsigned int j;
 	int16_t opt;
 
 	if (start_offset != nullptr) {
@@ -410,7 +409,7 @@ int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBuff
 }
 
 int VoipJitterBuffer::jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet) {
-	int i, j;
+	int i;
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
 		if (!jitter->packets[i]->get_data().is_empty() && jitter->packets[i]->get_timestamp() == jitter->last_returned_timestamp) {
 			break;
