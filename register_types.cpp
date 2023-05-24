@@ -36,6 +36,8 @@
 #include "speech_decoder.h"
 #include "speech_processor.h"
 
+#include "jitter.h"
+
 extern "C"
 #ifdef __GNUC__
 		__attribute__((noreturn))
@@ -57,6 +59,10 @@ void initialize_speech_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(SpeechProcessor);
 	GDREGISTER_CLASS(SpeechDecoder);
 	GDREGISTER_CLASS(Speech);
+	GDREGISTER_CLASS(JitterBuffer);
+	GDREGISTER_CLASS(TimingBuffer);
+	GDREGISTER_CLASS(JitterBufferPacket);
+	GDREGISTER_CLASS(VoipJitterBuffer);
 }
 
 void uninitialize_speech_module(ModuleInitializationLevel p_level) {

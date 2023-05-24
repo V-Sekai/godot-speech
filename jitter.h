@@ -190,93 +190,247 @@ public:
 };
 
 /** Definition of an incoming packet */
-struct _JitterBufferPacket {
-	PackedByteArray data; /**< Data bytes contained in the packet */
-	uint32_t timestamp = 0; /**< Timestamp for the packet */
-	uint32_t span = 0; /**< Time covered by the packet (same units as timestamp) */
-	uint16_t sequence = 0; /**< RTP Sequence number if available (0 otherwise) */
-	uint32_t user_data = 0; /**< Put whatever data you like here (it's ignored by the jitter buffer) */
+class JitterBufferPacket : public RefCounted {
+	GDCLASS(JitterBufferPacket, RefCounted);
+
+private:
+	PackedByteArray data;
+	int64_t timestamp = 0;
+	int64_t span = 0;
+	int64_t sequence = 0;
+	int64_t user_data = 0;
+
+protected:
+	static void _bind_methods();
+
+public:
+	void set_data(const PackedByteArray &p_data);
+	void set_timestamp(int64_t p_timestamp);
+	void set_span(int64_t p_span);
+	void set_sequence(int64_t p_sequence);
+	void set_user_data(int64_t p_user_data);
+
+	PackedByteArray get_data() const;
+	int64_t get_timestamp() const;
+	int64_t get_span() const;
+	int64_t get_sequence() const;
+	int64_t get_user_data() const;
 };
 
-/** Generic adaptive jitter buffer state */
-typedef struct JitterBuffer_ JitterBuffer;
+void JitterBufferPacket::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_data", "data"), &JitterBufferPacket::set_data);
+	ClassDB::bind_method(D_METHOD("get_data"), &JitterBufferPacket::get_data);
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "data"), "set_data", "get_data");
 
-/** Definition of an incoming packet */
-typedef struct _JitterBufferPacket JitterBufferPacket;
+	ClassDB::bind_method(D_METHOD("set_timestamp", "timestamp"), &JitterBufferPacket::set_timestamp);
+	ClassDB::bind_method(D_METHOD("get_timestamp"), &JitterBufferPacket::get_timestamp);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "timestamp"), "set_timestamp", "get_timestamp");
+
+	ClassDB::bind_method(D_METHOD("set_span", "span"), &JitterBufferPacket::set_span);
+	ClassDB::bind_method(D_METHOD("get_span"), &JitterBufferPacket::get_span);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "span"), "set_span", "get_span");
+
+	ClassDB::bind_method(D_METHOD("set_sequence", "sequence"), &JitterBufferPacket::set_sequence);
+	ClassDB::bind_method(D_METHOD("get_sequence"), &JitterBufferPacket::get_sequence);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "sequence"), "set_sequence", "get_sequence");
+
+	ClassDB::bind_method(D_METHOD("set_user_data", "user_data"), &JitterBufferPacket::set_user_data);
+	ClassDB::bind_method(D_METHOD("get_user_data"), &JitterBufferPacket::get_user_data);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "user_data"), "set_user_data", "get_user_data");
+}
+
+// Setters
+void JitterBufferPacket::set_data(const PackedByteArray &p_data) {
+	data = p_data;
+}
+
+void JitterBufferPacket::set_timestamp(int64_t p_timestamp) {
+	timestamp = p_timestamp;
+}
+
+void JitterBufferPacket::set_span(int64_t p_span) {
+	span = p_span;
+}
+
+void JitterBufferPacket::set_sequence(int64_t p_sequence) {
+	sequence = p_sequence;
+}
+
+void JitterBufferPacket::set_user_data(int64_t p_user_data) {
+	user_data = p_user_data;
+}
+
+// Getters
+PackedByteArray JitterBufferPacket::get_data() const {
+	return data;
+}
+
+int64_t JitterBufferPacket::get_timestamp() const {
+	return timestamp;
+}
+
+int64_t JitterBufferPacket::get_span() const {
+	return span;
+}
+
+int64_t JitterBufferPacket::get_sequence() const {
+	return sequence;
+}
+
+int64_t JitterBufferPacket::get_user_data() const {
+	return user_data;
+}
 
 /** Jitter buffer structure */
-struct JitterBuffer_ {
-	uint32_t pointer_timestamp = 0U; /**< Timestamp of what we will *get* next */
-	uint32_t last_returned_timestamp = 0U; /**< Useful for getting the next packet with the same timestamp (for fragmented media) */
-	uint32_t next_stop = 0U; /**< Estimated time the next get() will be called */
+class JitterBuffer : public RefCounted {
+	GDCLASS(JitterBuffer, RefCounted);
 
-	int32_t buffered = 0; /**< Amount of data we think is still buffered by the application (timestamp units)*/
+public:
+	int64_t pointer_timestamp = 0;
+	int64_t last_returned_timestamp = 0;
+	int64_t next_stop = 0;
 
-	JitterBufferPacket packets[SPEEX_JITTER_MAX_BUFFER_SIZE]; /**< Packets stored in the buffer */
-	uint32_t arrival[SPEEX_JITTER_MAX_BUFFER_SIZE]; /**< Packet arrival time (0 means it was late, even though it's a valid timestamp) */
+	int64_t buffered = 0;
 
-	void (*destroy)(void *) = nullptr; /**< Callback for destroying a packet */
+	Ref<JitterBufferPacket> packets[SPEEX_JITTER_MAX_BUFFER_SIZE];
+	int64_t arrival[SPEEX_JITTER_MAX_BUFFER_SIZE];
 
-	int32_t delay_step = 0; /**< Size of the steps when adjusting buffering (timestamp units) */
-	int32_t concealment_size = 0; /**< Size of the packet loss concealment "units" */
-	int reset_state = 0; /**< True if state was just reset        */
-	int buffer_margin = 0; /**< How many frames we want to keep in the buffer (lower bound) */
-	int late_cutoff = 0; /**< How late must a packet be for it not to be considered at all */
-	int interp_requested = 0; /**< An interpolation is requested by speex_jitter_update_delay() */
-	int auto_adjust = 0; /**< Whether to automatically adjust the delay at any time */
+	void (*destroy)(void *) = nullptr;
 
-	Ref<TimingBuffer> _tb[MAX_BUFFERS] = {}; /**< Don't use those directly */
-	Ref<TimingBuffer> timeBuffers[MAX_BUFFERS] = {}; /**< Storing arrival time of latest frames so we can compute some stats */
-	int window_size = 0; /**< Total window over which the late frames are counted */
-	int subwindow_size = 0; /**< Sub-window size for faster computation  */
-	int max_late_rate = 0; /**< Absolute maximum amount of late packets tolerable (in percent) */
-	int latency_tradeoff = 0; /**< Latency equivalent of losing one percent of packets */
-	int auto_tradeoff = 0; /**< Latency equivalent of losing one percent of packets (automatic default) */
+	int64_t delay_step = 0;
+	int64_t concealment_size = 0;
+	int reset_state = 0;
+	int buffer_margin = 0;
+	int late_cutoff = 0;
+	int interp_requested = 0;
+	int auto_adjust = 0;
 
-	int lost_count = 0; /**< Number of consecutive lost packets  */
-	JitterBuffer_() {
+	Ref<TimingBuffer> _tb[MAX_BUFFERS] = {};
+	Ref<TimingBuffer> timeBuffers[MAX_BUFFERS] = {};
+	int window_size = 0;
+	int subwindow_size = 0;
+	int max_late_rate = 0;
+	int latency_tradeoff = 0;
+	int auto_tradeoff = 0;
+
+	int lost_count = 0;
+
+public:
+	JitterBuffer() {
 		for (int i = 0; i < MAX_BUFFERS; ++i) {
 			_tb[i].instantiate();
 			timeBuffers[i] = _tb[i];
 		}
 	}
+	void set_pointer_timestamp(int64_t p_pointer_timestamp) { pointer_timestamp = p_pointer_timestamp; }
+	void set_last_returned_timestamp(int64_t p_last_returned_timestamp) { last_returned_timestamp = p_last_returned_timestamp; }
+	void set_next_stop(int64_t p_next_stop) { next_stop = p_next_stop; }
+	void set_buffered(int64_t p_buffered) { buffered = p_buffered; }
+	void set_destroy(void (*p_destroy)(void *)) { destroy = p_destroy; }
+	void set_delay_step(int64_t p_delay_step) { delay_step = p_delay_step; }
+	void set_concealment_size(int64_t p_concealment_size) { concealment_size = p_concealment_size; }
+	void set_reset_state(int p_reset_state) { reset_state = p_reset_state; }
+	void set_buffer_margin(int p_buffer_margin) { buffer_margin = p_buffer_margin; }
+	void set_late_cutoff(int p_late_cutoff) { late_cutoff = p_late_cutoff; }
+	void set_interp_requested(int p_interp_requested) { interp_requested = p_interp_requested; }
+	void set_auto_adjust(int p_auto_adjust) { auto_adjust = p_auto_adjust; }
+	void set_window_size(int p_window_size) { window_size = p_window_size; }
+	void set_subwindow_size(int p_subwindow_size) { subwindow_size = p_subwindow_size; }
+	void set_max_late_rate(int p_max_late_rate) { max_late_rate = p_max_late_rate; }
+	void set_latency_tradeoff(int p_latency_tradeoff) { latency_tradeoff = p_latency_tradeoff; }
+	void set_auto_tradeoff(int p_auto_tradeoff) { auto_tradeoff = p_auto_tradeoff; }
+	void set_lost_count(int p_lost_count) { lost_count = p_lost_count; }
+
+	int64_t get_pointer_timestamp() const { return pointer_timestamp; }
+	int64_t get_last_returned_timestamp() const { return last_returned_timestamp; }
+	int64_t get_next_stop() const { return next_stop; }
+	int64_t get_buffered() const { return buffered; }
+	void (*get_destroy())(void *) { return destroy; }
+	int64_t get_delay_step() const { return delay_step; }
+	int64_t get_concealment_size() const { return concealment_size; }
+	int get_reset_state() const { return reset_state; }
+	int get_buffer_margin() const { return buffer_margin; }
+	int get_late_cutoff() const { return late_cutoff; }
+	int get_interp_requested() const { return interp_requested; }
+	int get_auto_adjust() const { return auto_adjust; }
+	int get_window_size() const { return window_size; }
+	int get_subwindow_size() const { return subwindow_size; }
+	int get_max_late_rate() const { return max_late_rate; }
+	int get_latency_tradeoff() const { return latency_tradeoff; }
+	int get_auto_tradeoff() const { return auto_tradeoff; }
+	int get_lost_count() const { return lost_count; }
+
+protected:
+	static void _bind_methods() {
+		ClassDB::bind_method(D_METHOD("set_pointer_timestamp", "p_pointer_timestamp"), &JitterBuffer::set_pointer_timestamp);
+		ClassDB::bind_method(D_METHOD("set_last_returned_timestamp", "p_last_returned_timestamp"), &JitterBuffer::set_last_returned_timestamp);
+		ClassDB::bind_method(D_METHOD("set_next_stop", "p_next_stop"), &JitterBuffer::set_next_stop);
+		ClassDB::bind_method(D_METHOD("set_buffered", "p_buffered"), &JitterBuffer::set_buffered);
+		ClassDB::bind_method(D_METHOD("set_delay_step", "p_delay_step"), &JitterBuffer::set_delay_step);
+		ClassDB::bind_method(D_METHOD("set_concealment_size", "p_concealment_size"), &JitterBuffer::set_concealment_size);
+		ClassDB::bind_method(D_METHOD("set_reset_state", "p_reset_state"), &JitterBuffer::set_reset_state);
+		ClassDB::bind_method(D_METHOD("set_buffer_margin", "p_buffer_margin"), &JitterBuffer::set_buffer_margin);
+		ClassDB::bind_method(D_METHOD("set_late_cutoff", "p_late_cutoff"), &JitterBuffer::set_late_cutoff);
+		ClassDB::bind_method(D_METHOD("set_interp_requested", "p_interp_requested"), &JitterBuffer::set_interp_requested);
+		ClassDB::bind_method(D_METHOD("set_auto_adjust", "p_auto_adjust"), &JitterBuffer::set_auto_adjust);
+		ClassDB::bind_method(D_METHOD("set_window_size", "p_window_size"), &JitterBuffer::set_window_size);
+		ClassDB::bind_method(D_METHOD("set_subwindow_size", "p_subwindow_size"), &JitterBuffer::set_subwindow_size);
+		ClassDB::bind_method(D_METHOD("set_max_late_rate", "p_max_late_rate"), &JitterBuffer::set_max_late_rate);
+		ClassDB::bind_method(D_METHOD("set_latency_tradeoff", "p_latency_tradeoff"), &JitterBuffer::set_latency_tradeoff);
+		ClassDB::bind_method(D_METHOD("set_auto_tradeoff", "p_auto_tradeoff"), &JitterBuffer::set_auto_tradeoff);
+		ClassDB::bind_method(D_METHOD("set_lost_count", "p_lost_count"), &JitterBuffer::set_lost_count);
+
+		ClassDB::bind_method(D_METHOD("get_pointer_timestamp"), &JitterBuffer::get_pointer_timestamp);
+		ClassDB::bind_method(D_METHOD("get_last_returned_timestamp"), &JitterBuffer::get_last_returned_timestamp);
+		ClassDB::bind_method(D_METHOD("get_next_stop"), &JitterBuffer::get_next_stop);
+		ClassDB::bind_method(D_METHOD("get_buffered"), &JitterBuffer::get_buffered);
+		ClassDB::bind_method(D_METHOD("get_delay_step"), &JitterBuffer::get_delay_step);
+		ClassDB::bind_method(D_METHOD("get_concealment_size"), &JitterBuffer::get_concealment_size);
+		ClassDB::bind_method(D_METHOD("get_reset_state"), &JitterBuffer::get_reset_state);
+		ClassDB::bind_method(D_METHOD("get_buffer_margin"), &JitterBuffer::get_buffer_margin);
+		ClassDB::bind_method(D_METHOD("get_late_cutoff"), &JitterBuffer::get_late_cutoff);
+		ClassDB::bind_method(D_METHOD("get_interp_requested"), &JitterBuffer::get_interp_requested);
+		ClassDB::bind_method(D_METHOD("get_auto_adjust"), &JitterBuffer::get_auto_adjust);
+		ClassDB::bind_method(D_METHOD("get_window_size"), &JitterBuffer::get_window_size);
+		ClassDB::bind_method(D_METHOD("get_subwindow_size"), &JitterBuffer::get_subwindow_size);
+		ClassDB::bind_method(D_METHOD("get_max_late_rate"), &JitterBuffer::get_max_late_rate);
+		ClassDB::bind_method(D_METHOD("get_latency_tradeoff"), &JitterBuffer::get_latency_tradeoff);
+		ClassDB::bind_method(D_METHOD("get_auto_tradeoff"), &JitterBuffer::get_auto_tradeoff);
+		ClassDB::bind_method(D_METHOD("get_lost_count"), &JitterBuffer::get_lost_count);
+	}
 };
 
-class VoipJitterBuffer : RefCounted {
+class VoipJitterBuffer : public RefCounted {
 	GDCLASS(VoipJitterBuffer, RefCounted);
-
-	/** Generic adaptive jitter buffer state */
-	struct JitterBuffer_;
-
 	/** Reset jitter buffer */
-	void jitter_buffer_reset(JitterBuffer *jitter);
+	void jitter_buffer_reset(Ref<JitterBuffer> jitter);
 
 	/* Used like the ioctl function to control the jitter buffer parameters */
-	int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr);
+	int jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, void *ptr);
 
 	/** Initialise jitter buffer */
-	JitterBuffer *jitter_buffer_init(int step_size);
+	Ref<JitterBuffer> jitter_buffer_init(int step_size);
 
 	/** Destroy jitter buffer */
-	void jitter_buffer_destroy(JitterBuffer *jitter);
+	void jitter_buffer_destroy(Ref<JitterBuffer> jitter);
 
 	/** Put one packet into the jitter buffer */
-	void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet);
+	void jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<JitterBufferPacket> packet);
 
 	/** Get one packet from the jitter buffer */
-	int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, int32_t desired_span, int32_t *start_offset);
+	int jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span, int32_t *start_offset);
 
-	int jitter_buffer_get_another(JitterBuffer *jitter, JitterBufferPacket *packet);
+	int jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
 
 	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
-	int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, int32_t *start_offset);
+	int jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset);
 
 	/** Get pointer timestamp of jitter buffer */
-	int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
+	int jitter_buffer_get_pointer_timestamp(Ref<JitterBuffer> jitter);
 
-	void jitter_buffer_tick(JitterBuffer *jitter);
+	void jitter_buffer_tick(Ref<JitterBuffer> jitter);
 
-	void jitter_buffer_remaining_span(JitterBuffer *jitter, uint32_t rem);
+	void jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem);
 
 public:
 	static void tb_init(Ref<TimingBuffer>);
@@ -290,16 +444,16 @@ public:
 	   @param tb Array of buffers
 	   @param late_factor Equivalent cost of a late frame (in timestamp units)
 	 */
-	static int16_t compute_opt_delay(JitterBuffer *jitter);
+	static int16_t compute_opt_delay(Ref<JitterBuffer> jitter);
 
 	/** Take the following timing into consideration for future calculations */
-	static void update_timings(JitterBuffer *jitter, int32_t timing);
+	static void update_timings(Ref<JitterBuffer> jitter, int32_t timing);
 
 	/** Compensate all timings when we do an adjustment of the buffering */
-	static void shift_timings(JitterBuffer *jitter, int16_t amount);
+	static void shift_timings(Ref<JitterBuffer> jitter, int16_t amount);
 
 	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
-	static int _jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, int32_t *start_offset);
+	static int _jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset);
 };
 
 #endif

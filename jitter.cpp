@@ -52,11 +52,11 @@ TODO:
 
 #include "jitter.h"
 
-void VoipJitterBuffer::jitter_buffer_reset(JitterBuffer *jitter) {
+void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 	int i;
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-		if (!jitter->packets[i].data.is_empty()) {
-			jitter->packets[i].data.clear();
+		if (!jitter->packets[i]->get_data().is_empty()) {
+			jitter->packets[i]->get_data().clear();
 		}
 	}
 	/* Timestamp is actually undefined at this point */
@@ -74,7 +74,7 @@ void VoipJitterBuffer::jitter_buffer_reset(JitterBuffer *jitter) {
 	/*fprintf (stderr, "reset\n");*/
 }
 
-int VoipJitterBuffer::jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr) {
+int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, void *ptr) {
 	int count, i;
 	switch (request) {
 		case JITTER_BUFFER_SET_MARGIN:
@@ -86,7 +86,7 @@ int VoipJitterBuffer::jitter_buffer_ctl(JitterBuffer *jitter, int request, void 
 		case JITTER_BUFFER_GET_AVALIABLE_COUNT:
 			count = 0;
 			for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-				if (!jitter->packets[i].data.is_empty() && LE32(jitter->pointer_timestamp, jitter->packets[i].timestamp)) {
+				if (!jitter->packets[i]->get_data().is_empty() && LE32(jitter->pointer_timestamp, jitter->packets[i]->get_timestamp())) {
 					count++;
 				}
 			}
@@ -131,35 +131,34 @@ int VoipJitterBuffer::jitter_buffer_ctl(JitterBuffer *jitter, int request, void 
 	return 0;
 }
 
-JitterBuffer *VoipJitterBuffer::jitter_buffer_init(int step_size) {
-	JitterBuffer *jitter = (JitterBuffer *)calloc(sizeof(JitterBuffer), 1);
-	if (jitter) {
-		int i;
-		int32_t tmp;
-		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			jitter->packets[i].data.clear();
-		}
-		jitter->delay_step = step_size;
-		jitter->concealment_size = step_size;
-		/*FIXME: Should this be 0 or 1?*/
-		jitter->buffer_margin = 0;
-		jitter->late_cutoff = 50;
-		jitter->destroy = nullptr;
-		jitter->latency_tradeoff = 0;
-		jitter->auto_adjust = 1;
-		tmp = 4;
-		jitter_buffer_ctl(jitter, JITTER_BUFFER_SET_MAX_LATE_RATE, &tmp);
-		jitter_buffer_reset(jitter);
-	}
+Ref<JitterBuffer> VoipJitterBuffer::jitter_buffer_init(int step_size) {
+	Ref<JitterBuffer> jitter;
+    jitter.instantiate();
+    int i;
+    int32_t tmp;
+    for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
+        jitter->packets[i]->get_data().clear();
+    }
+    jitter->delay_step = step_size;
+    jitter->concealment_size = step_size;
+    /*FIXME: Should this be 0 or 1?*/
+    jitter->buffer_margin = 0;
+    jitter->late_cutoff = 50;
+    jitter->destroy = nullptr;
+    jitter->latency_tradeoff = 0;
+    jitter->auto_adjust = 1;
+    tmp = 4;
+    jitter_buffer_ctl(jitter, JITTER_BUFFER_SET_MAX_LATE_RATE, &tmp);
+    jitter_buffer_reset(jitter);
 	return jitter;
 }
 
-void VoipJitterBuffer::jitter_buffer_destroy(JitterBuffer *jitter) {
+void VoipJitterBuffer::jitter_buffer_destroy(Ref<JitterBuffer> jitter) {
 	jitter_buffer_reset(jitter);
-	free(jitter);
+	jitter.unref();
 }
 
-void VoipJitterBuffer::jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet) {
+void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<JitterBufferPacket> packet) {
 	int i, j;
 	int late;
 	/*fprintf (stderr, "put packet %d %d\n", timestamp, span);*/
@@ -168,17 +167,17 @@ void VoipJitterBuffer::jitter_buffer_put(JitterBuffer *jitter, const JitterBuffe
 	if (!jitter->reset_state) {
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
 			/* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
-			if (!jitter->packets[i].data.is_empty() && LE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp)) {
+			if (!jitter->packets[i]->get_data().is_empty() && LE32(jitter->packets[i]->get_timestamp() + jitter->packets[i]->get_span(), jitter->pointer_timestamp)) {
 				/*fprintf (stderr, "cleaned (not played)\n");*/
-				jitter->packets[i].data.clear();
+				jitter->packets[i]->get_data().clear();
 			}
 		}
 	}
 
 	/*fprintf(stderr, "arrival: %d %d %d\n", packet->timestamp, jitter->next_stop, jitter->pointer_timestamp);*/
 	/* Check if packet is late (could still be useful though) */
-	if (!jitter->reset_state && LT32(packet->timestamp, jitter->next_stop)) {
-		update_timings(jitter, ((int32_t)packet->timestamp) - ((int32_t)jitter->next_stop) - jitter->buffer_margin);
+	if (!jitter->reset_state && LT32(packet->get_timestamp(), jitter->next_stop)) {
+		update_timings(jitter, ((int32_t)packet->get_timestamp()) - ((int32_t)jitter->next_stop) - jitter->buffer_margin);
 		late = 1;
 	} else {
 		late = 0;
@@ -191,35 +190,35 @@ void VoipJitterBuffer::jitter_buffer_put(JitterBuffer *jitter, const JitterBuffe
 	}
 
 	/* Only insert the packet if it's not hopelessly late (i.e. totally useless) */
-	if (jitter->reset_state || GE32(packet->timestamp + packet->span + jitter->delay_step, jitter->pointer_timestamp)) {
+	if (jitter->reset_state || GE32(packet->get_timestamp() + packet->get_span() + jitter->delay_step, jitter->pointer_timestamp)) {
 		/*Find an empty slot in the buffer*/
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			if (jitter->packets[i].data.is_empty()) {
+			if (jitter->packets[i]->get_data().is_empty()) {
 				break;
 			}
 		}
 
 		/*No place left in the buffer, need to make room for it by discarding the oldest packet */
 		if (i == SPEEX_JITTER_MAX_BUFFER_SIZE) {
-			int earliest = jitter->packets[0].timestamp;
+			int earliest = jitter->packets[0]->get_timestamp();
 			i = 0;
 			for (j = 1; j < SPEEX_JITTER_MAX_BUFFER_SIZE; j++) {
-				if (jitter->packets[i].data.is_empty() || LT32(jitter->packets[j].timestamp, earliest)) {
-					earliest = jitter->packets[j].timestamp;
+				if (jitter->packets[i]->get_data().is_empty() || LT32(jitter->packets[j]->get_timestamp(), earliest)) {
+					earliest = jitter->packets[j]->get_timestamp();
 					i = j;
 				}
 			}
-			jitter->packets[i].data.clear();
+			jitter->packets[i]->get_data().clear();
 			/*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/
 		}
 
 		/* Copy packet in buffer */
-		jitter->packets[i].data = packet->data;
+		jitter->packets[i]->get_data() = packet->get_data();
 
-		jitter->packets[i].timestamp = packet->timestamp;
-		jitter->packets[i].span = packet->span;
-		jitter->packets[i].sequence = packet->sequence;
-		jitter->packets[i].user_data = packet->user_data;
+		jitter->packets[i]->set_timestamp(packet->get_timestamp());
+		jitter->packets[i]->set_span(packet->get_span());
+		jitter->packets[i]->set_sequence(packet->get_sequence());
+		jitter->packets[i]->set_user_data(packet->get_user_data());
 		if (jitter->reset_state || late) {
 			jitter->arrival[i] = 0;
 		} else {
@@ -228,7 +227,7 @@ void VoipJitterBuffer::jitter_buffer_put(JitterBuffer *jitter, const JitterBuffe
 	}
 }
 
-int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, int32_t desired_span, int32_t *start_offset) {
+int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span, int32_t *start_offset) {
 	int i;
 	unsigned int j;
 	int16_t opt;
@@ -243,8 +242,8 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 		/* Find the oldest packet */
 		uint32_t oldest = 0;
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			if (!jitter->packets[i].data.is_empty() && (!found || LT32(jitter->packets[i].timestamp, oldest))) {
-				oldest = jitter->packets[i].timestamp;
+			if (!jitter->packets[i]->get_data().is_empty() && (!found || LT32(jitter->packets[i]->get_timestamp(), oldest))) {
+				oldest = jitter->packets[i]->get_timestamp();
 				found = 1;
 			}
 		}
@@ -253,8 +252,8 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 			jitter->pointer_timestamp = oldest;
 			jitter->next_stop = oldest;
 		} else {
-			packet->timestamp = 0;
-			packet->span = jitter->interp_requested;
+			packet->set_timestamp(0);
+			packet->set_span(jitter->interp_requested);
 			return JITTER_BUFFER_MISSING;
 		}
 	}
@@ -262,17 +261,17 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 	jitter->last_returned_timestamp = jitter->pointer_timestamp;
 
 	if (jitter->interp_requested != 0) {
-		packet->timestamp = jitter->pointer_timestamp;
-		packet->span = jitter->interp_requested;
+		packet->set_timestamp(jitter->pointer_timestamp);
+		packet->set_span(jitter->interp_requested);
 
 		/* Increment the pointer because it got decremented in the delay update */
 		jitter->pointer_timestamp += jitter->interp_requested;
-		packet->data.clear();
+		packet->get_data().clear();
 		/*fprintf (stderr, "Deferred interpolate\n");*/
 
 		jitter->interp_requested = 0;
 
-		jitter->buffered = packet->span - desired_span;
+		jitter->buffered = packet->get_span() - desired_span;
 
 		return JITTER_BUFFER_INSERTION;
 	}
@@ -281,14 +280,15 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 
 	/* Search the buffer for a packet with the right timestamp and spanning the whole current chunk */
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-		if (!jitter->packets[i].data.is_empty() && jitter->packets[i].timestamp == jitter->pointer_timestamp && GE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp + desired_span))
+		if (!jitter->packets[i]->get_data().is_empty() && jitter->packets[i]->get_timestamp() == jitter->pointer_timestamp && GE32(jitter->packets[i]->get_timestamp() + jitter->packets[i]->get_span(), jitter->pointer_timestamp + desired_span)) {
 			break;
+		}
 	}
 
 	/* If no match, try for an "older" packet that still spans (fully) the current chunk */
 	if (i == SPEEX_JITTER_MAX_BUFFER_SIZE) {
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			if (!jitter->packets[i].data.is_empty() && LE32(jitter->packets[i].timestamp, jitter->pointer_timestamp) && GE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp + desired_span)) {
+			if (!jitter->packets[i]->get_data().is_empty() && LE32(jitter->packets[i]->get_timestamp(), jitter->pointer_timestamp) && GE32(jitter->packets[i]->get_timestamp() + jitter->packets[i]->get_span(), jitter->pointer_timestamp + desired_span)) {
 				break;
 			}
 		}
@@ -297,7 +297,7 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 	/* If still no match, try for an "older" packet that spans part of the current chunk */
 	if (i == SPEEX_JITTER_MAX_BUFFER_SIZE) {
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-			if (!jitter->packets[i].data.is_empty() && LE32(jitter->packets[i].timestamp, jitter->pointer_timestamp) && GT32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp)) {
+			if (!jitter->packets[i]->get_data().is_empty() && LE32(jitter->packets[i]->get_timestamp(), jitter->pointer_timestamp) && GT32(jitter->packets[i]->get_timestamp() + jitter->packets[i]->get_span(), jitter->pointer_timestamp)) {
 				break;
 			}
 		}
@@ -311,10 +311,10 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 		int besti = 0;
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
 			/* check if packet starts within current chunk */
-			if (!jitter->packets[i].data.is_empty() && LT32(jitter->packets[i].timestamp, jitter->pointer_timestamp + desired_span) && GE32(jitter->packets[i].timestamp, jitter->pointer_timestamp)) {
-				if (!found || LT32(jitter->packets[i].timestamp, best_time) || (jitter->packets[i].timestamp == best_time && GT32(jitter->packets[i].span, best_span))) {
-					best_time = jitter->packets[i].timestamp;
-					best_span = jitter->packets[i].span;
+			if (!jitter->packets[i]->get_data().is_empty() && LT32(jitter->packets[i]->get_timestamp(), jitter->pointer_timestamp + desired_span) && GE32(jitter->packets[i]->get_timestamp(), jitter->pointer_timestamp)) {
+				if (!found || LT32(jitter->packets[i]->get_timestamp(), best_time) || (jitter->packets[i]->get_timestamp() == best_time && GT32(jitter->packets[i]->get_span(), best_span))) {
+					best_time = jitter->packets[i]->get_timestamp();
+					best_span = jitter->packets[i]->get_span();
 					besti = i;
 					found = 1;
 				}
@@ -322,7 +322,7 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 		}
 		if (found) {
 			i = besti;
-			/*fprintf (stderr, "incomplete: %d %d %d %d\n", jitter->packets[i].timestamp, jitter->pointer_timestamp, chunk_size, jitter->packets[i].span);*/
+			/*fprintf (stderr, "incomplete: %d %d %d %d\n", jitter->packets[i]->timestamp, jitter->pointer_timestamp, chunk_size, jitter->packets[i]->span);*/
 		}
 	}
 
@@ -335,31 +335,31 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 
 		/* In this case, 0 isn't as a valid timestamp */
 		if (jitter->arrival[i] != 0) {
-			update_timings(jitter, ((int32_t)jitter->packets[i].timestamp) - ((int32_t)jitter->arrival[i]) - jitter->buffer_margin);
+			update_timings(jitter, ((int32_t)jitter->packets[i]->get_timestamp()) - ((int32_t)jitter->arrival[i]) - jitter->buffer_margin);
 		}
 
 		/* Copy packet */
-		packet->data = jitter->packets[i].data;
-		jitter->packets[i].data.clear();
+		packet->set_data(jitter->packets[i]->get_data());
+		jitter->packets[i]->get_data().clear();
 
 		/* Set timestamp and span (if requested) */
-		offset = (int32_t)jitter->packets[i].timestamp - (int32_t)jitter->pointer_timestamp;
+		offset = (int32_t)jitter->packets[i]->get_timestamp() - (int32_t)jitter->pointer_timestamp;
 		if (start_offset != nullptr) {
 			*start_offset = offset;
 		} else if (offset != 0) {
 			ERR_PRINT(vformat("jitter_buffer_get() discarding non-zero start_offset %d", offset));
 		}
 
-		packet->timestamp = jitter->packets[i].timestamp;
-		jitter->last_returned_timestamp = packet->timestamp;
+		packet->set_timestamp(jitter->packets[i]->get_timestamp());
+		jitter->last_returned_timestamp = packet->get_timestamp();
 
-		packet->span = jitter->packets[i].span;
-		packet->sequence = jitter->packets[i].sequence;
-		packet->user_data = jitter->packets[i].user_data;
+		packet->set_span(jitter->packets[i]->get_span());
+		packet->set_sequence(jitter->packets[i]->get_sequence());
+		packet->set_user_data(jitter->packets[i]->get_user_data());
 		/* Point to the end of the current packet */
-		jitter->pointer_timestamp = jitter->packets[i].timestamp + jitter->packets[i].span;
+		jitter->pointer_timestamp = jitter->packets[i]->get_timestamp() + jitter->packets[i]->get_span();
 
-		jitter->buffered = packet->span - desired_span;
+		jitter->buffered = packet->get_span() - desired_span;
 
 		if (start_offset != nullptr) {
 			jitter->buffered += *start_offset;
@@ -384,54 +384,54 @@ int VoipJitterBuffer::jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket
 		/* Shift histogram to compensate */
 		shift_timings(jitter, -opt);
 
-		packet->timestamp = jitter->pointer_timestamp;
-		packet->span = -opt;
+		packet->set_timestamp(jitter->pointer_timestamp);
+		packet->set_span(-opt);
 		/* Don't move the pointer_timestamp forward */
-		packet->data.clear();
+		packet->get_data().clear();
 
-		jitter->buffered = packet->span - desired_span;
+		jitter->buffered = packet->get_span() - desired_span;
 		return JITTER_BUFFER_INSERTION;
 		/*jitter->pointer_timestamp -= jitter->delay_step;*/
 		/*fprintf (stderr, "Forced to interpolate\n");*/
 	} else {
 		/* Normal packet loss */
-		packet->timestamp = jitter->pointer_timestamp;
+		packet->set_timestamp(jitter->pointer_timestamp);
 
 		desired_span = ROUND_DOWN(desired_span, jitter->concealment_size);
-		packet->span = desired_span;
+		packet->set_span(desired_span);
 		jitter->pointer_timestamp += desired_span;
-		packet->data.clear();
+		packet->get_data().clear();
 
-		jitter->buffered = packet->span - desired_span;
+		jitter->buffered = packet->get_span() - desired_span;
 		return JITTER_BUFFER_MISSING;
 		/*fprintf (stderr, "Normal loss\n");*/
 	}
 }
 
-int VoipJitterBuffer::jitter_buffer_get_another(JitterBuffer *jitter, JitterBufferPacket *packet) {
+int VoipJitterBuffer::jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet) {
 	int i, j;
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-		if (!jitter->packets[i].data.is_empty() && jitter->packets[i].timestamp == jitter->last_returned_timestamp) {
+		if (!jitter->packets[i]->get_data().is_empty() && jitter->packets[i]->get_timestamp() == jitter->last_returned_timestamp) {
 			break;
 		}
 	}
 	if (i != SPEEX_JITTER_MAX_BUFFER_SIZE) {
 		/* Copy packet */
-		packet->data = jitter->packets[i].data;
-		jitter->packets[i].data.clear();
-		packet->timestamp = jitter->packets[i].timestamp;
-		packet->span = jitter->packets[i].span;
-		packet->sequence = jitter->packets[i].sequence;
-		packet->user_data = jitter->packets[i].user_data;
+		packet->set_data(jitter->packets[i]->get_data());
+		jitter->packets[i]->get_data().clear();
+		packet->set_timestamp(jitter->packets[i]->get_timestamp());
+		packet->set_span(jitter->packets[i]->get_span());
+		packet->set_sequence(jitter->packets[i]->get_sequence());
+		packet->set_user_data(jitter->packets[i]->get_user_data());
 		return JITTER_BUFFER_OK;
 	} else {
-		packet->data.clear();
-		packet->span = 0;
+		packet->get_data().clear();
+		packet->set_span(0);
 		return JITTER_BUFFER_MISSING;
 	}
 }
 
-int VoipJitterBuffer::jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, int32_t *start_offset) {
+int VoipJitterBuffer::jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset) {
 	/* If the programmer calls jitter_buffer_update_delay() directly,
 	   automatically disable auto-adjustment */
 	jitter->auto_adjust = 0;
@@ -439,11 +439,11 @@ int VoipJitterBuffer::jitter_buffer_update_delay(JitterBuffer *jitter, JitterBuf
 	return _jitter_buffer_update_delay(jitter, packet, start_offset);
 }
 
-int VoipJitterBuffer::jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter) {
+int VoipJitterBuffer::jitter_buffer_get_pointer_timestamp(Ref<JitterBuffer> jitter) {
 	return jitter->pointer_timestamp;
 }
 
-void VoipJitterBuffer::jitter_buffer_tick(JitterBuffer *jitter) {
+void VoipJitterBuffer::jitter_buffer_tick(Ref<JitterBuffer> jitter) {
 	/* Automatically-adjust the buffering delay if requested */
 	if (jitter->auto_adjust) {
 		_jitter_buffer_update_delay(jitter, NULL, NULL);
@@ -458,7 +458,7 @@ void VoipJitterBuffer::jitter_buffer_tick(JitterBuffer *jitter) {
 	jitter->buffered = 0;
 }
 
-void VoipJitterBuffer::jitter_buffer_remaining_span(JitterBuffer *jitter, uint32_t rem) {
+void VoipJitterBuffer::jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem) {
 	/* Automatically-adjust the buffering delay if requested */
 	if (jitter->auto_adjust) {
 		_jitter_buffer_update_delay(jitter, NULL, NULL);
@@ -518,7 +518,7 @@ void VoipJitterBuffer::tb_add(Ref<TimingBuffer> tb, int16_t timing) {
 	}
 }
 
-int16_t VoipJitterBuffer::compute_opt_delay(JitterBuffer *jitter) {
+int16_t VoipJitterBuffer::compute_opt_delay(Ref<JitterBuffer> jitter) {
 	int i;
 	int16_t opt = 0;
 	int32_t best_cost = 0x7fffffff;
@@ -609,7 +609,7 @@ int16_t VoipJitterBuffer::compute_opt_delay(JitterBuffer *jitter) {
 	return opt;
 }
 
-void VoipJitterBuffer::update_timings(JitterBuffer *jitter, int32_t timing) {
+void VoipJitterBuffer::update_timings(Ref<JitterBuffer> jitter, int32_t timing) {
 	if (timing < -32767) {
 		timing = -32767;
 	}
@@ -630,7 +630,7 @@ void VoipJitterBuffer::update_timings(JitterBuffer *jitter, int32_t timing) {
 	tb_add(jitter->timeBuffers[0], timing);
 }
 
-void VoipJitterBuffer::shift_timings(JitterBuffer *jitter, int16_t amount) {
+void VoipJitterBuffer::shift_timings(Ref<JitterBuffer> jitter, int16_t amount) {
 	int i, j;
 	for (i = 0; i < MAX_BUFFERS; i++) {
 		for (j = 0; j < jitter->timeBuffers[i]->get_filled(); j++) {
@@ -639,7 +639,7 @@ void VoipJitterBuffer::shift_timings(JitterBuffer *jitter, int16_t amount) {
 	}
 }
 
-int VoipJitterBuffer::_jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, int32_t *start_offset) {
+int VoipJitterBuffer::_jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset) {
 	int16_t opt = compute_opt_delay(jitter);
 	/*fprintf(stderr, "opt adjustment is %d ", opt);*/
 
