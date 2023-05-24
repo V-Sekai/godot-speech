@@ -368,6 +368,9 @@ class VoipJitterBuffer : public RefCounted {
 
 	void jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem);
 
+	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
+	static int _jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset = nullptr);
+
 protected:
 	static void _bind_methods() {
 		ClassDB::bind_static_method("VoipJitterBuffer", D_METHOD("tb_init", "timing_buffer"), &VoipJitterBuffer::tb_init);
@@ -396,9 +399,6 @@ public:
 
 	/** Compensate all timings when we do an adjustment of the buffering */
 	static void shift_timings(Ref<JitterBuffer> jitter, int16_t amount);
-
-	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
-	static int _jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset = nullptr);
 };
 
 #endif
