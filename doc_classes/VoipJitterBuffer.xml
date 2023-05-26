@@ -13,6 +13,14 @@
 			<description>
 			</description>
 		</method>
+		<method name="jitter_buffer_get">
+			<return type="Array" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<param index="1" name="packet" type="JitterBufferPacket" />
+			<param index="2" name="desired_span" type="int" />
+			<description>
+			</description>
+		</method>
 		<method name="jitter_buffer_get_another">
 			<return type="int" />
 			<param index="0" name="jitter" type="JitterBuffer" />
@@ -58,5 +66,11 @@
 			<description>
 			</description>
 		</method>
-	</methods>
+		<method name="jitter_buffer_update_delay">
+			<return type="int" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<param index="1" name="packet" type="JitterBufferPacket" />
+			<description>
+			</description>
+		</methods>
 </class>
