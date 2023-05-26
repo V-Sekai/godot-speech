@@ -186,7 +186,6 @@ Ref<JitterBuffer> VoipJitterBuffer::jitter_buffer_init(int step_size) {
 
 void VoipJitterBuffer::jitter_buffer_destroy(Ref<JitterBuffer> jitter) {
 	jitter_buffer_reset(jitter);
-	jitter.unref();
 }
 
 void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<JitterBufferPacket> packet) {
