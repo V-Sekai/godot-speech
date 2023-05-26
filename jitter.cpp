@@ -424,7 +424,11 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		packet->get_data().clear();
 
 		jitter->buffered = packet->get_span() - desired_span;
-		return varray(JITTER_BUFFER_INSERTION, start_offset);
+		Array array;
+		array.resize(2);
+		array[0] = JITTER_BUFFER_INSERTION;
+		array[1] = start_offset;
+		return array;
 		/*jitter->pointer_timestamp -= jitter->delay_step;*/
 		/*fprintf (stderr, "Forced to interpolate\n");*/
 	} else {
@@ -437,7 +441,11 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		packet->get_data().clear();
 
 		jitter->buffered = packet->get_span() - desired_span;
-		return varray(JITTER_BUFFER_MISSING, start_offset);
+		Array array;
+		array.resize(2);
+		array[0] = JITTER_BUFFER_MISSING;
+		array[1] = start_offset;
+		return array;
 		/*fprintf (stderr, "Normal loss\n");*/
 	}
 }
