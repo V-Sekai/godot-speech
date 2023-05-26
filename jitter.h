@@ -309,12 +309,12 @@ public:
 	void jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<JitterBufferPacket> packet);
 
 	/** Get one packet from the jitter buffer */
-	int jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span, int32_t *start_offset = nullptr);
+	Array jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span);
 
 	int jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
 
 	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
-	int jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset = nullptr);
+	int32_t jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
 
 	/** Get pointer timestamp of jitter buffer */
 	int jitter_buffer_get_pointer_timestamp(Ref<JitterBuffer> jitter);
@@ -347,7 +347,7 @@ public:
 	static void shift_timings(Ref<JitterBuffer> jitter, int16_t amount);
 
 	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
-	static int _jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset = nullptr);
+	static int _jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
 };
 
 #endif // JITTER_H

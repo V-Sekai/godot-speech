@@ -257,13 +257,10 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 	}
 }
 
-int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span, int32_t *start_offset) {
+Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span) {
+	int32_t start_offset = 0;
 	int i;
 	int16_t opt;
-
-	if (start_offset != nullptr) {
-		*start_offset = 0;
-	}
 
 	/* Syncing on the first call */
 	if (jitter->reset_state) {
@@ -283,7 +280,11 @@ int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBuff
 		} else {
 			packet->set_timestamp(0);
 			packet->set_span(jitter->interp_requested);
-			return JITTER_BUFFER_MISSING;
+			Array array;
+			array.resize(2);
+			array[0] = JITTER_BUFFER_MISSING;
+			array[1] = start_offset;
+			return array;
 		}
 	}
 
@@ -301,8 +302,11 @@ int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBuff
 		jitter->interp_requested = 0;
 
 		jitter->buffered = packet->get_span() - desired_span;
-
-		return JITTER_BUFFER_INSERTION;
+		Array array;
+		array.resize(2);
+		array[0] = JITTER_BUFFER_INSERTION;
+		array[1] = start_offset;
+		return array;
 	}
 
 	/* Searching for the packet that fits best */
@@ -373,9 +377,8 @@ int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBuff
 
 		/* Set timestamp and span (if requested) */
 		offset = (int32_t)jitter->packets[i]->get_timestamp() - (int32_t)jitter->pointer_timestamp;
-		if (start_offset != nullptr) {
-			*start_offset = offset;
-		} else if (offset != 0) {
+		start_offset = offset;
+		if (offset != 0) {
 			ERR_PRINT(vformat("jitter_buffer_get() discarding non-zero start_offset %d", offset));
 		}
 
@@ -390,11 +393,13 @@ int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBuff
 
 		jitter->buffered = packet->get_span() - desired_span;
 
-		if (start_offset != nullptr) {
-			jitter->buffered += *start_offset;
-		}
+		jitter->buffered += start_offset;
 
-		return JITTER_BUFFER_OK;
+		Array array;
+		array.resize(2);
+		array[0] = JITTER_BUFFER_OK;
+		array[1] = start_offset;
+		return array;
 	}
 
 	/* If we haven't found anything worth returning */
@@ -419,7 +424,7 @@ int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBuff
 		packet->get_data().clear();
 
 		jitter->buffered = packet->get_span() - desired_span;
-		return JITTER_BUFFER_INSERTION;
+		return varray(JITTER_BUFFER_INSERTION, start_offset);
 		/*jitter->pointer_timestamp -= jitter->delay_step;*/
 		/*fprintf (stderr, "Forced to interpolate\n");*/
 	} else {
@@ -432,7 +437,7 @@ int VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBuff
 		packet->get_data().clear();
 
 		jitter->buffered = packet->get_span() - desired_span;
-		return JITTER_BUFFER_MISSING;
+		return varray(JITTER_BUFFER_MISSING, start_offset);
 		/*fprintf (stderr, "Normal loss\n");*/
 	}
 }
@@ -460,12 +465,11 @@ int VoipJitterBuffer::jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<Ji
 	}
 }
 
-int VoipJitterBuffer::jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset) {
+int32_t VoipJitterBuffer::jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet) {
 	/* If the programmer calls jitter_buffer_update_delay() directly,
 	   automatically disable auto-adjustment */
 	jitter->auto_adjust = 0;
-
-	return _jitter_buffer_update_delay(jitter, packet, start_offset);
+	return _jitter_buffer_update_delay(jitter, packet);
 }
 
 int VoipJitterBuffer::jitter_buffer_get_pointer_timestamp(Ref<JitterBuffer> jitter) {
@@ -475,7 +479,7 @@ int VoipJitterBuffer::jitter_buffer_get_pointer_timestamp(Ref<JitterBuffer> jitt
 void VoipJitterBuffer::jitter_buffer_tick(Ref<JitterBuffer> jitter) {
 	/* Automatically-adjust the buffering delay if requested */
 	if (jitter->auto_adjust) {
-		_jitter_buffer_update_delay(jitter, NULL, NULL);
+		_jitter_buffer_update_delay(jitter, nullptr);
 	}
 
 	if (jitter->buffered >= 0) {
@@ -490,7 +494,7 @@ void VoipJitterBuffer::jitter_buffer_tick(Ref<JitterBuffer> jitter) {
 void VoipJitterBuffer::jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem) {
 	/* Automatically-adjust the buffering delay if requested */
 	if (jitter->auto_adjust) {
-		_jitter_buffer_update_delay(jitter, NULL, NULL);
+		_jitter_buffer_update_delay(jitter, nullptr);
 	}
 
 	if (jitter->buffered < 0) {
@@ -670,7 +674,7 @@ void VoipJitterBuffer::shift_timings(Ref<JitterBuffer> jitter, int16_t amount) {
 	}
 }
 
-int VoipJitterBuffer::_jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t *start_offset) {
+int32_t VoipJitterBuffer::_jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet) {
 	int16_t opt = compute_opt_delay(jitter);
 	/*fprintf(stderr, "opt adjustment is %d ", opt);*/
 
@@ -757,9 +761,9 @@ void VoipJitterBuffer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("jitter_buffer_init", "step_size"), &VoipJitterBuffer::jitter_buffer_init);
 	ClassDB::bind_method(D_METHOD("jitter_buffer_destroy", "jitter"), &VoipJitterBuffer::jitter_buffer_destroy);
 	ClassDB::bind_method(D_METHOD("jitter_buffer_put", "jitter", "packet"), &VoipJitterBuffer::jitter_buffer_put);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_get", "jitter", "packet", "desired_span", "start_offset"), &VoipJitterBuffer::jitter_buffer_get, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("jitter_buffer_get", "jitter", "packet", "desired_span"), &VoipJitterBuffer::jitter_buffer_get);
 	ClassDB::bind_method(D_METHOD("jitter_buffer_get_another", "jitter", "packet"), &VoipJitterBuffer::jitter_buffer_get_another);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_update_delay", "jitter", "packet", "start_offset"), &VoipJitterBuffer::jitter_buffer_update_delay, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("jitter_buffer_update_delay", "jitter", "packet"), &VoipJitterBuffer::jitter_buffer_update_delay);
 	ClassDB::bind_method(D_METHOD("jitter_buffer_get_pointer_timestamp", "jitter"), &VoipJitterBuffer::jitter_buffer_get_pointer_timestamp);
 	ClassDB::bind_method(D_METHOD("jitter_buffer_tick", "jitter"), &VoipJitterBuffer::jitter_buffer_tick);
 	ClassDB::bind_method(D_METHOD("jitter_buffer_remaining_span", "jitter", "rem"), &VoipJitterBuffer::jitter_buffer_remaining_span);
