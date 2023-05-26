@@ -86,9 +86,7 @@ TODO:
 void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 	int i;
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
-		if (!jitter->packets[i]->get_data().is_empty()) {
-			jitter->packets[i]->get_data().clear();
-		}
+		jitter->packets[i]->get_data().clear();
 	}
 	/* Timestamp is actually undefined at this point */
 	jitter->pointer_timestamp = 0;
@@ -197,7 +195,7 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 	if (!jitter->reset_state) {
 		for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
 			/* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
-			if (!jitter->packets[i]->get_data().is_empty() && LE32(jitter->packets[i]->get_timestamp() + jitter->packets[i]->get_span(), jitter->pointer_timestamp)) {
+			if (LE32(jitter->packets[i]->get_timestamp() + jitter->packets[i]->get_span(), jitter->pointer_timestamp)) {
 				/*fprintf (stderr, "cleaned (not played)\n");*/
 				jitter->packets[i]->get_data().clear();
 			}
@@ -744,6 +742,9 @@ void JitterBufferPacket::set_user_data(int64_t p_user_data) {
 }
 
 PackedByteArray JitterBufferPacket::get_data() const {
+	if (data.is_empty()) {
+		return PackedByteArray();
+	}
 	return data;
 }
 
