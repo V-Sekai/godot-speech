@@ -742,9 +742,6 @@ void JitterBufferPacket::set_user_data(int64_t p_user_data) {
 }
 
 PackedByteArray JitterBufferPacket::get_data() const {
-	if (data.is_empty()) {
-		return PackedByteArray();
-	}
 	return data;
 }
 
