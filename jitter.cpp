@@ -86,6 +86,9 @@ TODO:
 void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 	int i;
 	for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
+		if (jitter->packets[i].is_empty()) {
+			continue;
+		}
 		jitter->packets[i]->get_data().clear();
 	}
 	/* Timestamp is actually undefined at this point */
