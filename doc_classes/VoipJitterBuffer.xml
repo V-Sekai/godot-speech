@@ -72,5 +72,6 @@
 			<param index="1" name="packet" type="JitterBufferPacket" />
 			<description>
 			</description>
-		</methods>
+		</method>
+	</methods>
 </class>
