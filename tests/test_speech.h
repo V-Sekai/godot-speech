@@ -5,7 +5,7 @@
 #include "core/variant/variant.h"
 #include "tests/test_macros.h"
 
-#include "modules/speech/jitter.h"
+#include "modules/speech/thirdparty/jitter.h"
 
 namespace TestJitter {
 TEST_CASE("[Modules][Speech] Basic Tests") {
