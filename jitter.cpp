@@ -210,26 +210,29 @@ void VoipJitterBuffer::jitter_buffer_destroy(Ref<JitterBuffer> jitter) {
 void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<JitterBufferPacket> packet) {
 	ERR_FAIL_NULL(jitter);
 	ERR_FAIL_NULL(packet);
-	int i_jitter = 0, j_jitter;
+	int i_jitter = 0, j_jitter = 0;
 	int late;
-	/*fprintf (stderr, "put packet %d %d\n", timestamp, span);*/
 
-	/* Cleanup buffer (remove old packets that weren't played) */
+	// Cleanup buffer (remove old packets that weren't played)
 	if (!jitter->reset_state) {
 		for (i_jitter = 0; i_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; i_jitter++) {
-			/* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
 			if (jitter->packets[i_jitter].is_valid() && LE32(jitter->packets[i_jitter]->get_timestamp() + jitter->packets[i_jitter]->get_span(), jitter->pointer_timestamp)) {
 				if (jitter->packets[i_jitter]->get_data().is_empty()) {
 					continue;
 				}
-				/*fprintf (stderr, "cleaned (not played)\n");*/
 				jitter->packets[i_jitter]->get_data().clear();
 			}
 		}
 	}
 
-	/*fprintf(stderr, "arrival: %d %d %d\n", packet->timestamp, jitter->next_stop, jitter->pointer_timestamp);*/
-	/* Check if packet is late (could still be useful though) */
+	// Find an empty slot for the new packet
+	for (i_jitter = 0; i_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; i_jitter++) {
+		if (jitter->packets[i_jitter] == nullptr || jitter->packets[i_jitter]->get_data().is_empty()) {
+			break;
+		}
+	}
+
+	// Check if packet is late (could still be useful though)
 	if (jitter->packets[i_jitter].is_valid() && !jitter->reset_state && LT32(packet->get_timestamp(), jitter->next_stop)) {
 		update_timings(jitter, ((int32_t)packet->get_timestamp()) - ((int32_t)jitter->next_stop) - jitter->buffer_margin);
 		late = 1;
@@ -237,59 +240,68 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 		late = 0;
 	}
 
-	/* For some reason, the consumer has failed the last 20 fetches. Make sure this packet is
-	 * used to resync. */
-	if (jitter.is_valid() && jitter->lost_count > 20) {
+	// For some reason, the consumer has failed the last 20 fetches. Make sure this packet is used to resync.
+	if (jitter->packets[i_jitter].is_valid() && jitter->lost_count > 20) {
 		jitter_buffer_reset(jitter);
 	}
 
-	/* Only insert the packet if it's not hopelessly late (i.e. totally useless) */
-	if (jitter->reset_state || GE32(packet->get_timestamp() + packet->get_span() + jitter->delay_step, jitter->pointer_timestamp)) {
-		/*Find an empty slot in the buffer*/
-		for (i_jitter = 0; i_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; i_jitter++) {
-			if (jitter->packets[i_jitter].is_null()) {
-				continue;
-			}
-			if (jitter->packets[i_jitter]->get_data().is_empty()) {
+	/* No place left in the buffer, need to make room for it by discarding the oldest packet */
+	if (i_jitter == SPEEX_JITTER_MAX_BUFFER_SIZE) {
+		int earliest;
+		i_jitter = 0;
+
+		// Find the first non-null packet and set its timestamp as the initial value of 'earliest'
+		for (; i_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; i_jitter++) {
+			if (jitter->packets[i_jitter] != nullptr) {
+				earliest = jitter->packets[i_jitter]->get_timestamp();
 				break;
 			}
 		}
 
-		/*No place left in the buffer, need to make room for it by discarding the oldest packet */
-		if (i_jitter == SPEEX_JITTER_MAX_BUFFER_SIZE && jitter->packets[0].is_valid()) {
-			int earliest = jitter->packets[0]->get_timestamp();
-			i_jitter = 0;
-			for (j_jitter = 1; j_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; j_jitter++) {
-				if (jitter->packets[i_jitter].is_null()) {
-					continue;
-				}
-				if (jitter->packets[i_jitter]->get_data().is_empty() || LT32(jitter->packets[j_jitter]->get_timestamp(), earliest)) {
-					earliest = jitter->packets[j_jitter]->get_timestamp();
-					i_jitter = j_jitter;
-				}
+		for (j_jitter = 1; j_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; j_jitter++) {
+			if (jitter->packets[j_jitter] == nullptr || jitter->packets[j_jitter]->get_data().is_empty()) {
+				continue;
 			}
-			if (jitter->packets[i_jitter].is_valid()) {
-				jitter->packets[i_jitter]->get_data().clear();
+			if (LT32(jitter->packets[j_jitter]->get_timestamp(), earliest)) {
+				earliest = jitter->packets[j_jitter]->get_timestamp();
+				i_jitter = j_jitter;
 			}
-			/*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/
+		}
+		if (jitter->packets[i_jitter] != nullptr) {
+			jitter->packets[i_jitter]->get_data().clear();
 		}
 
-		if (jitter->packets[i_jitter].is_null()) {
-			jitter->packets[i_jitter].instantiate();
+		// Shift non-null packets to the left, filling the gaps created by nulls
+		for (int k_jitter = 0, l_jitter = 0; k_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; k_jitter++) {
+			if (jitter->packets[k_jitter] != nullptr && !jitter->packets[k_jitter]->get_data().is_empty()) {
+				if (k_jitter != l_jitter) {
+					jitter->packets[l_jitter] = jitter->packets[k_jitter];
+					jitter->packets[k_jitter] = Ref<JitterBufferPacket>(memnew(JitterBufferPacket));
+				}
+				l_jitter++;
+			}
+        	i_jitter = l_jitter;
 		}
 
-		/* Copy packet in buffer */
-		jitter->packets[i_jitter]->get_data() = packet->get_data();
+		/*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/
+	}
 
-		jitter->packets[i_jitter]->set_timestamp(packet->get_timestamp());
-		jitter->packets[i_jitter]->set_span(packet->get_span());
-		jitter->packets[i_jitter]->set_sequence(packet->get_sequence());
-		jitter->packets[i_jitter]->set_user_data(packet->get_user_data());
-		if (jitter->reset_state || late) {
-			jitter->arrival[i_jitter] = 0;
-		} else {
-			jitter->arrival[i_jitter] = jitter->next_stop;
-		}
+	// Check if the packet object is valid before copying data and setting properties
+	if (jitter->packets[i_jitter].is_null()) {
+		jitter->packets[i_jitter].instantiate();
+	}
+
+	/* Copy packet in buffer */
+	jitter->packets[i_jitter]->get_data() = packet->get_data();
+
+	jitter->packets[i_jitter]->set_timestamp(packet->get_timestamp());
+	jitter->packets[i_jitter]->set_span(packet->get_span());
+	jitter->packets[i_jitter]->set_sequence(packet->get_sequence());
+	jitter->packets[i_jitter]->set_user_data(packet->get_user_data());
+	if (jitter->reset_state || late) {
+		jitter->arrival[i_jitter] = 0;
+	} else {
+		jitter->arrival[i_jitter] = jitter->next_stop;
 	}
 }
 
