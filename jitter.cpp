@@ -520,8 +520,9 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 	} else {
 		/* Normal packet loss */
 		packet->set_timestamp(jitter->pointer_timestamp);
-
-		desired_span = ROUND_DOWN(desired_span, jitter->concealment_size);
+		if (jitter->concealment_size != 0) {
+			desired_span = ROUND_DOWN(desired_span, jitter->concealment_size);
+		}
 		packet->set_span(desired_span);
 		jitter->pointer_timestamp += desired_span;
 		packet->get_data().clear();
