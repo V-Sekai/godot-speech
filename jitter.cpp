@@ -247,7 +247,7 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 
 	/* No place left in the buffer, need to make room for it by discarding the oldest packet */
 	if (i_jitter == SPEEX_JITTER_MAX_BUFFER_SIZE) {
-		int earliest;
+		int earliest = 0;
 		i_jitter = 0;
 
 		// Find the first non-null packet and set its timestamp as the initial value of 'earliest'
