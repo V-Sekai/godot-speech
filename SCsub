@@ -399,3 +399,4 @@ env_thirdparty.add_source_files(env.modules_sources, Glob("thirdparty/libsampler
 env_thirdparty.add_source_files(env.modules_sources, thirdparty_sources)
 
 module_env.add_source_files(env.modules_sources, "*.cpp")
+module_env.add_source_files(env.modules_sources, "thirdparty/*.cpp")

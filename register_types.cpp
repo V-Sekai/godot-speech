@@ -36,7 +36,7 @@
 #include "speech_decoder.h"
 #include "speech_processor.h"
 
-#include "jitter.h"
+#include "thirdparty/jitter.h"
 
 extern "C"
 #ifdef __GNUC__
