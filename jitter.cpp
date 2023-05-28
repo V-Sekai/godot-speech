@@ -331,7 +331,6 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		} else {
 			packet->set_timestamp(0);
 			packet->set_span(jitter->interp_requested);
-			Array array;
 			array.resize(2);
 			array[0] = JITTER_BUFFER_MISSING;
 			array[1] = start_offset;
@@ -356,7 +355,6 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		jitter->interp_requested = 0;
 
 		jitter->buffered = packet->get_span() - desired_span;
-		Array array;
 		array.resize(2);
 		array[0] = JITTER_BUFFER_INSERTION;
 		array[1] = start_offset;
@@ -477,7 +475,6 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 
 		jitter->buffered += start_offset;
 
-		Array array;
 		array.resize(2);
 		array[0] = JITTER_BUFFER_OK;
 		array[1] = start_offset;
@@ -506,7 +503,6 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		packet->get_data().clear();
 
 		jitter->buffered = packet->get_span() - desired_span;
-		Array array;
 		array.resize(2);
 		array[0] = JITTER_BUFFER_INSERTION;
 		array[1] = start_offset;
@@ -523,7 +519,6 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		packet->get_data().clear();
 
 		jitter->buffered = packet->get_span() - desired_span;
-		Array array;
 		array.resize(2);
 		array[0] = JITTER_BUFFER_MISSING;
 		array[1] = start_offset;
