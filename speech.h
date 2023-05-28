@@ -96,6 +96,7 @@ class Speech : public Node {
 	int current_input_size = 0;
 	PackedByteArray compression_output_byte_array;
 	InputPacket input_audio_buffer_array[MAX_AUDIO_BUFFER_ARRAY_SIZE];
+
 private:
 	// Assigns the memory to the fixed audio buffer arrays
 	void preallocate_buffers();
@@ -194,4 +195,5 @@ public:
 	void clear_all_player_audio();
 	void attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Array p_jitter_buffer, Ref<PlaybackStats> p_playback_stats, Dictionary p_player_dict);
 };
+
 #endif // SPEECH_H
