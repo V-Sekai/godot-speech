@@ -280,7 +280,7 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 				}
 				l_jitter++;
 			}
-        	i_jitter = l_jitter;
+			i_jitter = l_jitter;
 		}
 
 		/*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/
@@ -515,7 +515,6 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		array.resize(2);
 		array[0] = JITTER_BUFFER_INSERTION;
 		array[1] = start_offset;
-		return array;
 		/*jitter->pointer_timestamp -= jitter->delay_step;*/
 		/*fprintf (stderr, "Forced to interpolate\n");*/
 	} else {
@@ -531,9 +530,8 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		array.resize(2);
 		array[0] = JITTER_BUFFER_MISSING;
 		array[1] = start_offset;
-		return array;
-		/*fprintf (stderr, "Normal loss\n");*/
 	}
+	return array;
 }
 
 int VoipJitterBuffer::jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet) {
