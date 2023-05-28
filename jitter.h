@@ -293,34 +293,16 @@ class VoipJitterBuffer : public RefCounted {
 	GDCLASS(VoipJitterBuffer, RefCounted);
 
 public:
-	/** Reset jitter buffer */
 	void jitter_buffer_reset(Ref<JitterBuffer> jitter);
-
-	/* Used like the ioctl function to control the jitter buffer parameters */
 	int jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, int32_t *ptr);
-
-	/** Initialise jitter buffer */
 	Ref<JitterBuffer> jitter_buffer_init(int step_size);
-
-	/** Destroy jitter buffer */
 	void jitter_buffer_destroy(Ref<JitterBuffer> jitter);
-
-	/** Put one packet into the jitter buffer */
 	void jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<JitterBufferPacket> packet);
-
-	/** Get one packet from the jitter buffer */
 	Array jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span);
-
 	int jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
-
-	/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
 	int32_t jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
-
-	/** Get pointer timestamp of jitter buffer */
 	int jitter_buffer_get_pointer_timestamp(Ref<JitterBuffer> jitter);
-
 	void jitter_buffer_tick(Ref<JitterBuffer> jitter);
-
 	void jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem);
 
 protected:
