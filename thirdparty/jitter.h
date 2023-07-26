@@ -172,7 +172,7 @@ class JitterBufferPacket : public RefCounted {
 
 private:
 	PackedByteArray data;
-	int64_t timestamp = 0;
+	int64_t timestamp_usec = 0;
 	int64_t span = 0;
 	int64_t sequence = 0;
 	int64_t user_data = 0;

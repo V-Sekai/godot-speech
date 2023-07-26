@@ -107,7 +107,7 @@ void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 		tb_init(jitter->_tb[i]);
 		jitter->timeBuffers[i] = jitter->_tb[i];
 	}
-	/*fprintf (stderr, "reset\n");*/
+	print_verbose("reset");
 }
 
 int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, int32_t *ptr) {
@@ -247,7 +247,7 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 
 	/* No place left in the buffer, need to make room for it by discarding the oldest packet */
 	if (i_jitter == SPEEX_JITTER_MAX_BUFFER_SIZE) {
-		int earliest = 0;
+		int64_t earliest = 0;
 		i_jitter = 0;
 
 		// Find the first non-null packet and set its timestamp as the initial value of 'earliest'
@@ -282,8 +282,7 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 			}
 			i_jitter = l_jitter;
 		}
-
-		/*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/
+		print_verbose(vformat("Buffer is full, discarding earliest frame %d (currently at %d)", packet->get_timestamp(), jitter->pointer_timestamp));		
 	}
 
 	// Check if the packet object is valid before copying data and setting properties
@@ -359,7 +358,7 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		/* Increment the pointer because it got decremented in the delay update */
 		jitter->pointer_timestamp += jitter->interp_requested;
 		packet->get_data().clear();
-		/*fprintf (stderr, "Deferred interpolate\n");*/
+		print_verbose("Deferred interpolate");
 
 		jitter->interp_requested = 0;
 
@@ -492,10 +491,10 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 
 	/* If we haven't found anything worth returning */
 
-	/*fprintf (stderr, "not found\n");*/
+	print_verbose("not found");
 	jitter->lost_count++;
-	/*fprintf (stderr, "m");*/
-	/*fprintf (stderr, "lost_count = %d\n", jitter->lost_count);*/
+	print_verbose("m");
+	print_verbose(vformat("lost_count = %d\n", jitter->lost_count));
 
 	opt = compute_opt_delay(jitter);
 
@@ -516,7 +515,7 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		array[0] = JITTER_BUFFER_INSERTION;
 		array[1] = start_offset;
 		/*jitter->pointer_timestamp -= jitter->delay_step;*/
-		/*fprintf (stderr, "Forced to interpolate\n");*/
+		print_verbose(vformat("Forced to interpolate."));
 	} else {
 		/* Normal packet loss */
 		packet->set_timestamp(jitter->pointer_timestamp);
@@ -695,7 +694,7 @@ int16_t VoipJitterBuffer::compute_opt_delay(Ref<JitterBuffer> jitter) {
 		late_factor = jitter->auto_tradeoff * jitter->window_size / tot_count;
 	}
 
-	/*fprintf(stderr, "late_factor = %f\n", late_factor);*/
+	print_verbose(vformat("late_factor = %f\n", late_factor));
 	for (i = 0; i < MAX_BUFFERS; i++) {
 		pos[i] = 0;
 	}
@@ -746,7 +745,7 @@ int16_t VoipJitterBuffer::compute_opt_delay(Ref<JitterBuffer> jitter) {
 	deltaT = best - worst;
 	/* This is a default "automatic latency tradeoff" when none is provided */
 	jitter->auto_tradeoff = 1 + deltaT / TOP_DELAY;
-	/*fprintf(stderr, "auto_tradeoff = %d (%d %d %d)\n", jitter->auto_tradeoff, best, worst, i);*/
+	print_verbose(vformat("auto_tradeoff = %d (%d %d %d)\n", jitter->auto_tradeoff, best, worst, i));
 
 	/* FIXME: Compute a short-term estimate too and combine with the long-term one */
 
@@ -765,10 +764,10 @@ void VoipJitterBuffer::update_timings(Ref<JitterBuffer> jitter, int32_t timing) 
 	if (timing > 32767) {
 		timing = 32767;
 	}
-	/* If the current sub-window is full, perform a rotation and discard oldest sub-widow */
+	/* If the current sub-window is full, perform a rotation and discard oldest sub-window */
 	if (jitter->timeBuffers[0]->get_curr_count() >= jitter->subwindow_size) {
 		int i;
-		/*fprintf(stderr, "Rotate buffer\n");*/
+		print_verbose("Rotate buffer");
 		TimingBuffer *tmp = jitter->timeBuffers[MAX_BUFFERS - 1];
 		for (i = MAX_BUFFERS - 1; i >= 1; i--) {
 			jitter->timeBuffers[i] = jitter->timeBuffers[i - 1];
@@ -793,20 +792,17 @@ int32_t VoipJitterBuffer::_jitter_buffer_update_delay(Ref<JitterBuffer> jitter, 
 	ERR_FAIL_NULL_V(jitter, 0);
 	ERR_FAIL_NULL_V(packet, 0);
 	int16_t opt = compute_opt_delay(jitter);
-	/*fprintf(stderr, "opt adjustment is %d ", opt);*/
-
+	print_verbose(vformat("opt adjustment is %d ", opt));
 	if (opt < 0) {
 		shift_timings(jitter, -opt);
-
 		jitter->pointer_timestamp += opt;
 		jitter->interp_requested = -opt;
-		/*fprintf (stderr, "Decision to interpolate %d samples\n", -opt);*/
+		print_verbose(vformat("Decision to interpolate %d samples\n", -opt));
 	} else if (opt > 0) {
 		shift_timings(jitter, -opt);
 		jitter->pointer_timestamp += opt;
-		/*fprintf (stderr, "Decision to drop %d samples\n", opt);*/
+		print_verbose(vformat("Decision to drop %d samples\n", opt));
 	}
-
 	return opt;
 }
 
@@ -837,7 +833,7 @@ void JitterBufferPacket::set_data(const PackedByteArray &p_data) {
 }
 
 void JitterBufferPacket::set_timestamp(int64_t p_timestamp) {
-	timestamp = p_timestamp;
+	timestamp_usec = p_timestamp;
 }
 
 void JitterBufferPacket::set_span(int64_t p_span) {
@@ -857,7 +853,7 @@ PackedByteArray JitterBufferPacket::get_data() const {
 }
 
 int64_t JitterBufferPacket::get_timestamp() const {
-	return timestamp;
+	return timestamp_usec;
 }
 
 int64_t JitterBufferPacket::get_span() const {
