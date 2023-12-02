@@ -74,7 +74,6 @@ void SpeechProcessor::_bind_methods() {
 	BIND_CONSTANT(SPEECH_SETTING_PACKET_DELTA_TIME);
 }
 
-
 void SpeechProcessor::register_speech_processed(const std::function<void(SpeechInput *)> &callback) {
 	speech_processed = callback;
 }
@@ -286,7 +285,6 @@ bool SpeechProcessor::_16_pcm_mono_to_real_stereo(
 
 	return true;
 }
-
 
 bool SpeechProcessor::compress_buffer_internal(const PackedByteArray *p_pcm_byte_array, CompressedSpeechBuffer *p_output_buffer) {
 	p_output_buffer->buffer_size =
@@ -500,7 +498,6 @@ Dictionary SpeechProcessor::get_stats() const {
 	return stats;
 }
 
-
 void SpeechProcessor::print_opus_error(int error_code) {
 	switch (error_code) {
 		case OPUS_OK:
@@ -535,7 +532,6 @@ Ref<SpeechDecoder> SpeechProcessor::get_speech_decoder() {
 	speech_decoder.instantiate();
 	return speech_decoder;
 }
-
 
 int SpeechProcessor::encode_buffer(const PackedByteArray *p_pcm_buffer, PackedByteArray *p_output_buffer) {
 	int number_of_bytes = -1;
