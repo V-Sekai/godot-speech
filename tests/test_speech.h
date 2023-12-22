@@ -75,8 +75,6 @@ TEST_CASE("[Modules][Speech] Basic Tests") {
 		int step_size = 10;
 		Ref<JitterBuffer> jitter;
 		jitter.instantiate();
-		Ref<VoipJitterBuffer> buffer;
-		buffer.instantiate();
 		jitter = VoipJitterBuffer::jitter_buffer_init(step_size);
 		CHECK_MESSAGE(jitter.is_valid(), "Initialize the jitter buffer");
 		Ref<JitterBufferPacket> packet;
@@ -102,8 +100,6 @@ TEST_CASE("[Modules][Speech] Basic Tests") {
 		int step_size = 10;
 		Ref<JitterBuffer> jitter;
 		jitter.instantiate();
-		Ref<VoipJitterBuffer> buffer;
-		buffer.instantiate();
 		jitter = VoipJitterBuffer::jitter_buffer_init(step_size);
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
