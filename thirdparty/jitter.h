@@ -112,7 +112,7 @@ TODO:
 #define LT32(a, b) (((int32_t)((a) - (b))) < 0)
 #define LE32(a, b) (((int32_t)((a) - (b))) <= 0)
 
-#define ROUND_DOWN(x, step) ((x) < 0 ? ((x) - (step) + 1) / (step) * (step) : (x) / (step) * (step))
+#define ROUND_DOWN(x, step) ((step) != 0 ? ((x) < 0 ? ((x) - (step) + 1) / (step) * (step) : (x) / (step) * (step)) : (x))
 
 #define MAX_TIMINGS 40
 #define MAX_BUFFERS 3

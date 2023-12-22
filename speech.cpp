@@ -688,13 +688,13 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		required_packets += 1;
 	}
 	int64_t current_update = OS::get_singleton()->get_ticks_msec();
-	int32_t packet_duration_ms = (double)SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT / SpeechProcessor::SPEECH_SETTING_SAMPLE_RATE * SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND;
-	PackedVector2Array empty_uncompressed_audio;
+	int32_t packet_duration_ms = SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_PACKET;
 	Ref<JitterBufferPacket> packet;
 	packet.instantiate();
 	int32_t packet_i = 0;
 	do {
 		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_update + (packet_i * packet_duration_ms));
+		VoipJitterBuffer::jitter_buffer_tick(jitter);
 		int32_t error = result[0];
 		if (error != OK) {
 			playback->push_buffer(blank_packet);
@@ -710,7 +710,6 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		}
 		packet_i++;
 	} while (packet_i < required_packets);
-	VoipJitterBuffer::jitter_buffer_tick(jitter);
 	if (p_playback_stats.is_valid()) {
 		// p_playback_stats->jitter_buffer_size_sum += jitter.packets.size();
 		p_playback_stats->jitter_buffer_calls += 1;
