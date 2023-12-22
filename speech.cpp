@@ -688,8 +688,8 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		to_fill -= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
 		required_packets += 1;
 	}
-	if (required_packets > 1) {
-		int64_t current_update = p_player_dict["last_update"];
+	int64_t current_update = p_player_dict["last_update"];
+	for (int32_t packet_i = 0; packet_i < required_packets; packet_i++) {
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
 		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_update);
@@ -705,11 +705,11 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 				}
 			}
 		}
-		if (p_playback_stats.is_valid()) {
-			// p_playback_stats->jitter_buffer_size_sum += jitter.packets.size();
-			p_playback_stats->jitter_buffer_calls += 1;
-			// p_playback_stats->jitter_buffer_max_size = jitter.packets.size() ? jitter.packets.size() > p_playback_stats->jitter_buffer_max_size : p_playback_stats->jitter_buffer_max_size;
-			// p_playback_stats->jitter_buffer_current_size = jitter.packets.size();
-		}
+	}
+	if (p_playback_stats.is_valid()) {
+		// p_playback_stats->jitter_buffer_size_sum += jitter.packets.size();
+		p_playback_stats->jitter_buffer_calls += 1;
+		// p_playback_stats->jitter_buffer_max_size = jitter.packets.size() ? jitter.packets.size() > p_playback_stats->jitter_buffer_max_size : p_playback_stats->jitter_buffer_max_size;
+		// p_playback_stats->jitter_buffer_current_size = jitter.packets.size();
 	}
 }
