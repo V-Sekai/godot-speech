@@ -315,10 +315,7 @@ protected:
 	static void _bind_methods();
 };
 
-class VoipJitterBuffer : public RefCounted {
-	GDCLASS(VoipJitterBuffer, RefCounted);
-
-public:
+struct VoipJitterBuffer {
 	static void jitter_buffer_reset(Ref<JitterBuffer> jitter);
 	static int jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, int32_t *ptr);
 	static Ref<JitterBuffer> jitter_buffer_init(int step_size);
@@ -331,10 +328,6 @@ public:
 	static void jitter_buffer_tick(Ref<JitterBuffer> jitter);
 	static void jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem);
 
-protected:
-	static void _bind_methods();
-
-public:
 	static void tb_init(TimingBuffer *buffer);
 
 	/* Add the timing of a new packet to the TimingBuffer */

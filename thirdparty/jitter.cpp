@@ -855,20 +855,6 @@ int64_t JitterBufferPacket::get_user_data() const {
 	return user_data;
 }
 
-void VoipJitterBuffer::_bind_methods() {
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_reset", "jitter"), &VoipJitterBuffer::jitter_buffer_reset);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_ctl", "jitter", "request", "value"), &VoipJitterBuffer::jitter_buffer_ctl);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_init", "step_size"), &VoipJitterBuffer::jitter_buffer_init);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_destroy", "jitter"), &VoipJitterBuffer::jitter_buffer_destroy);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_put", "jitter", "packet"), &VoipJitterBuffer::jitter_buffer_put);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_get", "jitter", "packet", "desired_span"), &VoipJitterBuffer::jitter_buffer_get);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_get_another", "jitter", "packet"), &VoipJitterBuffer::jitter_buffer_get_another);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_update_delay", "jitter", "packet"), &VoipJitterBuffer::jitter_buffer_update_delay);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_get_pointer_timestamp", "jitter"), &VoipJitterBuffer::jitter_buffer_get_pointer_timestamp);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_tick", "jitter"), &VoipJitterBuffer::jitter_buffer_tick);
-	// ClassDB::bind_method(D_METHOD("jitter_buffer_remaining_span", "jitter", "rem"), &VoipJitterBuffer::jitter_buffer_remaining_span);
-}
-
 void JitterBuffer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_pointer_timestamp", "p_pointer_timestamp"), &JitterBuffer::set_pointer_timestamp);
 	ClassDB::bind_method(D_METHOD("set_last_returned_timestamp", "p_last_returned_timestamp"), &JitterBuffer::set_last_returned_timestamp);

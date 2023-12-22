@@ -61,7 +61,6 @@ void initialize_speech_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(Speech);
 	GDREGISTER_CLASS(JitterBuffer);
 	GDREGISTER_CLASS(JitterBufferPacket);
-	GDREGISTER_CLASS(VoipJitterBuffer);
 }
 
 void uninitialize_speech_module(ModuleInitializationLevel p_level) {
