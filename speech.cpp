@@ -686,11 +686,12 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		to_fill -= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
 		required_packets += 1;
 	}
-	uint64_t current_last_update = p_player_dict["playback_start_time"];
+	int64_t current_update = p_player_dict["playback_current_time"];
+	int32_t packet_duration_ms = (double)SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT / SpeechProcessor::SPEECH_SETTING_SAMPLE_RATE * SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND;
 	for (int32_t packet_i = 0;  packet_i < required_packets; packet_i++) {
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
-		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_last_update + (packet_i * SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_PACKET));
+		Array result = jitter_buffer->jitter_buffer_get(jitter, packet,  current_update + (packet_i * packet_duration_ms));
 		int32_t error = result[0];
 		if (error != OK) {
 			continue;
