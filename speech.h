@@ -31,20 +31,17 @@
 #ifndef SPEECH_H
 #define SPEECH_H
 
-#include "core/config/engine.h"
-#include "core/config/project_settings.h"
 #include "core/error/error_macros.h"
 #include "core/os/mutex.h"
 #include "core/variant/array.h"
 #include "core/variant/dictionary.h"
+#include "modules/speech/thirdparty/jitter.h"
 #include "playback_stats.h"
 #include "scene/main/node.h"
 #include "servers/audio/effects/audio_stream_generator.h"
-#include "servers/audio_server.h"
 
 #include "speech_decoder.h"
 #include "speech_processor.h"
-#include "thirdparty/libsamplerate/src/samplerate.h"
 
 class SpeechProcessor;
 
@@ -71,6 +68,8 @@ class Speech : public Node {
 	int current_input_size = 0;
 	PackedByteArray compression_output_byte_array;
 	InputPacket input_audio_buffer_array[MAX_AUDIO_BUFFER_ARRAY_SIZE];
+	Ref<VoipJitterBuffer> jitter_buffer;
+	Ref<JitterBuffer> jitter;
 
 private:
 	// Assigns the memory to the fixed audio buffer arrays
@@ -168,7 +167,7 @@ public:
 	Dictionary get_playback_stats(Dictionary speech_stat_dict);
 	void remove_player_audio(int p_player_id);
 	void clear_all_player_audio();
-	void attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Array p_jitter_buffer, Ref<PlaybackStats> p_playback_stats, Dictionary p_player_dict);
+	void attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Ref<PlaybackStats> p_playback_stats, Dictionary p_player_dict);
 };
 
 #endif // SPEECH_H

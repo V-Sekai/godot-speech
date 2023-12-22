@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "modules/speech/thirdparty/jitter.h"
 #include "scene/2d/audio_stream_player_2d.h"
 #include "scene/3d/audio_stream_player_3d.h"
 
@@ -314,7 +315,7 @@ void Speech::_bind_methods() {
 			&Speech::remove_player_audio);
 	ClassDB::bind_method(D_METHOD("clear_all_player_audio"),
 			&Speech::clear_all_player_audio);
-	ClassDB::bind_method(D_METHOD("attempt_to_feed_stream", "skip_count", "decoder", "audio_stream_player", "jitter_buffer", "playback_stats", "player_dict"),
+	ClassDB::bind_method(D_METHOD("attempt_to_feed_stream", "skip_count", "decoder", "audio_stream_player", "playback_stats", "player_dict"),
 			&Speech::attempt_to_feed_stream);
 	ClassDB::bind_method(D_METHOD("set_error_cancellation_bus", "name"),
 			&Speech::set_error_cancellation_bus);
@@ -467,7 +468,6 @@ void Speech::_notification(int p_what) {
 				if (!elem.has("jitter_buffer")) {
 					continue;
 				}
-				Array jitter_buffer = elem["jitter_buffer"];
 				if (!elem.has("playback_stats")) {
 					continue;
 				}
@@ -476,7 +476,6 @@ void Speech::_notification(int p_what) {
 						0,
 						speech_decoder,
 						audio_stream_player,
-						jitter_buffer,
 						playback_stats,
 						elem);
 				Dictionary dict = player_audio[key];
@@ -524,6 +523,8 @@ Dictionary Speech::get_stats() {
 Speech::Speech() {
 	speech_processor = memnew(SpeechProcessor);
 	preallocate_buffers();
+	jitter_buffer.instantiate();
+	jitter.instantiate();
 }
 
 Speech::~Speech() {
@@ -594,67 +595,18 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 	elem["packets_received_this_frame"] = int64_t(elem["packets_received_this_frame"]) + 1;
 	packets_received_this_frame += 1;
 	int64_t current_sequence_id = elem["sequence_id"];
-	Array jitter_buffer = elem["jitter_buffer"];
-	int64_t sequence_id_offset = p_sequence_id - current_sequence_id;
-	if (sequence_id_offset > 0) {
-		// For skipped buffers, add empty packets.
-		int64_t skipped_packets = sequence_id_offset - 1;
-		if (skipped_packets) {
-			Variant fill_packets;
-			// If using stretching, fill with last received packet.
-			if (use_sample_stretching && jitter_buffer.size() > 0) {
-				Dictionary new_jitter_buffer = jitter_buffer.back();
-				fill_packets = new_jitter_buffer["packet"];
-			}
-			for (int32_t _i = 0; _i < skipped_packets; _i++) {
-				Dictionary dict;
-				dict["packet"] = fill_packets;
-				dict["valid"] = false;
-				jitter_buffer.push_back(dict);
-			}
-		}
-		{
-			// Add the new valid buffer.
-			Dictionary dict;
-			dict["packet"] = p_packet;
-			dict["valid"] = true;
-			jitter_buffer.push_back(dict);
-		}
-		int64_t excess_packet_count = jitter_buffer.size() - MAX_JITTER_BUFFER_SIZE;
-		if (excess_packet_count > 0) {
-			for (int32_t _i = 0; _i < excess_packet_count; _i++) {
-				elem["excess_packets"] = (int64_t)elem["excess_packets"] + 1;
-				jitter_buffer.pop_front();
-			}
-		}
-		elem["sequence_id"] = int64_t(elem["sequence_id"]) + sequence_id_offset;
-	} else {
-		int64_t sequence_id = jitter_buffer.size() - 1 + sequence_id_offset;
-		vc_debug_print(vformat("Updating existing sequence_id: %s", itos(sequence_id)));
-		if (sequence_id >= 0) {
-			// Update the existing buffer.
-			if (use_sample_stretching) {
-				int32_t jitter_buffer_size = jitter_buffer.size();
-				for (int32_t i = sequence_id; i < jitter_buffer_size - 1; i++) {
-					Dictionary buffer = jitter_buffer[i];
-					if (buffer["valid"]) {
-						break;
-					}
-					Dictionary dict;
-					dict["packet"] = p_packet;
-					dict["valid"] = false;
-					jitter_buffer[i] = dict;
-				}
-			}
-			Dictionary dict;
-			dict["packet"] = p_packet;
-			dict["valid"] = true;
-			jitter_buffer[sequence_id] = dict;
-		} else {
-			vc_debug_printerr("Invalid repair sequence_id.");
-		}
-	}
-	elem["jitter_buffer"] = jitter_buffer;
+	uint64_t current_last_update = elem["last_update"];
+	Array incoming_jitter_buffer = elem["jitter_buffer"];
+
+	Ref<JitterBufferPacket> jitter_buffer_packet;
+	jitter_buffer_packet.instantiate();
+	jitter_buffer_packet->set_data(p_packet);
+	jitter_buffer_packet->set_sequence(p_sequence_id);
+	jitter_buffer_packet->set_user_data(p_peer_id);
+	jitter_buffer_packet->set_timestamp(current_last_update);
+	jitter_buffer->jitter_buffer_put(jitter, jitter_buffer_packet);
+
+	elem["jitter_buffer"] = jitter_buffer_packet;
 	player_audio[p_peer_id] = elem;
 }
 
@@ -716,13 +668,9 @@ void Speech::clear_all_player_audio() {
 	player_audio = Dictionary();
 }
 
-void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Array p_jitter_buffer, Ref<PlaybackStats> p_playback_stats, Dictionary p_player_dict) {
+void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decoder, Node *p_audio_stream_player, Ref<PlaybackStats> p_playback_stats, Dictionary p_player_dict) {
 	if (!p_audio_stream_player) {
 		return;
-	}
-
-	for (int32_t skip_i = 0; skip_i < p_skip_count; skip_i++) {
-		p_jitter_buffer.pop_front();
 	}
 	if (!p_audio_stream_player->has_method("get_stream_playback")) {
 		return;
@@ -739,77 +687,37 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		p_player_dict["playback_last_skips"] = playback->get_skips();
 	}
 	int64_t to_fill = playback->get_frames_available();
+
 	int64_t required_packets = 0;
 	while (to_fill >= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
 		to_fill -= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
 		required_packets += 1;
 	}
-
-	Dictionary last_packet;
-	if (p_jitter_buffer.size() > 0) {
-		Dictionary jitter_buffer = p_jitter_buffer.back();
-		last_packet = jitter_buffer["packet"];
-	}
-	while (p_jitter_buffer.size() < required_packets) {
-		Variant fill_packets;
-		// If using stretching, fill with last received packet
-		if (use_sample_stretching && p_jitter_buffer.size() > 0) {
-			fill_packets = last_packet;
+	for (int32_t packet_i = 0;  packet_i < required_packets; packet_i++) {
+		Ref<JitterBufferPacket> packet;
+		packet.instantiate();
+		uint64_t current_last_update = p_player_dict["last_update"];
+		int32_t packet_duration_ms = (double)SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT / SpeechProcessor::SPEECH_SETTING_SAMPLE_RATE * SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND;
+		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_last_update + (packet_i * packet_duration_ms));
+		int32_t error = result[0];
+		if (error != OK) {
+			continue;
 		}
-		Dictionary dict;
-		dict["packet"] = fill_packets;
-		dict["valid"] = false;
-		p_jitter_buffer.push_back(dict);
-	}
-
-	for (int32_t _i = 0; _i < required_packets; _i++) {
-		Dictionary packet = p_jitter_buffer.pop_front();
-		bool packet_pushed = false;
-		bool push_result = false;
-		PackedByteArray buffer = packet["packet"];
+		PackedByteArray buffer = packet->get_data();
 		uncompressed_audio = decompress_buffer(p_decoder, buffer, buffer.size(), uncompressed_audio);
 		if (uncompressed_audio.size()) {
 			if (uncompressed_audio.size() == SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
-				push_result = playback->push_buffer(uncompressed_audio);
+				playback->push_buffer(uncompressed_audio);
 			}
 		}
-		packet_pushed = true;
-		if (!packet_pushed) {
-			push_result = playback->push_buffer(blank_packet);
-		}
-		if (p_playback_stats.is_null()) {
-			continue;
-		}
-		p_playback_stats->playback_ring_current_size = playback_ring_buffer_length - playback->get_frames_available();
-		p_playback_stats->playback_ring_max_size = p_playback_stats->playback_ring_current_size ? p_playback_stats->playback_ring_current_size > p_playback_stats->playback_ring_max_size : p_playback_stats->playback_ring_max_size;
-		p_playback_stats->playback_ring_size_sum += 1.0 * p_playback_stats->playback_ring_current_size;
-		p_playback_stats->playback_push_buffer_calls += 1;
-		if (!packet_pushed) {
-			p_playback_stats->playback_blank_push_calls += 1;
-		}
-		if (push_result) {
-			p_playback_stats->playback_pushed_calls += 1;
-		} else {
-			p_playback_stats->playback_discarded_calls += 1;
-		}
-		p_playback_stats->playback_skips = 1.0 * double(playback->get_skips());
 	}
-	if (use_sample_stretching && p_jitter_buffer.size() == 0) {
-		Dictionary dict;
-		dict["packet"] = last_packet;
-		dict["valid"] = false;
-		p_jitter_buffer.push_back(dict);
-	}
+	p_playback_stats->playback_ring_current_size = playback_ring_buffer_length - playback->get_frames_available();
+	p_playback_stats->playback_ring_max_size = p_playback_stats->playback_ring_current_size ? p_playback_stats->playback_ring_current_size > p_playback_stats->playback_ring_max_size : p_playback_stats->playback_ring_max_size;
+	p_playback_stats->playback_ring_size_sum += 1.0 * p_playback_stats->playback_ring_current_size;
+	p_playback_stats->playback_push_buffer_calls += 1;
+	p_playback_stats->playback_pushed_calls += 1;
+	p_playback_stats->playback_skips = 1.0 * double(playback->get_skips());
 	if (p_playback_stats.is_valid()) {
-		p_playback_stats->jitter_buffer_size_sum += p_jitter_buffer.size();
 		p_playback_stats->jitter_buffer_calls += 1;
-		p_playback_stats->jitter_buffer_max_size = p_jitter_buffer.size() ? p_jitter_buffer.size() > p_playback_stats->jitter_buffer_max_size : p_playback_stats->jitter_buffer_max_size;
-		p_playback_stats->jitter_buffer_current_size = p_jitter_buffer.size();
-	}
-	// Speed up or slow down the audio stream to mitigate skipping
-	if (p_jitter_buffer.size() > JITTER_BUFFER_SPEEDUP) {
-		p_audio_stream_player->set_physics_process(STREAM_SPEEDUP_PITCH);
-	} else if (p_jitter_buffer.size() < JITTER_BUFFER_SLOWDOWN) {
-		p_audio_stream_player->call("set_pitch_scale", STREAM_STANDARD_PITCH);
 	}
 }
