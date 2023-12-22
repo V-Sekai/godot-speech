@@ -688,32 +688,29 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		to_fill -= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
 		required_packets += 1;
 	}
-	int64_t current_update = p_player_dict["last_update"];
-	int32_t packet_duration_ms = SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_PACKET;
-	Ref<JitterBufferPacket> packet;
-	packet.instantiate();
-	int32_t packet_i = 0;
-	do {
-		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_update + (packet_i * packet_duration_ms));
+	if (required_packets > 1) {
+		int64_t current_update = p_player_dict["last_update"];
+		int32_t packet_duration_ms = SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_PACKET;
+		Ref<JitterBufferPacket> packet;
+		packet.instantiate();
+		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_update);
 		int32_t error = result[0];
 		if (error != OK) {
 			playback->push_buffer(blank_packet);
-			packet_i++;
-			continue;
-		}
-		PackedByteArray buffer = packet->get_data();
-		uncompressed_audio = decompress_buffer(p_decoder, buffer, buffer.size(), uncompressed_audio);
-		if (uncompressed_audio.size()) {
-			if (uncompressed_audio.size() == SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
-				playback->push_buffer(uncompressed_audio);
+		} else {
+			PackedByteArray buffer = packet->get_data();
+			uncompressed_audio = decompress_buffer(p_decoder, buffer, buffer.size(), uncompressed_audio);
+			if (uncompressed_audio.size()) {
+				if (uncompressed_audio.size() == SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
+					playback->push_buffer(uncompressed_audio);
+				}
 			}
 		}
-		packet_i++;
-	} while (packet_i < required_packets);
-	if (p_playback_stats.is_valid()) {
-		// p_playback_stats->jitter_buffer_size_sum += jitter.packets.size();
-		p_playback_stats->jitter_buffer_calls += 1;
-		// p_playback_stats->jitter_buffer_max_size = jitter.packets.size() ? jitter.packets.size() > p_playback_stats->jitter_buffer_max_size : p_playback_stats->jitter_buffer_max_size;
-		// p_playback_stats->jitter_buffer_current_size = jitter.packets.size();
+		if (p_playback_stats.is_valid()) {
+			// p_playback_stats->jitter_buffer_size_sum += jitter.packets.size();
+			p_playback_stats->jitter_buffer_calls += 1;
+			// p_playback_stats->jitter_buffer_max_size = jitter.packets.size() ? jitter.packets.size() > p_playback_stats->jitter_buffer_max_size : p_playback_stats->jitter_buffer_max_size;
+			// p_playback_stats->jitter_buffer_current_size = jitter.packets.size();
+		}
 	}
 }
