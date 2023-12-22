@@ -269,18 +269,6 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 		if (jitter->packets[i_jitter] != nullptr) {
 			jitter->packets[i_jitter]->get_data().clear();
 		}
-
-		// Shift non-null packets to the left, filling the gaps created by nulls
-		for (int k_jitter = 0, l_jitter = 0; k_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; k_jitter++) {
-			if (jitter->packets[k_jitter] != nullptr && !jitter->packets[k_jitter]->get_data().is_empty()) {
-				if (k_jitter != l_jitter) {
-					jitter->packets[l_jitter] = jitter->packets[k_jitter];
-					jitter->packets[k_jitter] = Ref<JitterBufferPacket>(memnew(JitterBufferPacket));
-				}
-				l_jitter++;
-			}
-			i_jitter = l_jitter;
-		}
 		print_verbose(vformat("Buffer is full, discarding earliest frame %d (currently at %d)", packet->get_timestamp(), jitter->pointer_timestamp));		
 	}
 

@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/variant/variant.h"
 #include "modules/speech/thirdparty/jitter.h"
 #include "scene/2d/audio_stream_player_2d.h"
 #include "scene/3d/audio_stream_player_3d.h"
@@ -591,7 +592,7 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 	if (int64_t(elem["sequence_id"]) == -1) {
 		elem["sequence_id"] = p_sequence_id - 1;
 	}
-	uint64_t current_last_update = elem["playback_start_time"];
+	uint64_t current_last_update = elem["last_update"];
 	Ref<JitterBufferPacket> jitter_buffer_packet;
 	jitter_buffer_packet.instantiate();
 	jitter_buffer_packet->set_data(p_packet);
@@ -686,14 +687,18 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		to_fill -= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
 		required_packets += 1;
 	}
-	int64_t current_update = p_player_dict["playback_current_time"];
+	int64_t current_update = OS::get_singleton()->get_ticks_msec();
 	int32_t packet_duration_ms = (double)SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT / SpeechProcessor::SPEECH_SETTING_SAMPLE_RATE * SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND;
-	for (int32_t packet_i = 0;  packet_i < required_packets; packet_i++) {
-		Ref<JitterBufferPacket> packet;
-		packet.instantiate();
-		Array result = jitter_buffer->jitter_buffer_get(jitter, packet,  current_update + (packet_i * packet_duration_ms));
+	PackedVector2Array empty_uncompressed_audio;
+	Ref<JitterBufferPacket> packet;
+	packet.instantiate();
+	int32_t packet_i = 0;
+	do {
+		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_update + (packet_i * packet_duration_ms));
 		int32_t error = result[0];
 		if (error != OK) {
+			playback->push_buffer(blank_packet);
+			packet_i++;
 			continue;
 		}
 		PackedByteArray buffer = packet->get_data();
@@ -703,15 +708,13 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 				playback->push_buffer(uncompressed_audio);
 			}
 		}
-	}
-
-	p_playback_stats->playback_ring_current_size = playback_ring_buffer_length - playback->get_frames_available();
-	p_playback_stats->playback_ring_max_size = p_playback_stats->playback_ring_current_size ? p_playback_stats->playback_ring_current_size > p_playback_stats->playback_ring_max_size : p_playback_stats->playback_ring_max_size;
-	p_playback_stats->playback_ring_size_sum += 1.0 * p_playback_stats->playback_ring_current_size;
-	p_playback_stats->playback_push_buffer_calls += 1;
-	p_playback_stats->playback_pushed_calls += 1;
-	p_playback_stats->playback_skips = 1.0 * double(playback->get_skips());
+		packet_i++;
+	} while (packet_i < required_packets);
+	VoipJitterBuffer::jitter_buffer_tick(jitter);
 	if (p_playback_stats.is_valid()) {
+		// p_playback_stats->jitter_buffer_size_sum += jitter.packets.size();
 		p_playback_stats->jitter_buffer_calls += 1;
+		// p_playback_stats->jitter_buffer_max_size = jitter.packets.size() ? jitter.packets.size() > p_playback_stats->jitter_buffer_max_size : p_playback_stats->jitter_buffer_max_size;
+		// p_playback_stats->jitter_buffer_current_size = jitter.packets.size();
 	}
 }
