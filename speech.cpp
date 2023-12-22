@@ -690,7 +690,6 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 	}
 	if (required_packets > 1) {
 		int64_t current_update = p_player_dict["last_update"];
-		int32_t packet_duration_ms = SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_PACKET;
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
 		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_update);
