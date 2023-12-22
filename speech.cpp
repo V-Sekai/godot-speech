@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/variant/variant.h"
 #include "modules/speech/thirdparty/jitter.h"
 #include "scene/2d/audio_stream_player_2d.h"
 #include "scene/3d/audio_stream_player_3d.h"
@@ -591,22 +592,15 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 	if (int64_t(elem["sequence_id"]) == -1) {
 		elem["sequence_id"] = p_sequence_id - 1;
 	}
-
-	elem["packets_received_this_frame"] = int64_t(elem["packets_received_this_frame"]) + 1;
-	packets_received_this_frame += 1;
-	int64_t current_sequence_id = elem["sequence_id"];
-	uint64_t current_last_update = elem["last_update"];
-	Array incoming_jitter_buffer = elem["jitter_buffer"];
-
+	uint64_t current_last_update = elem["playback_start_time"];
 	Ref<JitterBufferPacket> jitter_buffer_packet;
 	jitter_buffer_packet.instantiate();
 	jitter_buffer_packet->set_data(p_packet);
 	jitter_buffer_packet->set_sequence(p_sequence_id);
 	jitter_buffer_packet->set_user_data(p_peer_id);
 	jitter_buffer_packet->set_timestamp(current_last_update);
-	jitter_buffer->jitter_buffer_put(jitter, jitter_buffer_packet);
-
-	elem["jitter_buffer"] = jitter_buffer_packet;
+	VoipJitterBuffer::jitter_buffer_put(jitter, jitter_buffer_packet);
+	elem["packets_received_this_frame"] = int64_t(elem["packets_received_this_frame"]) + 1;
 	player_audio[p_peer_id] = elem;
 }
 
@@ -693,12 +687,11 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		to_fill -= SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
 		required_packets += 1;
 	}
+	uint64_t current_last_update = p_player_dict["playback_start_time"];
 	for (int32_t packet_i = 0;  packet_i < required_packets; packet_i++) {
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
-		uint64_t current_last_update = p_player_dict["last_update"];
-		int32_t packet_duration_ms = (double)SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT / SpeechProcessor::SPEECH_SETTING_SAMPLE_RATE * SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND;
-		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_last_update + (packet_i * packet_duration_ms));
+		Array result = jitter_buffer->jitter_buffer_get(jitter, packet, current_last_update + (packet_i * SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_PACKET));
 		int32_t error = result[0];
 		if (error != OK) {
 			continue;
@@ -711,6 +704,7 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 			}
 		}
 	}
+
 	p_playback_stats->playback_ring_current_size = playback_ring_buffer_length - playback->get_frames_available();
 	p_playback_stats->playback_ring_max_size = p_playback_stats->playback_ring_current_size ? p_playback_stats->playback_ring_current_size > p_playback_stats->playback_ring_max_size : p_playback_stats->playback_ring_max_size;
 	p_playback_stats->playback_ring_size_sum += 1.0 * p_playback_stats->playback_ring_current_size;
