@@ -25,3 +25,27 @@ bus = &"Mic"
 [node name="SpeechProcessor5" type="SpeechProcessor" parent="GodotSpeech"]
 
 [node name="SpeechProcessor6" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor7" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor8" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor9" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor10" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor11" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor12" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor13" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor14" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor15" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor16" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor17" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor18" type="SpeechProcessor" parent="GodotSpeech"]

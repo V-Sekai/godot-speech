@@ -119,7 +119,7 @@ int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, i
 		case JitterBufferPacket::JITTER_BUFFER_GET_MARGIN:
 			*ptr = jitter->buffer_margin;
 			break;
-		case JitterBufferPacket::JITTER_BUFFER_GET_AVALIABLE_COUNT:
+		case JitterBufferPacket::JITTER_BUFFER_GET_AVAILABLE_COUNT:
 			count = 0;
 			for (i = 0; i < SPEEX_JITTER_MAX_BUFFER_SIZE; i++) {
 				if (jitter->packets[i].is_null()) {
@@ -214,19 +214,24 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 
 	// Cleanup buffer (remove old packets that weren't played)
 	if (!jitter->reset_state) {
-		for (i_jitter = 0; i_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; i_jitter++) {
-			if (jitter->packets[i_jitter].is_valid() && LE32(jitter->packets[i_jitter]->get_timestamp() + jitter->packets[i_jitter]->get_span(), jitter->pointer_timestamp)) {
-				if (jitter->packets[i_jitter]->get_data().is_empty()) {
-					continue;
+		while (i_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE) {
+			if (jitter->packets[i_jitter].is_valid()) {
+				uint32_t packet_timestamp_end = LE32(
+						jitter->packets[i_jitter]->get_timestamp() + jitter->packets[i_jitter]->get_span(),
+						jitter->pointer_timestamp);
+				// If the packet's end timestamp is less than or equal to the pointer timestamp,
+				// it is considered old and can be cleared.
+				if (packet_timestamp_end <= jitter->pointer_timestamp) {
+					jitter->packets[i_jitter]->get_data().clear();
 				}
-				jitter->packets[i_jitter]->get_data().clear();
 			}
+			i_jitter++;
 		}
 	}
 
 	// Find an empty slot for the new packet
 	for (i_jitter = 0; i_jitter < SPEEX_JITTER_MAX_BUFFER_SIZE; i_jitter++) {
-		if (jitter->packets[i_jitter] == nullptr || jitter->packets[i_jitter]->get_data().is_empty()) {
+		if (jitter->packets[i_jitter].is_null() || jitter->packets[i_jitter]->get_data().is_empty()) {
 			break;
 		}
 	}
@@ -269,7 +274,7 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 		if (jitter->packets[i_jitter] != nullptr) {
 			jitter->packets[i_jitter]->get_data().clear();
 		}
-		print_verbose(vformat("Buffer is full, discarding earliest frame %d (currently at %d)", packet->get_timestamp(), jitter->pointer_timestamp));		
+		print_verbose(vformat("Buffer is full, discarding earliest frame %d (currently at %d)", packet->get_timestamp(), jitter->pointer_timestamp));
 	}
 
 	// Check if the packet object is valid before copying data and setting properties
