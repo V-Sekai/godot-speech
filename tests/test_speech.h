@@ -70,6 +70,7 @@ TEST_CASE("[Modules][Speech] Basic Tests") {
 		int step_size = 10;
 		Ref<JitterBuffer> jitter = VoipJitterBuffer::jitter_buffer_init(step_size);
 		CHECK_MESSAGE(jitter.is_valid(), "Initialize the jitter buffer");
+
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
 		PackedByteArray bytes;
@@ -77,17 +78,25 @@ TEST_CASE("[Modules][Speech] Basic Tests") {
 		bytes.fill(0);
 		packet->set_data(bytes);
 		VoipJitterBuffer::jitter_buffer_put(jitter, packet);
+
 		Ref<JitterBufferPacket> retrieved_packet;
 		retrieved_packet.instantiate();
 		retrieved_packet->set_data(bytes);
 		VoipJitterBuffer::jitter_buffer_put(jitter, retrieved_packet);
+
 		int32_t desired_span = 10;
 		Array result = VoipJitterBuffer::jitter_buffer_get(jitter, retrieved_packet, desired_span);
-		CHECK_MESSAGE(result.size(), "Get the jitter buffer.");
+		CHECK_MESSAGE(result.size() > 0, "Successfully retrieved packets from the jitter buffer.");
+
 		VoipJitterBuffer::jitter_buffer_tick(jitter);
-		CHECK_MESSAGE(result.size(), "Tick the jitter buffer.");
+
+		result = VoipJitterBuffer::jitter_buffer_get(jitter, retrieved_packet, desired_span);
+		CHECK_MESSAGE(result.size() > 0, "Successfully retrieved packets from the jitter buffer after tick.");
+
 		VoipJitterBuffer::jitter_buffer_destroy(jitter);
-		CHECK_MESSAGE(jitter->get_reset_state() == 1, "Destroy the jitter buffer.");
+
+		bool is_destroyed = !jitter.is_valid() || jitter->get_reset_state() == 1;
+		CHECK_MESSAGE(is_destroyed, "The jitter buffer is destroyed correctly.");
 	}
 	{
 		int step_size = 10;
@@ -172,10 +181,10 @@ TEST_CASE("[Modules][Speech] Adding and Retrieving Voice Packets with Jitter Cor
 	for (int i = 0; i < 3; ++i) {
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
-        packet->set_timestamp(i * step_size);
+		packet->set_timestamp(i * step_size);
 		packet->set_span(step_size);
-        packet->set_sequence(i); 
-        packet->set_user_data(i);
+		packet->set_sequence(i);
+		packet->set_user_data(i);
 		PackedByteArray data;
 		data.resize(10);
 		data.fill(1);
