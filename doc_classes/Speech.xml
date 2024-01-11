@@ -19,8 +19,9 @@
 			<param index="0" name="skip_count" type="int" />
 			<param index="1" name="decoder" type="SpeechDecoder" />
 			<param index="2" name="audio_stream_player" type="Node" />
-			<param index="3" name="playback_stats" type="PlaybackStats" />
-			<param index="4" name="player_dict" type="Dictionary" />
+			<param index="3" name="jitter_buffer" type="Array" />
+			<param index="4" name="playback_stats" type="PlaybackStats" />
+			<param index="5" name="player_dict" type="Dictionary" />
 			<description>
 			</description>
 		</method>

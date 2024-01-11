@@ -9,6 +9,7 @@ script = ExtResource("1_rgc2c")
 
 [node name="MicrophoneStreamAudio" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_tmvyd")
+volume_db = 1.0
 bus = &"Mic"
 
 [node name="GodotSpeech" type="Speech" parent="."]
@@ -20,3 +21,5 @@ bus = &"Mic"
 [node name="SpeechProcessor3" type="SpeechProcessor" parent="GodotSpeech"]
 
 [node name="SpeechProcessor4" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor5" type="SpeechProcessor" parent="GodotSpeech"]
