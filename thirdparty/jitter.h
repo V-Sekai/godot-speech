@@ -112,7 +112,7 @@ TODO:
 #define LT32(a, b) (((int32_t)((a) - (b))) < 0)
 #define LE32(a, b) (((int32_t)((a) - (b))) <= 0)
 
-#define ROUND_DOWN(x, step) ((x) < 0 ? ((x) - (step) + 1) / (step) * (step) : (x) / (step) * (step))
+#define ROUND_DOWN(x, step) ((step) != 0 ? ((x) < 0 ? ((x) - (step) + 1) / (step) * (step) : (x) / (step) * (step)) : (x))
 
 #define MAX_TIMINGS 40
 #define MAX_BUFFERS 3
@@ -315,26 +315,19 @@ protected:
 	static void _bind_methods();
 };
 
-class VoipJitterBuffer : public RefCounted {
-	GDCLASS(VoipJitterBuffer, RefCounted);
+struct VoipJitterBuffer {
+	static void jitter_buffer_reset(Ref<JitterBuffer> jitter);
+	static int jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, int32_t *ptr);
+	static Ref<JitterBuffer> jitter_buffer_init(int step_size);
+	static void jitter_buffer_destroy(Ref<JitterBuffer> jitter);
+	static void jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<JitterBufferPacket> packet);
+	static Array jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span);
+	static int jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
+	static int32_t jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
+	static int jitter_buffer_get_pointer_timestamp(Ref<JitterBuffer> jitter);
+	static void jitter_buffer_tick(Ref<JitterBuffer> jitter);
+	static void jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem);
 
-public:
-	void jitter_buffer_reset(Ref<JitterBuffer> jitter);
-	int jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, int32_t *ptr);
-	Ref<JitterBuffer> jitter_buffer_init(int step_size);
-	void jitter_buffer_destroy(Ref<JitterBuffer> jitter);
-	void jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<JitterBufferPacket> packet);
-	Array jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet, int32_t desired_span);
-	int jitter_buffer_get_another(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
-	int32_t jitter_buffer_update_delay(Ref<JitterBuffer> jitter, Ref<JitterBufferPacket> packet);
-	int jitter_buffer_get_pointer_timestamp(Ref<JitterBuffer> jitter);
-	void jitter_buffer_tick(Ref<JitterBuffer> jitter);
-	void jitter_buffer_remaining_span(Ref<JitterBuffer> jitter, uint32_t rem);
-
-protected:
-	static void _bind_methods();
-
-public:
 	static void tb_init(TimingBuffer *buffer);
 
 	/* Add the timing of a new packet to the TimingBuffer */
