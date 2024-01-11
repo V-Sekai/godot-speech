@@ -34,7 +34,6 @@
 
 #include "speech.h"
 #include "speech_processor.h"
-#include <cstdint>
 
 void Speech::preallocate_buffers() {
 	input_byte_array.resize(SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
@@ -47,7 +46,6 @@ void Speech::preallocate_buffers() {
 				SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
 		input_audio_buffer_array[i].compressed_byte_array.fill(0);
 	}
-	jitter = VoipJitterBuffer::jitter_buffer_init(10);
 }
 
 void Speech::setup_connections() {
@@ -525,6 +523,7 @@ Dictionary Speech::get_stats() {
 Speech::Speech() {
 	speech_processor = memnew(SpeechProcessor);
 	preallocate_buffers();
+	jitter = VoipJitterBuffer::jitter_buffer_init(10);
 }
 
 Speech::~Speech() {
@@ -600,6 +599,7 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 	jitter_buffer_packet->set_timestamp(current_last_update);
 	jitter_buffer_packet->set_span(SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_PACKET);
 	VoipJitterBuffer::jitter_buffer_put(jitter, jitter_buffer_packet);
+	VoipJitterBuffer::jitter_buffer_tick(jitter);
 	elem["packets_received_this_frame"] = int64_t(elem["packets_received_this_frame"]) + 1;
 	player_audio[p_peer_id] = elem;
 }
@@ -688,24 +688,27 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		required_packets += 1;
 	}
 
-	int64_t expected_time = p_player_dict["last_update"];
-	for (int32_t packet_i = 0; packet_i < required_packets; packet_i++) {
+	for (int32_t _i = 0; _i < required_packets; _i++) {
 		Array result;
 		result.resize(2);
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
 
-		int64_t arrived_time = OS::get_singleton()->get_ticks_msec();
-		result = VoipJitterBuffer::jitter_buffer_get(jitter, packet, expected_time);
+		if (_i == 0) {
+			int64_t current_update = p_player_dict["last_update"];
+			result = VoipJitterBuffer::jitter_buffer_get(jitter, packet, current_update);
+		} else {
+			result[0] = VoipJitterBuffer::jitter_buffer_get_another(jitter, packet);
+		}
+
 		if (int32_t(result[0]) != OK) {
 			playback->push_buffer(blank_packet);
-			continue; // Continue to the next iteration if getting a buffer fails
-		}
-		expected_time = arrived_time;
-		PackedByteArray buffer = packet->get_data();
-		uncompressed_audio = decompress_buffer(p_decoder, buffer, buffer.size(), uncompressed_audio);
-		if (uncompressed_audio.size() && uncompressed_audio.size() == SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
-			playback->push_buffer(uncompressed_audio);
+		} else {
+			PackedByteArray buffer = packet->get_data();
+			uncompressed_audio = decompress_buffer(p_decoder, buffer, buffer.size(), uncompressed_audio);
+			if (uncompressed_audio.size() && uncompressed_audio.size() == SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
+				playback->push_buffer(uncompressed_audio);
+			}
 		}
 	}
 
