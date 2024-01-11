@@ -450,7 +450,6 @@ void Speech::_notification(int p_what) {
 			break;
 		}
 		case NOTIFICATION_INTERNAL_PROCESS: {
-			VoipJitterBuffer::jitter_buffer_tick(jitter);
 			Array keys = player_audio.keys();
 			for (int32_t i = 0; i < keys.size(); i++) {
 				Variant key = keys[i];
@@ -524,7 +523,7 @@ Dictionary Speech::get_stats() {
 Speech::Speech() {
 	speech_processor = memnew(SpeechProcessor);
 	preallocate_buffers();
-	jitter.instantiate();
+	jitter = VoipJitterBuffer::jitter_buffer_init(10);
 }
 
 Speech::~Speech() {
@@ -581,6 +580,7 @@ void Speech::vc_debug_printerr(String p_str) const {
 }
 
 void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedByteArray p_packet) {
+	VoipJitterBuffer::jitter_buffer_tick(jitter);
 	vc_debug_print(
 			vformat("Received_audio_packet: peer_id: {%s} sequence_id: {%s}", itos(p_peer_id), itos(p_sequence_id)));
 	if (!player_audio.has(p_peer_id)) {
