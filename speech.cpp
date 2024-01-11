@@ -702,21 +702,20 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 		}
 
 		if (int32_t(result[0]) != OK) {
-			playback->push_buffer(blank_packet);
-		} else {
-			PackedByteArray buffer = packet->get_data();
-			uncompressed_audio = decompress_buffer(p_decoder, buffer, buffer.size(), uncompressed_audio);
-			if (uncompressed_audio.size() && uncompressed_audio.size() == SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
-				playback->push_buffer(uncompressed_audio);
-			}
+			break;
+		}
+		PackedByteArray buffer = packet->get_data();
+		uncompressed_audio = decompress_buffer(p_decoder, buffer, buffer.size(), uncompressed_audio);
+		if (uncompressed_audio.size() && uncompressed_audio.size() == SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) {
+			playback->push_buffer(uncompressed_audio);
 		}
 	}
 
-	if (p_playback_stats.is_valid()) {
+	if (p_playback_stats.is_valid() && jitter.is_valid()) {
 		int32_t available_count = 0;
 		VoipJitterBuffer::jitter_buffer_ctl(jitter, JitterBufferPacket::JITTER_BUFFER_GET_AVAILABLE_COUNT, &available_count);
 		p_playback_stats->jitter_buffer_calls += 1;
-		p_playback_stats->jitter_buffer_max_size = available_count > p_playback_stats->jitter_buffer_max_size ? available_count : p_playback_stats->jitter_buffer_max_size;
+		p_playback_stats->jitter_buffer_max_size = jitter->get_window_size();
 		p_playback_stats->jitter_buffer_current_size = available_count;
 	}
 }
