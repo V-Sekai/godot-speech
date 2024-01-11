@@ -23,3 +23,5 @@ bus = &"Mic"
 [node name="SpeechProcessor4" type="SpeechProcessor" parent="GodotSpeech"]
 
 [node name="SpeechProcessor5" type="SpeechProcessor" parent="GodotSpeech"]
+
+[node name="SpeechProcessor6" type="SpeechProcessor" parent="GodotSpeech"]
