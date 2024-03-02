@@ -213,10 +213,10 @@ TEST_CASE("[Modules][Speech] Adding and Retrieving Voice Packets with Jitter Cor
 	for (int i = 0; i < 3; ++i) {
 		Ref<JitterBufferPacket> packet;
 		packet.instantiate();
-        packet->set_timestamp(i * step_size);
+		packet->set_timestamp(i * step_size);
 		packet->set_span(step_size);
-        packet->set_sequence(i); 
-        packet->set_user_data(i);
+		packet->set_sequence(i);
+		packet->set_user_data(i);
 		PackedByteArray data;
 		data.resize(10);
 		data.fill(1);
