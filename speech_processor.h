@@ -31,16 +31,25 @@
 #ifndef SPEECH_PROCESSOR_H
 #define SPEECH_PROCESSOR_H
 
-#include "core/config/engine.h"
-#include "core/config/project_settings.h"
-#include "core/object/class_db.h"
-#include "core/object/ref_counted.h"
-#include "core/os/mutex.h"
-#include "scene/audio/audio_stream_player.h"
-#include "scene/main/node.h"
-#include "servers/audio/audio_stream.h"
-#include "servers/audio/effects/audio_effect_capture.h"
-#include "servers/audio_server.h"
+#include <godot_compat/classes/engine.hpp>
+#include <godot_compat/classes/project_settings.hpp>
+#include <godot_compat/core/class_db.hpp>
+#include <godot_compat/classes/ref.hpp>
+#include <godot_compat/classes/weak_ref.hpp>
+#include <godot_compat/classes/ref_counted.hpp>
+#include <godot_compat/core/mutex_lock.hpp>
+#include <godot_compat/classes/audio_stream_player.hpp>
+#include <godot_compat/core/memory.hpp>
+#include <godot_compat/variant/callable_method_pointer.hpp>
+#include <godot_compat/classes/node.hpp>
+#include <godot_compat/classes/audio_stream_microphone.hpp>
+#include <godot_compat/classes/audio_stream_playback_resampled.hpp>
+#include <godot_compat/classes/audio_stream_randomizer.hpp>
+#include <godot_compat/classes/audio_stream.hpp>
+#include <godot_compat/classes/audio_stream_playback.hpp>
+#include <godot_compat/classes/audio_effect_capture.hpp>
+#include <godot_compat/classes/audio_bus_layout.hpp>
+#include <godot_compat/classes/audio_server.hpp>
 
 #include <stdint.h>
 #include <stdlib.h>

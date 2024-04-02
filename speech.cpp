@@ -29,8 +29,8 @@
 /**************************************************************************/
 
 #include "modules/speech/thirdparty/jitter.h"
-#include "scene/2d/audio_stream_player_2d.h"
-#include "scene/3d/audio_stream_player_3d.h"
+#include <godot_compat/classes/audio_stream_player2d.hpp>
+#include <godot_compat/classes/audio_stream_player3d.hpp>
 
 #include "speech.h"
 #include "speech_processor.h"

@@ -31,7 +31,7 @@
 #ifndef TEST_SPEECH_H
 #define TEST_SPEECH_H
 
-#include "core/variant/variant.h"
+#include <godot_compat/variant/variant.hpp>
 #include "tests/test_macros.h"
 
 #include "modules/speech/thirdparty/jitter.h"
