@@ -33,9 +33,9 @@
 #include <godot_compat/classes/audio_stream_player3d.hpp>
 #include <godot_compat/classes/time.hpp>
 
+#include "godot_compat_helper.h"
 #include "speech.h"
 #include "speech_processor.h"
-#include "godot_compat_helper.h"
 
 void Speech::preallocate_buffers() {
 	input_byte_array.resize(SpeechProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
@@ -553,11 +553,11 @@ void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
 			dict["audio_stream_player"] = p_audio_stream_player;
 			dict["jitter_buffer"] = Array();
 			dict["sequence_id"] = -1;
-			#ifdef GODOT_MODULE_COMPAT
+#ifdef GODOT_MODULE_COMPAT
 			dict["last_update"] = OS::get_singleton()->get_ticks_msec();
-			#else
+#else
 			dict["last_update"] = Time::get_singleton()->get_ticks_msec();
-			#endif
+#endif
 			dict["packets_received_this_frame"] = 0;
 			dict["excess_packets"] = 0;
 			dict["speech_decoder"] = speech_decoder;

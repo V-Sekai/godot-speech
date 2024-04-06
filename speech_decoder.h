@@ -32,8 +32,8 @@
 #define SPEECH_DECODER_H
 
 #include <godot_compat/classes/ref.hpp>
-#include <godot_compat/classes/weak_ref.hpp>
 #include <godot_compat/classes/ref_counted.hpp>
+#include <godot_compat/classes/weak_ref.hpp>
 
 #include "thirdparty/opus/opus/opus.h"
 

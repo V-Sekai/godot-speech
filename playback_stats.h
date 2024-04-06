@@ -1,7 +1,7 @@
 #pragma once
 #include <godot_compat/classes/ref.hpp>
-#include <godot_compat/classes/weak_ref.hpp>
 #include <godot_compat/classes/ref_counted.hpp>
+#include <godot_compat/classes/weak_ref.hpp>
 
 #ifndef GODOT_MODULE_COMPAT
 using namespace godot;

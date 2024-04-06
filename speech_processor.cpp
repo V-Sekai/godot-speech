@@ -30,11 +30,11 @@
 
 #include <godot_compat/classes/audio_server.hpp>
 
-#include "speech_processor.h"
 #include "opus_custom.h"
+#include "speech_processor.h"
 
-#include <algorithm>
 #include "godot_compat_helper.h"
+#include <algorithm>
 
 #define STEREO_CHANNEL_COUNT 2
 
@@ -227,23 +227,23 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_capture_buffer, const Vector2 
 void SpeechProcessor::start() {
 	if (!ProjectSettings::get_singleton()->get("audio/enable_audio_input")) {
 		compat_print_line("Need to enable Project settings > Audio > Enable Audio Input "
-				   "option to use capturing.");
+						  "option to use capturing.");
 		return;
 	}
 
 	if (!audio_input_stream_player || !audio_effect_capture.is_valid() || !audio_effect_error_cancellation_capture.is_valid()) {
 		return;
 	}
-	#ifdef GODOT_MODULE_COMPAT
+#ifdef GODOT_MODULE_COMPAT
 	if (AudioDriver::get_singleton()) {
 		mix_rate = AudioDriver::get_singleton()->get_mix_rate();
 	}
-	#else
+#else
 	if (AudioServer::get_singleton()) {
 		mix_rate = AudioServer::get_singleton()->get_mix_rate();
 	}
-	#endif
-	
+#endif
+
 	audio_input_stream_player->play();
 	audio_effect_capture->clear_buffer();
 	audio_effect_error_cancellation_capture->clear_buffer();

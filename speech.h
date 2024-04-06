@@ -31,17 +31,17 @@
 #ifndef SPEECH_H
 #define SPEECH_H
 
+#include "playback_stats.h"
+#include "thirdparty/jitter.h"
+#include <godot_compat/classes/audio_stream_generator.hpp>
+#include <godot_compat/classes/audio_stream_generator_playback.hpp>
+#include <godot_compat/classes/node.hpp>
 #include <godot_compat/core/error_macros.hpp>
+#include <godot_compat/core/memory.hpp>
 #include <godot_compat/core/mutex_lock.hpp>
 #include <godot_compat/variant/array.hpp>
-#include <godot_compat/variant/dictionary.hpp>
-#include "thirdparty/jitter.h"
-#include "playback_stats.h"
-#include <godot_compat/core/memory.hpp>
 #include <godot_compat/variant/callable_method_pointer.hpp>
-#include <godot_compat/classes/node.hpp>
-#include <godot_compat/classes/audio_stream_generator_playback.hpp>
-#include <godot_compat/classes/audio_stream_generator.hpp>
+#include <godot_compat/variant/dictionary.hpp>
 #include <godot_compat/variant/packed_vector2_array.hpp>
 
 #include "speech_decoder.h"

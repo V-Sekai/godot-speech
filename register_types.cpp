@@ -30,8 +30,8 @@
 
 #include "register_types.h"
 
-#include <godot_compat/core/class_db.hpp>
 #include "speech.h"
+#include <godot_compat/core/class_db.hpp>
 
 #include "speech_decoder.h"
 #include "speech_processor.h"
