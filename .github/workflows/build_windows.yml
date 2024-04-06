@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: 🔗 GDExtension Build
-        uses: godot/godot-cpp-template/.github/actions/build
+        uses: godotengine/godot-cpp-template/.github/actions/build@main
         with:
           platform: windows
           arch: ${{ matrix.arch }}
@@ -44,7 +44,5 @@ jobs:
           name: Godot_Speech
           path: |
             ${{ github.workspace }}/bin/**/*.dll
-            ${{ github.workspace }}/bin/samples/**
             ${{ github.workspace }}/bin/addons/godot_speech/godot_speech.gdextension
           if-no-files-found: error
-          compression-level: 9
