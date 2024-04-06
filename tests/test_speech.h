@@ -34,7 +34,7 @@
 #include <godot_compat/variant/variant.hpp>
 #include "tests/test_macros.h"
 
-#include "modules/speech/thirdparty/jitter.h"
+#include "thirdparty/jitter.h"
 
 namespace TestJitter {
 TEST_CASE("[Modules][Speech] Basic Tests") {

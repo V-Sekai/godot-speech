@@ -37,10 +37,10 @@ elif env["platform"] == "android":
 else:  # including if env["platform"] == "javascript":
     env.Append(CPPDEFINES=["WEBRTC_POSIX"])
 
+env.Prepend(CPPPATH=["thirdparty"])
 env.Prepend(CPPPATH=["thirdparty/libsamplerate/src"])
 env.Prepend(CPPPATH=["thirdparty/opus"])
 env.Prepend(CPPPATH=["thirdparty/opus/opus"])
-env.Prepend(CPPPATH=["include"])
 env.Prepend(CPPPATH=["include"])
 env.Prepend(CPPPATH=["thirdparty/AEC3"])
 env.Prepend(CPPPATH=["thirdparty/AEC3/base"])
@@ -53,7 +53,6 @@ env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/resampler"])
 env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/utility"])
 env.Prepend(CPPPATH=["thirdparty/AEC3/base/jsoncpp/include"])
 
-#env.disable_warnings()
 thirdparty_dir = "thirdparty/opus/"
 thirdparty_sources = [
     # Sync with opus_sources.mk
@@ -372,7 +371,7 @@ thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources + opu
 env.Prepend(CPPPATH=["#thirdparty/libogg"])
 env.Append(CPPDEFINES=["HAVE_CONFIG_H"])
 thirdparty_include_paths = [
-    "",
+    #"",
     "celt",
     "opus",
     "silk",
@@ -395,11 +394,11 @@ elif env["platform"] == "osx":
     if "arch" in env and env["arch"] == "arm64":
         env.Append(CPPDEFINES=["OPUS_ARM64_OPT"])
 
-sources = [Glob("src/*.cpp")]
+sources = [Glob("*.cpp")]
 sources.extend(Glob("thirdparty/libsamplerate/src/*.c"))
 sources.extend(thirdparty_sources)
-sources.extend("thirdparty/*.cpp")
-
+sources.extend(Glob("thirdparty/*.cpp"))
+print(sources)
 if env["platform"] == "macos":
 	library = env.SharedLibrary(
 		"bin/addons/godot_speech/bin/libgodot_speech{}.framework/libgodot_speech{}".format(

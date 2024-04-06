@@ -3,6 +3,10 @@
 #include <godot_compat/classes/weak_ref.hpp>
 #include <godot_compat/classes/ref_counted.hpp>
 
+#ifndef GODOT_MODULE_COMPAT
+using namespace godot;
+#endif
+
 class PlaybackStats : public RefCounted {
 	GDCLASS(PlaybackStats, RefCounted);
 

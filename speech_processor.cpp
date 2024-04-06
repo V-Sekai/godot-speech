@@ -28,10 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include <godot_compat/classes/audio_server.hpp>
+
 #include "speech_processor.h"
 #include "opus_custom.h"
 
 #include <algorithm>
+#include "godot_compat_helper.h"
 
 #define STEREO_CHANNEL_COUNT 2
 
@@ -223,7 +226,7 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_capture_buffer, const Vector2 
 
 void SpeechProcessor::start() {
 	if (!ProjectSettings::get_singleton()->get("audio/enable_audio_input")) {
-		print_line("Need to enable Project settings > Audio > Enable Audio Input "
+		compat_print_line("Need to enable Project settings > Audio > Enable Audio Input "
 				   "option to use capturing.");
 		return;
 	}
@@ -231,9 +234,16 @@ void SpeechProcessor::start() {
 	if (!audio_input_stream_player || !audio_effect_capture.is_valid() || !audio_effect_error_cancellation_capture.is_valid()) {
 		return;
 	}
+	#ifdef GODOT_MODULE_COMPAT
 	if (AudioDriver::get_singleton()) {
 		mix_rate = AudioDriver::get_singleton()->get_mix_rate();
 	}
+	#else
+	if (AudioServer::get_singleton()) {
+		mix_rate = AudioServer::get_singleton()->get_mix_rate();
+	}
+	#endif
+	
 	audio_input_stream_player->play();
 	audio_effect_capture->clear_buffer();
 	audio_effect_error_cancellation_capture->clear_buffer();
@@ -501,28 +511,28 @@ Dictionary SpeechProcessor::get_stats() const {
 void SpeechProcessor::print_opus_error(int error_code) {
 	switch (error_code) {
 		case OPUS_OK:
-			print_line("OpusCodec::OPUS_OK");
+			compat_print_line("OpusCodec::OPUS_OK");
 			break;
 		case OPUS_BAD_ARG:
-			print_line("OpusCodec::OPUS_BAD_ARG");
+			compat_print_line("OpusCodec::OPUS_BAD_ARG");
 			break;
 		case OPUS_BUFFER_TOO_SMALL:
-			print_line("OpusCodec::OPUS_BUFFER_TOO_SMALL");
+			compat_print_line("OpusCodec::OPUS_BUFFER_TOO_SMALL");
 			break;
 		case OPUS_INTERNAL_ERROR:
-			print_line("OpusCodec::OPUS_INTERNAL_ERROR");
+			compat_print_line("OpusCodec::OPUS_INTERNAL_ERROR");
 			break;
 		case OPUS_INVALID_PACKET:
-			print_line("OpusCodec::OPUS_INVALID_PACKET");
+			compat_print_line("OpusCodec::OPUS_INVALID_PACKET");
 			break;
 		case OPUS_UNIMPLEMENTED:
-			print_line("OpusCodec::OPUS_UNIMPLEMENTED");
+			compat_print_line("OpusCodec::OPUS_UNIMPLEMENTED");
 			break;
 		case OPUS_INVALID_STATE:
-			print_line("OpusCodec::OPUS_INVALID_STATE");
+			compat_print_line("OpusCodec::OPUS_INVALID_STATE");
 			break;
 		case OPUS_ALLOC_FAIL:
-			print_line("OpusCodec::OPUS_ALLOC_FAIL");
+			compat_print_line("OpusCodec::OPUS_ALLOC_FAIL");
 			break;
 	}
 }

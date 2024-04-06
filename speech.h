@@ -35,18 +35,23 @@
 #include <godot_compat/core/mutex_lock.hpp>
 #include <godot_compat/variant/array.hpp>
 #include <godot_compat/variant/dictionary.hpp>
-#include "modules/speech/thirdparty/jitter.h"
+#include "thirdparty/jitter.h"
 #include "playback_stats.h"
 #include <godot_compat/core/memory.hpp>
 #include <godot_compat/variant/callable_method_pointer.hpp>
 #include <godot_compat/classes/node.hpp>
 #include <godot_compat/classes/audio_stream_generator_playback.hpp>
 #include <godot_compat/classes/audio_stream_generator.hpp>
+#include <godot_compat/variant/packed_vector2_array.hpp>
 
 #include "speech_decoder.h"
 #include "speech_processor.h"
 
 class SpeechProcessor;
+
+#ifndef GODOT_MODULE_COMPAT
+using namespace godot;
+#endif
 
 class Speech : public Node {
 	GDCLASS(Speech, Node);

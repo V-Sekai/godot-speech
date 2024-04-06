@@ -122,6 +122,8 @@ TODO:
 
 #include <godot_compat/variant/variant.hpp>
 
+using namespace godot;
+
 /** Definition of an incoming packet */
 class JitterBufferPacket : public RefCounted {
 	GDCLASS(JitterBufferPacket, RefCounted);
@@ -269,7 +271,9 @@ public:
 	}
 	~JitterBuffer() {
 		for (int i = 0; i < MAX_BUFFERS; ++i) {
-			memdelete_notnull(_tb[i]);
+			if (_tb[i]) {
+				memdelete(_tb[i]);
+			}
 			_tb[i] = nullptr;
 			timeBuffers[i] = nullptr;
 		}

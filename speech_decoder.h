@@ -37,12 +37,19 @@
 
 #include "thirdparty/opus/opus/opus.h"
 
+#ifndef GODOT_MODULE_COMPAT
+using namespace godot;
+#endif
+
 class SpeechDecoder : public RefCounted {
 	GDCLASS(SpeechDecoder, RefCounted);
 
 private:
 	::OpusDecoder *decoder = nullptr;
 	bool is_compressed = false;
+
+protected:
+	static void _bind_methods() {}
 
 public:
 	SpeechDecoder();
