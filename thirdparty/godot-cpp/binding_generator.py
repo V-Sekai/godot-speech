@@ -3,9 +3,6 @@
 import json
 import re
 import shutil
-import os
-from compat_generator import map_header_files
-from header_matcher import match_headers
 from pathlib import Path
 
 
@@ -208,7 +205,6 @@ def get_file_list(api_filepath, output_dir, headers=False, sources=False):
 
     core_gen_folder = Path(output_dir) / "gen" / "include" / "godot_cpp" / "core"
     include_gen_folder = Path(output_dir) / "gen" / "include" / "godot_cpp"
-    include_gen_compat_folder = Path(output_dir) / "gen" / "include" / "godot_compat"
     source_gen_folder = Path(output_dir) / "gen" / "src"
 
     files.append(str((core_gen_folder / "ext_wrappers.gen.inc").as_posix()))
@@ -311,7 +307,6 @@ def generate_bindings(api_filepath, use_template_get_node, bits="64", precision=
     generate_builtin_bindings(api, target_dir, real_t + "_" + bits)
     generate_engine_classes_bindings(api, target_dir, use_template_get_node)
     generate_utility_functions(api, target_dir)
-    generate_compat_includes(target_dir)
 
 
 builtin_classes = []
@@ -701,7 +696,7 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
 
             vararg = method["is_vararg"]
             if vararg:
-                result.append("\ttemplate<class... Args>")
+                result.append("\ttemplate<typename... Args>")
 
             method_signature = "\t"
             if "is_static" in method and method["is_static"]:
@@ -800,7 +795,7 @@ def generate_builtin_class_header(builtin_api, size, used_classes, fully_used_cl
         result.append("\tchar32_t *ptrw();")
 
     if class_name == "Array":
-        result.append("\ttemplate <class... Args>")
+        result.append("\ttemplate <typename... Args>")
         result.append("\tstatic Array make(Args... args) {")
         result.append("\t\treturn helpers::append_all(Array(), args...);")
         result.append("\t}")
@@ -1445,41 +1440,6 @@ def generate_engine_classes_bindings(api, output_dir, use_template_get_node):
             header_file.write("\n".join(result))
 
 
-def generate_compat_includes(output_dir):
-    file_types_mapping_godot_cpp = map_header_files("gen/include")
-    godot_compat = Path("output_header_mapping.json")
-    if not godot_compat.exists():
-        return
-    with godot_compat.open() as file:
-        mapping2 = json.load(file)
-    # Match the headers
-    file_types_mapping = match_headers(file_types_mapping_godot_cpp, mapping2)
-
-    include_gen_folder = Path(output_dir) / "include"
-    for file_godot_cpp_name, file_godot_names in file_types_mapping.items():
-        header_filename = file_godot_cpp_name.replace("godot_cpp", "godot_compat")
-        header_filepath = include_gen_folder / header_filename
-        Path(os.path.dirname(header_filepath)).mkdir(parents=True, exist_ok=True)
-        result = []
-        snake_header_name = camel_to_snake(header_filename)
-        add_header(f"{snake_header_name}.hpp", result)
-
-        header_guard = f"GODOT_COMPAT_{os.path.splitext(os.path.basename(header_filepath).upper())[0]}_HPP"
-        result.append(f"#ifndef {header_guard}")
-        result.append(f"#define {header_guard}")
-        result.append("")
-        result.append(f"#ifdef GODOT_MODULE_COMPAT")
-        for file_godot_name in file_godot_names:
-            result.append(f"#include <{file_godot_name}>")
-        result.append(f"#else")
-        result.append(f"#include <{file_godot_cpp_name}>")
-        result.append(f"#endif")
-        result.append("")
-        result.append(f"#endif // ! {header_guard}")
-        with header_filepath.open("w+", encoding="utf-8") as header_file:
-            header_file.write("\n".join(result))
-
-
 def generate_engine_class_header(class_api, used_classes, fully_used_classes, use_template_get_node):
     global singletons
     result = []
@@ -1596,7 +1556,7 @@ def generate_engine_class_header(class_api, used_classes, fully_used_classes, us
     result.append("protected:")
     # T is the custom class we want to register (from which the call initiates, going up the inheritance chain),
     # B is its base class (can be a custom class too, that's why we pass it).
-    result.append("\ttemplate <class T, class B>")
+    result.append("\ttemplate <typename T, typename B>")
     result.append("\tstatic void register_virtuals() {")
     if class_name != "Object":
         result.append(f"\t\t{inherits}::register_virtuals<T, B>();")
@@ -1642,16 +1602,16 @@ def generate_engine_class_header(class_api, used_classes, fully_used_classes, us
     if class_name == "Object":
         result.append("")
 
-        result.append("\ttemplate<class T>")
+        result.append("\ttemplate<typename T>")
         result.append("\tstatic T *cast_to(Object *p_object);")
 
-        result.append("\ttemplate<class T>")
+        result.append("\ttemplate<typename T>")
         result.append("\tstatic const T *cast_to(const Object *p_object);")
 
         result.append("\tvirtual ~Object() = default;")
 
     elif use_template_get_node and class_name == "Node":
-        result.append("\ttemplate<class T>")
+        result.append("\ttemplate<typename T>")
         result.append(
             "\tT *get_node(const NodePath &p_path) const { return Object::cast_to<T>(get_node_internal(p_path)); }"
         )
@@ -2285,7 +2245,7 @@ def make_varargs_template(
     if with_public_declare:
         function_signature = "public: "
 
-    function_signature += "template<class... Args> "
+    function_signature += "template<typename... Args> "
 
     if static:
         function_signature += "static "
