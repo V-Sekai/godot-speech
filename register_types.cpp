@@ -38,6 +38,7 @@
 
 #include "thirdparty/jitter.h"
 
+#ifdef GODOT_MODULE_COMPAT
 extern "C"
 #ifdef __GNUC__
 		__attribute__((noreturn))
@@ -68,3 +69,35 @@ void uninitialize_speech_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 }
+#else
+void initialize_speech_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+	GDREGISTER_CLASS(PlaybackStats);
+	GDREGISTER_CLASS(SpeechProcessor);
+	GDREGISTER_CLASS(SpeechDecoder);
+	GDREGISTER_CLASS(Speech);
+	GDREGISTER_CLASS(JitterBuffer);
+	GDREGISTER_CLASS(JitterBufferPacket);
+}
+
+void uninitialize_speech_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+
+extern "C" {
+
+GDExtensionBool GDE_EXPORT godot_speech_library_init(const GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
+	godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
+
+	init_obj.register_initializer(initialize_speech_module);
+	init_obj.register_terminator(uninitialize_speech_module);
+	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
+
+	return init_obj.init();
+}
+}
+#endif
