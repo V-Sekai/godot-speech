@@ -30,7 +30,7 @@ elif env["platform"] == "ios":
     env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_IOS"])
 elif env["platform"] == "macos":
     env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_MAC"])
-elif env["platform"] == "linuxbsd":
+elif env["platform"] == "linux":
     env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_LINUX"])
 elif env["platform"] == "android":
     env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_ANDROID"])
