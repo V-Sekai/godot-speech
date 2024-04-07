@@ -9,6 +9,14 @@
 
 using namespace godot;
 
+inline void compat_print_verbose(const Variant &v) {
+#ifdef GODOT_MODULE_COMPAT
+	print_verbose(v);
+#else
+	UtilityFunctions::print_verbose(v);
+#endif
+}
+
 inline void compat_print_line(const Variant &v) {
 #ifdef GODOT_MODULE_COMPAT
 	print_line(v);
