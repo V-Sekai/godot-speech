@@ -82,7 +82,7 @@ TODO:
 
 #include "jitter.h"
 #include <godot_compat/core/error_macros.hpp>
-#include <godot_compat_helper.h>
+#include "../godot_compat_helper.h"
 
 void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 	if (jitter.is_null()) {
