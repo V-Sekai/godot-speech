@@ -73,10 +73,6 @@ namespace webrtc {
 struct EchoCanceller3Config;
 }
 
-#ifndef GODOT_MODULE_COMPAT
-using namespace godot;
-#endif
-
 class SpeechProcessor : public Node {
 	GDCLASS(SpeechProcessor, Node);
 	Mutex mutex;

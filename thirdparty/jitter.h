@@ -122,8 +122,6 @@ TODO:
 
 #include <godot_compat/variant/variant.hpp>
 
-using namespace godot;
-
 /** Definition of an incoming packet */
 class JitterBufferPacket : public RefCounted {
 	GDCLASS(JitterBufferPacket, RefCounted);

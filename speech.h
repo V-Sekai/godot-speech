@@ -49,10 +49,6 @@
 
 class SpeechProcessor;
 
-#ifndef GODOT_MODULE_COMPAT
-using namespace godot;
-#endif
-
 class Speech : public Node {
 	GDCLASS(Speech, Node);
 

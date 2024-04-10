@@ -7,8 +7,6 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 #endif
 
-using namespace godot;
-
 inline void compat_print_verbose(const Variant &v) {
 #ifdef GODOT_MODULE_COMPAT
 	print_verbose(v);

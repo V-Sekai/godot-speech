@@ -37,10 +37,6 @@
 
 #include "thirdparty/opus/opus/opus.h"
 
-#ifndef GODOT_MODULE_COMPAT
-using namespace godot;
-#endif
-
 class SpeechDecoder : public RefCounted {
 	GDCLASS(SpeechDecoder, RefCounted);
 
