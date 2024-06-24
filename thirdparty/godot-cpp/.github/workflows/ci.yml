@@ -5,7 +5,7 @@ env:
   # Only used for the cache key. Increment version to force clean build.
   GODOT_BASE_BRANCH: master
   # Used to select the version of Godot to run the tests with.
-  GODOT_TEST_VERSION: master
+  GODOT_TEST_VERSION: 4.2.2-stable
 
 concurrency:
   group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}
@@ -54,7 +54,7 @@ jobs:
             cache-name: windows-x86_64-mingw
 
           - name: 🍎 macOS (universal)
-            os: macos-latest
+            os: macos-11
             platform: macos
             artifact-name: godot-cpp-macos-universal-release
             artifact-path: bin/libgodot-cpp.macos.template_release.universal.a
@@ -72,7 +72,7 @@ jobs:
             cache-name: android-arm64
 
           - name: 🍏 iOS (arm64)
-            os: macos-latest
+            os: macos-11
             platform: ios
             artifact-name: godot-cpp-ios-arm64-release
             artifact-path: bin/libgodot-cpp.ios.template_release.arm64.a
@@ -188,7 +188,7 @@ jobs:
           $GODOT --headless --version
           cd test
           # Need to run the editor so .godot is generated... but it crashes! Ignore that :-)
-          (cd project && (timeout 30 $GODOT --import --headless >/dev/null 2>&1 || true))
+          (cd project && (timeout 30 $GODOT --editor --headless --quit >/dev/null 2>&1 || true))
           ./run-tests.sh
 
       - name: Upload artifact
