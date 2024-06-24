@@ -31,9 +31,9 @@
 #include "thirdparty/jitter.h"
 #include <godot_cpp/classes/audio_stream_player2d.hpp>
 #include <godot_cpp/classes/audio_stream_player3d.hpp>
+#include <godot_cpp/classes/time.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
-#include <godot_cpp/classes/time.hpp>
 
 #include "speech.h"
 #include "speech_processor.h"

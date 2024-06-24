@@ -227,7 +227,7 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_capture_buffer, const Vector2 
 void SpeechProcessor::start() {
 	if (!ProjectSettings::get_singleton()->get("audio/enable_audio_input")) {
 		UtilityFunctions::print("Need to enable Project settings > Audio > Enable Audio Input "
-						  "option to use capturing.");
+								"option to use capturing.");
 		return;
 	}
 
