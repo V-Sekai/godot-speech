@@ -5,7 +5,7 @@ compatibility_minimum = 4.2
 
 [libraries]
 
-macos.debug = "bin/libgodot_speech.macos.template_release.universal.framework"
+macos.debug = "bin/libgodot_speech.macos.template_debug.universal.framework"
 macos.release = "bin/libgodot_speech.macos.template_release.universal.framework"
 macos.debug.double = "bin/libgodot_speech.macos.template_release.double.universal.framework"
 macos.release.double = "bin/libgodot_speech.macos.template_release.double.universal.framework"
