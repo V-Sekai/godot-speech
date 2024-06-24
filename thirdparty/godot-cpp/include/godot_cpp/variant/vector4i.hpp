@@ -84,9 +84,6 @@ struct _NO_DISCARD_ Vector4i {
 	_FORCE_INLINE_ int64_t length_squared() const;
 	_FORCE_INLINE_ double length() const;
 
-	_FORCE_INLINE_ int64_t distance_squared_to(const Vector4i &p_to) const;
-	_FORCE_INLINE_ double distance_to(const Vector4i &p_to) const;
-
 	_FORCE_INLINE_ void zero();
 
 	_FORCE_INLINE_ Vector4i abs() const;
@@ -141,14 +138,6 @@ int64_t Vector4i::length_squared() const {
 
 double Vector4i::length() const {
 	return Math::sqrt((double)length_squared());
-}
-
-int64_t Vector4i::distance_squared_to(const Vector4i &p_to) const {
-	return (p_to - *this).length_squared();
-}
-
-double Vector4i::distance_to(const Vector4i &p_to) const {
-	return (p_to - *this).length();
 }
 
 Vector4i Vector4i::abs() const {

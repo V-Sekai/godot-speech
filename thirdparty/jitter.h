@@ -93,8 +93,10 @@ TODO:
 #include <cstdlib>
 #include <cstring>
 
-#include "core/object/ref_counted.h"
-#include "core/variant/variant.h"
+#include <godot_cpp/classes/ref.hpp>
+#include <godot_cpp/classes/weak_ref.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
 #define speex_assert(cond)                           \
 	{                                                \
@@ -118,7 +120,9 @@ TODO:
 #define MAX_BUFFERS 3
 #define TOP_DELAY 40
 
-#include "core/variant/variant.h"
+#include <godot_cpp/variant/variant.hpp>
+
+using namespace godot;
 
 /** Definition of an incoming packet */
 class JitterBufferPacket : public RefCounted {
@@ -267,7 +271,9 @@ public:
 	}
 	~JitterBuffer() {
 		for (int i = 0; i < MAX_BUFFERS; ++i) {
-			memdelete_notnull(_tb[i]);
+			if (_tb[i]) {
+				memdelete(_tb[i]);
+			}
 			_tb[i] = nullptr;
 			timeBuffers[i] = nullptr;
 		}
