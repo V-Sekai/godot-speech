@@ -31,25 +31,27 @@
 #ifndef SPEECH_PROCESSOR_H
 #define SPEECH_PROCESSOR_H
 
-#include <godot_compat/classes/audio_bus_layout.hpp>
-#include <godot_compat/classes/audio_effect_capture.hpp>
-#include <godot_compat/classes/audio_server.hpp>
-#include <godot_compat/classes/audio_stream.hpp>
-#include <godot_compat/classes/audio_stream_microphone.hpp>
-#include <godot_compat/classes/audio_stream_playback.hpp>
-#include <godot_compat/classes/audio_stream_playback_resampled.hpp>
-#include <godot_compat/classes/audio_stream_player.hpp>
-#include <godot_compat/classes/audio_stream_randomizer.hpp>
-#include <godot_compat/classes/engine.hpp>
-#include <godot_compat/classes/node.hpp>
-#include <godot_compat/classes/project_settings.hpp>
-#include <godot_compat/classes/ref.hpp>
-#include <godot_compat/classes/ref_counted.hpp>
-#include <godot_compat/classes/weak_ref.hpp>
-#include <godot_compat/core/class_db.hpp>
-#include <godot_compat/core/memory.hpp>
-#include <godot_compat/core/mutex_lock.hpp>
-#include <godot_compat/variant/callable_method_pointer.hpp>
+#include <godot_cpp/classes/audio_bus_layout.hpp>
+#include <godot_cpp/classes/audio_effect_capture.hpp>
+#include <godot_cpp/classes/audio_server.hpp>
+#include <godot_cpp/classes/audio_stream.hpp>
+#include <godot_cpp/classes/audio_stream_microphone.hpp>
+#include <godot_cpp/classes/audio_stream_playback.hpp>
+#include <godot_cpp/classes/audio_stream_playback_resampled.hpp>
+#include <godot_cpp/classes/audio_stream_player.hpp>
+#include <godot_cpp/classes/audio_stream_randomizer.hpp>
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
+#include <godot_cpp/classes/ref.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/weak_ref.hpp>
+#include <godot_cpp/templates/vector.hpp>
+#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/memory.hpp>
+#include <godot_cpp/core/mutex_lock.hpp>
+#include <godot_cpp/classes/mutex.hpp>
+#include <godot_cpp/variant/callable_method_pointer.hpp>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -72,6 +74,8 @@ class AudioBuffer;
 namespace webrtc {
 struct EchoCanceller3Config;
 }
+
+using namespace godot;
 
 class SpeechProcessor : public Node {
 	GDCLASS(SpeechProcessor, Node);

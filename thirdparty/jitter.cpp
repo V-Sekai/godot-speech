@@ -81,8 +81,9 @@ TODO:
 */
 
 #include "jitter.h"
-#include <godot_compat/core/error_macros.hpp>
-#include "../godot_compat_helper.h"
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/variant/variant.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 
 void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 	if (jitter.is_null()) {
@@ -109,7 +110,7 @@ void VoipJitterBuffer::jitter_buffer_reset(Ref<JitterBuffer> jitter) {
 		tb_init(jitter->_tb[i]);
 		jitter->timeBuffers[i] = jitter->_tb[i];
 	}
-	compat_print_verbose("reset");
+	UtilityFunctions::print_verbose("reset");
 }
 
 int VoipJitterBuffer::jitter_buffer_ctl(Ref<JitterBuffer> jitter, int request, int32_t *ptr) {
@@ -287,7 +288,7 @@ void VoipJitterBuffer::jitter_buffer_put(Ref<JitterBuffer> jitter, const Ref<Jit
 		if (jitter->packets[i_jitter] != nullptr) {
 			jitter->packets[i_jitter]->get_data().clear();
 		}
-		compat_print_verbose(vformat("Buffer is full, discarding earliest frame %d (currently at %d)", packet->get_timestamp(), jitter->pointer_timestamp));
+		UtilityFunctions::print_verbose(vformat("Buffer is full, discarding earliest frame %d (currently at %d)", packet->get_timestamp(), jitter->pointer_timestamp));
 	}
 
 	// Check if the packet object is valid before copying data and setting properties
@@ -367,7 +368,7 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		/* Increment the pointer because it got decremented in the delay update */
 		jitter->pointer_timestamp += jitter->interp_requested;
 		packet->get_data().clear();
-		compat_print_verbose("Deferred interpolate");
+		UtilityFunctions::print_verbose("Deferred interpolate");
 
 		jitter->interp_requested = 0;
 
@@ -500,10 +501,10 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 
 	/* If we haven't found anything worth returning */
 
-	compat_print_verbose("not found");
+	UtilityFunctions::print_verbose("not found");
 	jitter->lost_count++;
-	compat_print_verbose("m");
-	compat_print_verbose(vformat("lost_count = %d\n", jitter->lost_count));
+	UtilityFunctions::print_verbose("m");
+	UtilityFunctions::print_verbose(vformat("lost_count = %d\n", jitter->lost_count));
 
 	opt = compute_opt_delay(jitter);
 
@@ -524,7 +525,7 @@ Array VoipJitterBuffer::jitter_buffer_get(Ref<JitterBuffer> jitter, Ref<JitterBu
 		array[0] = JitterBufferPacket::JITTER_BUFFER_INSERTION;
 		array[1] = start_offset;
 		/*jitter->pointer_timestamp -= jitter->delay_step;*/
-		compat_print_verbose(vformat("Forced to interpolate."));
+		UtilityFunctions::print_verbose(vformat("Forced to interpolate."));
 	} else {
 		/* Normal packet loss */
 		packet->set_timestamp(jitter->pointer_timestamp);
@@ -723,7 +724,7 @@ int16_t VoipJitterBuffer::compute_opt_delay(Ref<JitterBuffer> jitter) {
 		late_factor = jitter->auto_tradeoff * jitter->window_size / tot_count;
 	}
 
-	compat_print_verbose(vformat("late_factor = %f\n", late_factor));
+	UtilityFunctions::print_verbose(vformat("late_factor = %f\n", late_factor));
 	for (i = 0; i < MAX_BUFFERS; i++) {
 		pos[i] = 0;
 	}
@@ -774,7 +775,7 @@ int16_t VoipJitterBuffer::compute_opt_delay(Ref<JitterBuffer> jitter) {
 	deltaT = best - worst;
 	/* This is a default "automatic latency tradeoff" when none is provided */
 	jitter->auto_tradeoff = 1 + deltaT / TOP_DELAY;
-	compat_print_verbose(vformat("auto_tradeoff = %d (%d %d %d)\n", jitter->auto_tradeoff, best, worst, i));
+	UtilityFunctions::print_verbose(vformat("auto_tradeoff = %d (%d %d %d)\n", jitter->auto_tradeoff, best, worst, i));
 
 	/* FIXME: Compute a short-term estimate too and combine with the long-term one */
 
@@ -798,7 +799,7 @@ void VoipJitterBuffer::update_timings(Ref<JitterBuffer> jitter, int32_t timing) 
 	/* If the current sub-window is full, perform a rotation and discard oldest sub-window */
 	if (jitter->timeBuffers[0]->get_curr_count() >= jitter->subwindow_size) {
 		int i;
-		compat_print_verbose("Rotate buffer");
+		UtilityFunctions::print_verbose("Rotate buffer");
 		TimingBuffer *tmp = jitter->timeBuffers[MAX_BUFFERS - 1];
 		for (i = MAX_BUFFERS - 1; i >= 1; i--) {
 			jitter->timeBuffers[i] = jitter->timeBuffers[i - 1];
@@ -829,16 +830,16 @@ int32_t VoipJitterBuffer::_jitter_buffer_update_delay(Ref<JitterBuffer> jitter, 
 		return 0;
 	}
 	int16_t opt = compute_opt_delay(jitter);
-	compat_print_verbose(vformat("opt adjustment is %d ", opt));
+	UtilityFunctions::print_verbose(vformat("opt adjustment is %d ", opt));
 	if (opt < 0) {
 		shift_timings(jitter, -opt);
 		jitter->pointer_timestamp += opt;
 		jitter->interp_requested = -opt;
-		compat_print_verbose(vformat("Decision to interpolate %d samples\n", -opt));
+		UtilityFunctions::print_verbose(vformat("Decision to interpolate %d samples\n", -opt));
 	} else if (opt > 0) {
 		shift_timings(jitter, -opt);
 		jitter->pointer_timestamp += opt;
-		compat_print_verbose(vformat("Decision to drop %d samples\n", opt));
+		UtilityFunctions::print_verbose(vformat("Decision to drop %d samples\n", opt));
 	}
 	return opt;
 }

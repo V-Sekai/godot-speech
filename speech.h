@@ -33,21 +33,23 @@
 
 #include "playback_stats.h"
 #include "thirdparty/jitter.h"
-#include <godot_compat/classes/audio_stream_generator.hpp>
-#include <godot_compat/classes/audio_stream_generator_playback.hpp>
-#include <godot_compat/classes/node.hpp>
-#include <godot_compat/core/error_macros.hpp>
-#include <godot_compat/core/memory.hpp>
-#include <godot_compat/core/mutex_lock.hpp>
-#include <godot_compat/variant/array.hpp>
-#include <godot_compat/variant/callable_method_pointer.hpp>
-#include <godot_compat/variant/dictionary.hpp>
-#include <godot_compat/variant/packed_vector2_array.hpp>
+#include <godot_cpp/classes/audio_stream_generator.hpp>
+#include <godot_cpp/classes/audio_stream_generator_playback.hpp>
+#include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/core/memory.hpp>
+#include <godot_cpp/core/mutex_lock.hpp>
+#include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/callable_method_pointer.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/packed_vector2_array.hpp>
 
 #include "speech_decoder.h"
 #include "speech_processor.h"
 
 class SpeechProcessor;
+
+using namespace godot;
 
 class Speech : public Node {
 	GDCLASS(Speech, Node);

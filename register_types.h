@@ -30,16 +30,11 @@
 
 #pragma once
 
-#ifdef GODOT_MODULE_COMPAT
-#include "modules/register_module_types.h"
-
-void initialize_speech_module(ModuleInitializationLevel p_level);
-void uninitialize_speech_module(ModuleInitializationLevel p_level);
-#else
-
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
+using namespace godot;
+
 void initialize_speech_module(ModuleInitializationLevel p_level);
 void uninitialize_speech_module(ModuleInitializationLevel p_level);
-#endif
+

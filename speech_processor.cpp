@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include <godot_compat/classes/audio_server.hpp>
+#include <godot_cpp/classes/audio_server.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 
 #include "opus_custom.h"
 #include "speech_processor.h"
 
-#include "godot_compat_helper.h"
 #include <algorithm>
 
 #define STEREO_CHANNEL_COUNT 2
@@ -226,7 +226,7 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_capture_buffer, const Vector2 
 
 void SpeechProcessor::start() {
 	if (!ProjectSettings::get_singleton()->get("audio/enable_audio_input")) {
-		compat_print_line("Need to enable Project settings > Audio > Enable Audio Input "
+		UtilityFunctions::print("Need to enable Project settings > Audio > Enable Audio Input "
 						  "option to use capturing.");
 		return;
 	}
@@ -511,28 +511,28 @@ Dictionary SpeechProcessor::get_stats() const {
 void SpeechProcessor::print_opus_error(int error_code) {
 	switch (error_code) {
 		case OPUS_OK:
-			compat_print_line("OpusCodec::OPUS_OK");
+			UtilityFunctions::print("OpusCodec::OPUS_OK");
 			break;
 		case OPUS_BAD_ARG:
-			compat_print_line("OpusCodec::OPUS_BAD_ARG");
+			UtilityFunctions::print("OpusCodec::OPUS_BAD_ARG");
 			break;
 		case OPUS_BUFFER_TOO_SMALL:
-			compat_print_line("OpusCodec::OPUS_BUFFER_TOO_SMALL");
+			UtilityFunctions::print("OpusCodec::OPUS_BUFFER_TOO_SMALL");
 			break;
 		case OPUS_INTERNAL_ERROR:
-			compat_print_line("OpusCodec::OPUS_INTERNAL_ERROR");
+			UtilityFunctions::print("OpusCodec::OPUS_INTERNAL_ERROR");
 			break;
 		case OPUS_INVALID_PACKET:
-			compat_print_line("OpusCodec::OPUS_INVALID_PACKET");
+			UtilityFunctions::print("OpusCodec::OPUS_INVALID_PACKET");
 			break;
 		case OPUS_UNIMPLEMENTED:
-			compat_print_line("OpusCodec::OPUS_UNIMPLEMENTED");
+			UtilityFunctions::print("OpusCodec::OPUS_UNIMPLEMENTED");
 			break;
 		case OPUS_INVALID_STATE:
-			compat_print_line("OpusCodec::OPUS_INVALID_STATE");
+			UtilityFunctions::print("OpusCodec::OPUS_INVALID_STATE");
 			break;
 		case OPUS_ALLOC_FAIL:
-			compat_print_line("OpusCodec::OPUS_ALLOC_FAIL");
+			UtilityFunctions::print("OpusCodec::OPUS_ALLOC_FAIL");
 			break;
 	}
 }

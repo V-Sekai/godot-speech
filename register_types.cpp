@@ -31,45 +31,13 @@
 #include "register_types.h"
 
 #include "speech.h"
-#include <godot_compat/core/class_db.hpp>
+#include <godot_cpp/core/class_db.hpp>
 
 #include "speech_decoder.h"
 #include "speech_processor.h"
 
 #include "thirdparty/jitter.h"
 
-#ifdef GODOT_MODULE_COMPAT
-extern "C"
-#ifdef __GNUC__
-		__attribute__((noreturn))
-#endif
-		void
-		celt_fatal(const char *str, const char *file, int line) {
-	ERR_PRINT(String(str));
-#if defined(_MSC_VER)
-	_set_abort_behavior(0, _WRITE_ABORT_MSG);
-#endif
-	abort();
-}
-
-void initialize_speech_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-	GDREGISTER_CLASS(PlaybackStats);
-	GDREGISTER_CLASS(SpeechProcessor);
-	GDREGISTER_CLASS(SpeechDecoder);
-	GDREGISTER_CLASS(Speech);
-	GDREGISTER_CLASS(JitterBuffer);
-	GDREGISTER_CLASS(JitterBufferPacket);
-}
-
-void uninitialize_speech_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-}
-#else
 void initialize_speech_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
@@ -100,4 +68,3 @@ GDExtensionBool GDE_EXPORT godot_speech_library_init(const GDExtensionInterfaceG
 	return init_obj.init();
 }
 }
-#endif

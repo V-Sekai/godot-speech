@@ -1,7 +1,9 @@
 #pragma once
-#include <godot_compat/classes/ref.hpp>
-#include <godot_compat/classes/ref_counted.hpp>
-#include <godot_compat/classes/weak_ref.hpp>
+#include <godot_cpp/classes/ref.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/weak_ref.hpp>
+
+using namespace godot;
 
 class PlaybackStats : public RefCounted {
 	GDCLASS(PlaybackStats, RefCounted);

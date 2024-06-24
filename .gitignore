@@ -387,3 +387,5 @@ gcov.css
 !thirdparty/opus/silk/x86
 !thirdparty/libsamplerate/Win32
 !thirdparty/opus/silk/fixed/x86
+
+!bin

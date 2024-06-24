@@ -29,11 +29,12 @@
 /**************************************************************************/
 
 #include "thirdparty/jitter.h"
-#include <godot_compat/classes/audio_stream_player2d.hpp>
-#include <godot_compat/classes/audio_stream_player3d.hpp>
-#include <godot_compat/classes/time.hpp>
+#include <godot_cpp/classes/audio_stream_player2d.hpp>
+#include <godot_cpp/classes/audio_stream_player3d.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/classes/time.hpp>
 
-#include "godot_compat_helper.h"
 #include "speech.h"
 #include "speech_processor.h"
 
@@ -566,7 +567,7 @@ void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
 			dict["playback_prev_time"] = -1;
 			player_audio[p_player_id] = dict;
 		} else {
-			compat_print_error(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
+			ERR_PRINT(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
 		}
 	}
 }
@@ -575,14 +576,14 @@ void Speech::vc_debug_print(String p_str) const {
 	if (!DEBUG) {
 		return;
 	}
-	compat_print_line(p_str);
+	UtilityFunctions::print(p_str);
 }
 
 void Speech::vc_debug_printerr(String p_str) const {
 	if (!DEBUG) {
 		return;
 	}
-	compat_print_error(p_str);
+	ERR_PRINT(p_str);
 }
 
 void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedByteArray p_packet) {
@@ -642,7 +643,7 @@ void Speech::remove_player_audio(int p_player_id) {
 			return;
 		}
 	}
-	compat_print_error(vformat("Attempted to remove a non-existant player_audio entry (%s)", p_player_id));
+	ERR_PRINT(vformat("Attempted to remove a non-existant player_audio entry (%s)", p_player_id));
 }
 
 void Speech::clear_all_player_audio() {
