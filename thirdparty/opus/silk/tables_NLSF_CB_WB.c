@@ -186,7 +186,7 @@ const silk_NLSF_CB_struct silk_NLSF_CB_WB =
     32,
     16,
     SILK_FIX_CONST( 0.15, 16 ),
-    SILK_FIX_CONST( 1.0 / 0.15, 6 ),
+    SILK_FIX_CONST( 6.666666666666667, 6 ), // SILK_FIX_CONST( 1.0 / 0.15, 6 ),
     silk_NLSF_CB1_WB_Q8,
     silk_NLSF_CB1_iCDF_WB,
     silk_NLSF_PRED_WB_Q8,
