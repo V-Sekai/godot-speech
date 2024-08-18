@@ -174,6 +174,9 @@ thirdparty_sources = [
     "silk/stereo_quant_pred.c",
 ]
 
+if env["platform"] == "windows" and env["arch"] == "x86_64":
+    thirdparty_sources += ["celt/x86/pitch_sse.c"]
+
 opus_sources_silk = []
 
 if env["platform"] in ["android", "iphone", "javascript"]:
@@ -372,7 +375,6 @@ thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources + opu
 env_thirdparty.Prepend(CPPPATH=["#thirdparty/libogg"])
 env_thirdparty.Append(CPPDEFINES=["HAVE_CONFIG_H"])
 thirdparty_include_paths = [
-    "",
     "celt",
     "opus",
     "silk",
