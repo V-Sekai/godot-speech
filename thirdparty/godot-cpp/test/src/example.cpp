@@ -11,6 +11,7 @@
 #include <godot_cpp/classes/label.hpp>
 #include <godot_cpp/classes/multiplayer_api.hpp>
 #include <godot_cpp/classes/multiplayer_peer.hpp>
+#include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
 using namespace godot;
@@ -47,11 +48,6 @@ public:
 
 	virtual ObjectID get_object() const {
 		return ObjectID();
-	}
-
-	virtual int get_argument_count(bool &r_is_valid) const {
-		r_is_valid = true;
-		return 2;
 	}
 
 	virtual void call(const Variant **p_arguments, int p_argcount, Variant &r_return_value, GDExtensionCallError &r_call_error) const {
@@ -236,8 +232,7 @@ void Example::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("callable_bind"), &Example::callable_bind);
 	ClassDB::bind_method(D_METHOD("test_post_initialize"), &Example::test_post_initialize);
 
-	GDVIRTUAL_BIND(_do_something_virtual, "name", "value");
-	ClassDB::bind_method(D_METHOD("test_virtual_implemented_in_script"), &Example::test_virtual_implemented_in_script);
+	ClassDB::bind_method(D_METHOD("test_use_engine_singleton"), &Example::test_use_engine_singleton);
 
 	ClassDB::bind_static_method("Example", D_METHOD("test_static", "a", "b"), &Example::test_static);
 	ClassDB::bind_static_method("Example", D_METHOD("test_static2"), &Example::test_static2);
@@ -663,30 +658,6 @@ void ExampleChild::_notification(int p_what) {
 	}
 }
 
-String Example::test_virtual_implemented_in_script(const String &p_name, int p_value) {
-	String ret;
-	if (GDVIRTUAL_CALL(_do_something_virtual, p_name, p_value, ret)) {
-		return ret;
-	}
-	return "Unimplemented";
-}
-
-void ExampleRuntime::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_prop_value", "value"), &ExampleRuntime::set_prop_value);
-	ClassDB::bind_method(D_METHOD("get_prop_value"), &ExampleRuntime::get_prop_value);
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "prop_value"), "set_prop_value", "get_prop_value");
-}
-
-void ExampleRuntime::set_prop_value(int p_prop_value) {
-	prop_value = p_prop_value;
-}
-
-int ExampleRuntime::get_prop_value() const {
-	return prop_value;
-}
-
-ExampleRuntime::ExampleRuntime() {
-}
-
-ExampleRuntime::~ExampleRuntime() {
+String Example::test_use_engine_singleton() const {
+	return OS::get_singleton()->get_name();
 }

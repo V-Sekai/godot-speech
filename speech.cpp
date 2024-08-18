@@ -28,9 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "modules/speech/thirdparty/jitter.h"
-#include "scene/2d/audio_stream_player_2d.h"
-#include "scene/3d/audio_stream_player_3d.h"
+#include "thirdparty/jitter.h"
+#include <godot_cpp/classes/audio_stream_player2d.hpp>
+#include <godot_cpp/classes/audio_stream_player3d.hpp>
+#include <godot_cpp/classes/time.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 
 #include "speech.h"
 #include "speech_processor.h"
@@ -445,7 +448,7 @@ void Speech::_notification(int p_what) {
 			blank_packet.resize(SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT);
 			blank_packet.fill(Vector2());
 			for (int32_t i = 0; i < SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT; i++) {
-				blank_packet.write[i] = Vector2();
+				blank_packet[i] = Vector2();
 			}
 			break;
 		}
@@ -551,7 +554,11 @@ void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
 			dict["audio_stream_player"] = p_audio_stream_player;
 			dict["jitter_buffer"] = Array();
 			dict["sequence_id"] = -1;
+#ifdef GODOT_MODULE_COMPAT
 			dict["last_update"] = OS::get_singleton()->get_ticks_msec();
+#else
+			dict["last_update"] = Time::get_singleton()->get_ticks_msec();
+#endif
 			dict["packets_received_this_frame"] = 0;
 			dict["excess_packets"] = 0;
 			dict["speech_decoder"] = speech_decoder;
@@ -560,7 +567,7 @@ void Speech::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
 			dict["playback_prev_time"] = -1;
 			player_audio[p_player_id] = dict;
 		} else {
-			print_error(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
+			ERR_PRINT(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
 		}
 	}
 }
@@ -569,14 +576,14 @@ void Speech::vc_debug_print(String p_str) const {
 	if (!DEBUG) {
 		return;
 	}
-	print_line(p_str);
+	UtilityFunctions::print(p_str);
 }
 
 void Speech::vc_debug_printerr(String p_str) const {
 	if (!DEBUG) {
 		return;
 	}
-	print_error(p_str);
+	ERR_PRINT(p_str);
 }
 
 void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedByteArray p_packet) {
@@ -622,7 +629,7 @@ Dictionary Speech::get_playback_stats(Dictionary speech_stat_dict) {
 			continue;
 		}
 		Dictionary stats = playback_stats->get_playback_stats();
-		stats["playback_total_time"] = (OS::get_singleton()->get_ticks_msec() - int64_t(elem["playback_start_time"])) / double(SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND);
+		stats["playback_total_time"] = (Time::get_singleton()->get_ticks_msec() - int64_t(elem["playback_start_time"])) / double(SpeechProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND);
 		stats["excess_packets"] = elem["excess_packets"];
 		stats["excess_s"] = int64_t(elem["excess_packets"]) * SpeechProcessor::SPEECH_SETTING_PACKET_DELTA_TIME;
 		stat_dict[key] = stats;
@@ -636,7 +643,7 @@ void Speech::remove_player_audio(int p_player_id) {
 			return;
 		}
 	}
-	print_error(vformat("Attempted to remove a non-existant player_audio entry (%s)", p_player_id));
+	ERR_PRINT(vformat("Attempted to remove a non-existant player_audio entry (%s)", p_player_id));
 }
 
 void Speech::clear_all_player_audio() {

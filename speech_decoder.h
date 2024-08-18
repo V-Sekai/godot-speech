@@ -31,9 +31,14 @@
 #ifndef SPEECH_DECODER_H
 #define SPEECH_DECODER_H
 
-#include "core/object/ref_counted.h"
+#include <godot_cpp/classes/ref.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/weak_ref.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
 
 #include "thirdparty/opus/opus/opus.h"
+
+using namespace godot;
 
 class SpeechDecoder : public RefCounted {
 	GDCLASS(SpeechDecoder, RefCounted);
@@ -41,6 +46,9 @@ class SpeechDecoder : public RefCounted {
 private:
 	::OpusDecoder *decoder = nullptr;
 	bool is_compressed = false;
+
+protected:
+	static void _bind_methods() {}
 
 public:
 	SpeechDecoder();

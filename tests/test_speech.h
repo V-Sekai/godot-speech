@@ -31,10 +31,10 @@
 #ifndef TEST_SPEECH_H
 #define TEST_SPEECH_H
 
-#include "core/variant/variant.h"
 #include "tests/test_macros.h"
+#include <godot_cpp/variant/variant.hpp>
 
-#include "modules/speech/thirdparty/jitter.h"
+#include "thirdparty/jitter.h"
 
 namespace TestJitter {
 TEST_CASE("[Modules][Speech] Basic Tests") {

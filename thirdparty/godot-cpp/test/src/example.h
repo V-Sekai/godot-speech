@@ -24,7 +24,6 @@
 #include <godot_cpp/variant/variant.hpp>
 
 #include <godot_cpp/core/binder_common.hpp>
-#include <godot_cpp/core/gdvirtual.gen.inc>
 
 using namespace godot;
 
@@ -184,8 +183,7 @@ public:
 	virtual bool _has_point(const Vector2 &point) const override;
 	virtual void _input(const Ref<InputEvent> &event) override;
 
-	GDVIRTUAL2R(String, _do_something_virtual, String, int);
-	String test_virtual_implemented_in_script(const String &p_name, int p_value);
+	String test_use_engine_singleton() const;
 };
 
 VARIANT_ENUM_CAST(Example::Constants);
@@ -244,22 +242,6 @@ protected:
 	static void _bind_methods() {}
 
 	void _notification(int p_what);
-};
-
-class ExampleRuntime : public Node {
-	GDCLASS(ExampleRuntime, Node);
-
-	int prop_value = 12;
-
-protected:
-	static void _bind_methods();
-
-public:
-	void set_prop_value(int p_prop_value);
-	int get_prop_value() const;
-
-	ExampleRuntime();
-	~ExampleRuntime();
 };
 
 #endif // EXAMPLE_CLASS_H
