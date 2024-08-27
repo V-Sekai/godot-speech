@@ -1,5 +1,5 @@
 def can_build(env, platform):
-    return platform != "web" and platform != "android"
+    return not env["disable_3d"] and platform != "android"
 
 
 def configure(env):
@@ -12,6 +12,9 @@ def get_doc_classes():
         "SpeechDecoder",
         "SpeechProcessor",
         "PlaybackStats",
+        "VoipJitterBuffer",
+        "JitterBuffer",
+        "JitterBufferPacket",
     ]
 
 
