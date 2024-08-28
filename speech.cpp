@@ -165,14 +165,6 @@ void Speech::set_debug(bool val) {
 	DEBUG = val;
 }
 
-bool Speech::get_use_sample_stretching() const {
-	return use_sample_stretching;
-}
-
-void Speech::set_use_sample_stretching(bool val) {
-	use_sample_stretching = val;
-}
-
 PackedVector2Array Speech::get_uncompressed_audio() const {
 	return uncompressed_audio;
 }
@@ -298,10 +290,6 @@ void Speech::_bind_methods() {
 			&Speech::get_player_audio);
 	ClassDB::bind_method(D_METHOD("set_player_audio", "player_audio"),
 			&Speech::set_player_audio);
-	ClassDB::bind_method(D_METHOD("get_use_sample_stretching"),
-			&Speech::get_use_sample_stretching);
-	ClassDB::bind_method(D_METHOD("set_use_sample_stretching", "use_sample_stretching"),
-			&Speech::set_use_sample_stretching);
 	ClassDB::bind_method(D_METHOD("calc_playback_ring_buffer_length", "generator"),
 			&Speech::calc_playback_ring_buffer_length);
 	ClassDB::bind_method(D_METHOD("add_player_audio", "player_id", "audio_stream_player"),
@@ -332,8 +320,6 @@ void Speech::_bind_methods() {
 			"get_jitter_buffer_speedup");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "DEBUG"), "set_debug",
 			"get_debug");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_sample_stretching"), "set_use_sample_stretching",
-			"get_use_sample_stretching");
 	ADD_PROPERTY(PropertyInfo(Variant::PACKED_VECTOR2_ARRAY, "uncompressed_audio", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_uncompressed_audio",
 			"get_uncompressed_audio");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "packets_received_this_frame"), "set_packets_received_this_frame",
@@ -601,11 +587,6 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 		int64_t skipped_packets = sequence_id_offset - 1;
 		if (skipped_packets) {
 			Variant fill_packets;
-			// If using stretching, fill with last received packet.
-			if (use_sample_stretching && jitter_buffer.size() > 0) {
-				Dictionary new_jitter_buffer = jitter_buffer.back();
-				fill_packets = new_jitter_buffer["packet"];
-			}
 			for (int32_t _i = 0; _i < skipped_packets; _i++) {
 				Dictionary dict;
 				dict["packet"] = fill_packets;
@@ -633,19 +614,6 @@ void Speech::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedBy
 		vc_debug_print(vformat("Updating existing sequence_id: %s", itos(sequence_id)));
 		if (sequence_id >= 0) {
 			// Update the existing buffer.
-			if (use_sample_stretching) {
-				int32_t jitter_buffer_size = jitter_buffer.size();
-				for (int32_t i = sequence_id; i < jitter_buffer_size - 1; i++) {
-					Dictionary buffer = jitter_buffer[i];
-					if (buffer["valid"]) {
-						break;
-					}
-					Dictionary dict;
-					dict["packet"] = p_packet;
-					dict["valid"] = false;
-					jitter_buffer[i] = dict;
-				}
-			}
 			Dictionary dict;
 			dict["packet"] = p_packet;
 			dict["valid"] = true;
@@ -752,10 +720,6 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 	}
 	while (p_jitter_buffer.size() < required_packets) {
 		Variant fill_packets;
-		// If using stretching, fill with last received packet
-		if (use_sample_stretching && p_jitter_buffer.size() > 0) {
-			fill_packets = last_packet;
-		}
 		Dictionary dict;
 		dict["packet"] = fill_packets;
 		dict["valid"] = false;
@@ -793,12 +757,6 @@ void Speech::attempt_to_feed_stream(int p_skip_count, Ref<SpeechDecoder> p_decod
 			p_playback_stats->playback_discarded_calls += 1;
 		}
 		p_playback_stats->playback_skips = 1.0 * double(playback->get_skips());
-	}
-	if (use_sample_stretching && p_jitter_buffer.size() == 0) {
-		Dictionary dict;
-		dict["packet"] = last_packet;
-		dict["valid"] = false;
-		p_jitter_buffer.push_back(dict);
 	}
 	if (p_playback_stats.is_valid()) {
 		p_playback_stats->jitter_buffer_size_sum += p_jitter_buffer.size();

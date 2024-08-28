@@ -144,7 +144,5 @@
 		</member>
 		<member name="uncompressed_audio" type="PackedVector2Array" setter="set_uncompressed_audio" getter="get_uncompressed_audio">
 		</member>
-		<member name="use_sample_stretching" type="bool" setter="set_use_sample_stretching" getter="get_use_sample_stretching" default="true">
-		</member>
 	</members>
 </class>

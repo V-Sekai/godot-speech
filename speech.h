@@ -123,7 +123,6 @@ private:
 	int JITTER_BUFFER_SLOWDOWN = 6;
 
 	bool DEBUG = false;
-	bool use_sample_stretching = true;
 	PackedVector2Array uncompressed_audio;
 
 	int packets_received_this_frame = 0;
@@ -148,8 +147,6 @@ public:
 	void set_stream_standard_pitch(float p_stream_standard_pitch);
 	bool get_debug() const;
 	void set_debug(bool val);
-	bool get_use_sample_stretching() const;
-	void set_use_sample_stretching(bool val);
 	PackedVector2Array get_uncompressed_audio() const;
 	void set_uncompressed_audio(PackedVector2Array val);
 	int get_packets_received_this_frame() const;
