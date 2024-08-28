@@ -25,7 +25,8 @@ if not enable_webrtc_logging:
     env.Append(CPPDEFINES=["RTC_DISABLE_LOGGING", "RTC_DISABLE_METRICS"])
 
 if env["platform"] == "windows" or env["platform"] == "uwp":
-    env.Append(CPPDEFINES=["WEBRTC_WIN"])
+    env.Append(CPPDEFINES=["WEBRTC_WIN", "WIN32"])
+    env.Append(LIBS=["winmm"]) # time_utils.cc needed by audio_frame.cc
 elif env["platform"] == "ios":
     env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_IOS"])
 elif env["platform"] == "macos":
@@ -51,7 +52,6 @@ env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/include"])
 env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/logging"])
 env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/resampler"])
 env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/utility"])
-env.Prepend(CPPPATH=["thirdparty/AEC3/base/jsoncpp/include"])
 
 thirdparty_dir = "thirdparty/opus/"
 thirdparty_sources = [
@@ -66,11 +66,6 @@ thirdparty_sources = [
     "analysis.c",
     "mlp.c",
     "mlp_data.c",
-    # Sync with libopusfile Makefile.am
-    "info.c",
-    "internal.c",
-    "opusfile.c",
-    "stream.c",
     # Sync with celt_sources.mk
     "celt/bands.c",
     "celt/celt.c",
@@ -90,11 +85,6 @@ thirdparty_sources = [
     "celt/quant_bands.c",
     "celt/rate.c",
     "celt/vq.c",
-    # "celt/arm/arm_celt_map.c",
-    # "celt/arm/armcpu.c",
-    # "celt/arm/celt_ne10_fft.c",
-    # "celt/arm/celt_ne10_mdct.c",
-    # "celt/arm/celt_neon_intr.c",
     # Sync with silk_sources.mk
     "silk/CNG.c",
     "silk/code_signs.c",
@@ -173,6 +163,26 @@ thirdparty_sources = [
     "silk/stereo_find_predictor.c",
     "silk/stereo_quant_pred.c",
 ]
+
+if env["arch"].startswith("arm"):
+    thirdparty_sources += [
+        "celt/arm/arm_celt_map.c",
+        "celt/arm/armcpu.c",
+        "celt/arm/celt_ne10_fft.c",
+        "celt/arm/celt_ne10_mdct.c",
+        "celt/arm/celt_neon_intr.c",
+    ]
+elif env["arch"].startswith("x86"):
+    thirdparty_sources += [
+        "celt/x86/celt_lpc_sse.c",
+        "celt/x86/pitch_sse.c",
+        "celt/x86/pitch_sse2.c",
+        "celt/x86/pitch_sse4_1.c",
+        "celt/x86/x86_celt_map.c",
+        "celt/x86/x86cpu.c",
+    ]
+
+
 
 opus_sources_silk = []
 
@@ -311,33 +321,13 @@ aec3_sources = [
     "AEC3/audio_processing/utility/cascaded_biquad_filter.cc",
     "AEC3/audio_processing/utility/ooura_fft.cc",
     "AEC3/api/echo_canceller3_config.cc",
-    "AEC3/api/echo_canceller3_config_json.cc",
     "AEC3/api/echo_canceller3_factory.cc",
     "AEC3/base/system_wrappers/source/cpu_features.cc",
     "AEC3/base/system_wrappers/source/field_trial.cc",
-    "AEC3/base/abseil/absl/base/internal/throw_delegate.cc",
-    "AEC3/base/abseil/absl/strings/ascii.cc",
-    "AEC3/base/abseil/absl/strings/charconv.cc",
-    "AEC3/base/abseil/absl/strings/escaping.cc",
-    "AEC3/base/abseil/absl/strings/internal/charconv_bigint.cc",
-    "AEC3/base/abseil/absl/strings/internal/charconv_parse.cc",
-    "AEC3/base/abseil/absl/strings/internal/memutil.cc",
-    "AEC3/base/abseil/absl/strings/match.cc",
-    "AEC3/base/abseil/absl/strings/numbers.cc",
-    "AEC3/base/abseil/absl/strings/string_view.cc",
-    "AEC3/base/abseil/absl/strings/str_cat.cc",
-    "AEC3/base/abseil/absl/strings/str_replace.cc",
-    "AEC3/base/abseil/absl/strings/str_split.cc",
-    "AEC3/base/abseil/absl/strings/substitute.cc",
-    "AEC3/base/abseil/absl/types/bad_optional_access.cc",
-    # "AEC3/base/jsoncpp/src/lib_json/json_reader.cpp",
-    # "AEC3/base/jsoncpp/src/lib_json/json_value.cpp",
-    # "AEC3/base/jsoncpp/src/lib_json/json_writer.cpp",
     "AEC3/base/rtc_base/checks.cc",
     "AEC3/base/rtc_base/memory/aligned_malloc.cc",
     "AEC3/base/rtc_base/platform_thread_types.cc",
     "AEC3/base/rtc_base/race_checker.cc",
-    "AEC3/base/rtc_base/strings/json.cc",
     "AEC3/base/rtc_base/strings/string_builder.cc",
     "AEC3/base/rtc_base/string_encode.cc",
     "AEC3/base/rtc_base/string_to_number.cc",
@@ -400,22 +390,22 @@ sources.extend(thirdparty_sources)
 sources.extend(Glob("thirdparty/*.cpp"))
 print(sources)
 if env["platform"] == "macos":
-	library = env.SharedLibrary(
-		"bin/addons/godot_speech/bin/libgodot_speech{}.framework/libgodot_speech{}".format(
-			env["suffix"], env["suffix"]
-		),
-		source=sources,
-	)
+    library = env.SharedLibrary(
+        "bin/addons/godot_speech/bin/libgodot_speech{}.framework/libgodot_speech{}".format(
+            env["suffix"], env["suffix"]
+        ),
+        source=sources,
+    )
 elif env["platform"] == "ios":
-	library = env.SharedLibrary(
-		"bin/addons/godot_speech/bin/libgodot_speech{}.framework/libgodot_speech{}".format(
-			env["suffix"], env["suffix"]
-		),
-		source=sources,
-	)
+    library = env.SharedLibrary(
+        "bin/addons/godot_speech/bin/libgodot_speech{}.framework/libgodot_speech{}".format(
+            env["suffix"], env["suffix"]
+        ),
+        source=sources,
+    )
 else:
-	library = env.SharedLibrary(
-		"bin/addons/godot_speech/bin/libgodot_speech{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
-		source=sources,
-	)
+    library = env.SharedLibrary(
+        "bin/addons/godot_speech/bin/libgodot_speech{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        source=sources,
+    )
 Default(library)
