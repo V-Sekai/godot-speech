@@ -41,7 +41,6 @@
 #include "tests/test_macros.h"
 
 namespace TestSpeechProcessor {
-
 TEST_CASE("[SceneTree][SpeechProcessor] Initialization and Basic Getters") {
 	SpeechProcessor *processor = memnew(SpeechProcessor);
 	REQUIRE(processor != nullptr);
@@ -187,5 +186,4 @@ TEST_CASE("[SpeechProcessor] Test Direct Audio Processing via test_process_mono_
 
 	memdelete(processor);
 }
-
 } // namespace TestSpeechProcessor

@@ -31,6 +31,8 @@ while IFS= read -rd '' f; do
         continue
     elif [[ "$f" == "api.json" ]]; then
         continue
+    elif [[ "$f" == "patches"* ]]; then
+        continue
     fi
     # Ensure that files are UTF-8 formatted.
     recode UTF-8 "$f" 2> /dev/null

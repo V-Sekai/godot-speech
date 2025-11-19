@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/godotengine/godot-cpp.git
+	branch = godot-4.3-stable
+	commit = fbbf9ec4efd8f1055d00edb8d926eef8ba4c2cce
+	parent = 1817c06684dce3955a7d95e1df63d3da58269074
+	method = merge
+	cmdver = 0.4.9

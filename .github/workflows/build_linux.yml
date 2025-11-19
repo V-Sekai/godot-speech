@@ -1,0 +1,40 @@
+name: Build Linux
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - precision: single
+            arch: x86_64
+          - precision: double
+            arch: x86_64
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: 🔗 GDExtension Build
+        uses: godotengine/godot-cpp-template/.github/actions/build@f9564a9c8115139b9624692d39e358291f6d76ce
+        with:
+          platform: linux
+          arch: ${{ matrix.arch }}
+          float-precision: ${{ matrix.precision }}
+          build-target-type: template_release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Godot_Speech
+          path: |
+            ${{ github.workspace }}/bin/**/*.so
+          if-no-files-found: error
+

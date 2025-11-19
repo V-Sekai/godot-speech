@@ -1,0 +1,18 @@
+diff --git a/SConstruct b/SConstruct
+index fb32b3e..bf2519b 100644
+--- a/SConstruct
++++ b/SConstruct
+@@ -15,6 +15,13 @@ env.Append(
+     ]
+ )
+ 
++# Windows MSVC doesn't support C99 variable-length arrays (VLAs)
++# Use alloca() instead via USE_ALLOCA define
++if env["platform"] == "windows":
++    env.Append(CPPDEFINES=["USE_ALLOCA"])
++    # Ensure VAR_ARRAYS is not defined for Windows
++    env.Append(CPPDEFINES=[("VAR_ARRAYS", None)])
++
+ env.Prepend(CPPPATH=["thirdparty", "include"])
+ env.Append(CPPPATH=["src/", "thirdparty/libsamplerate/src", "thirdparty/opus", "thirdparty/opus/opus"])
+ 

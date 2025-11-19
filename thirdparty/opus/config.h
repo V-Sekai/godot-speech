@@ -95,12 +95,14 @@
 /* This is a build of OPUS */
 #define OPUS_BUILD /**/
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(_WIN32) && !defined(_MSC_VER)
 	/* Use C99 variable-size arrays */
 	#define VAR_ARRAYS 1
 #else
-	/* Fixes VS 2013 compile error */
+	/* Fixes VS 2013 compile error - MSVC doesn't support C99 VLAs */
+	/* Use alloca() instead for Windows/MSVC builds */
 	#define USE_ALLOCA 1
+	#undef VAR_ARRAYS
 #endif
 
 #ifndef OPUS_FIXED_POINT

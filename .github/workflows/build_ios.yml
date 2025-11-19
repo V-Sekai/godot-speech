@@ -1,0 +1,45 @@
+name: Build iOS
+on:
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - precision: single
+            arch: arm64
+            ios_precision_extension:
+          - precision: double
+            arch: arm64
+            ios_precision_extension: .double
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: 🔗 GDExtension Build
+        uses: godotengine/godot-cpp-template/.github/actions/build@f9564a9c8115139b9624692d39e358291f6d76ce
+        with:
+          platform: ios
+          arch: ${{ matrix.arch }}
+          float-precision: ${{ matrix.precision }}
+          build-target-type: template_release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Godot_Speech
+          path: |
+            ${{ github.workspace }}/bin/**/libgodot_speech.ios.template_release${{ matrix.ios_precision_extension }}.arm64.framework/**
+          if-no-files-found: error
+
