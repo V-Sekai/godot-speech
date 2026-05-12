@@ -13,6 +13,7 @@ methodology, and outstanding questions; it will be the artifact CHI-101 Step 6 e
 | 2    | Lean spec: frame energy (VAD fallback signal)       | done         |
 | 2    | Lean spec: framing cursor (capture-loop policy)     | done         |
 | 2    | Lean spec: jitter-buffer append (receive-side)      | done         |
+| 2    | Lean spec: PCM s16↔float (encode + decode)          | done         |
 | 2    | Lean spec: PCM framing / resampling (full)          | partial      |
 | 2    | Lean spec: Opus encode/decode invariants            | not started  |
 | 2    | Lean spec: jitter buffer sizing (C5 from PredictiveBVH) | done     |
@@ -231,6 +232,38 @@ forward-by-1) and the kernel matches both the CPU reference and the
 hand-checked oracle frame-for-frame. The `on_received_audio_packet` math
 in `speech.cpp` is *correct* — it doesn't have an F1-style bug. The kernel
 stays in tree as a regression guard for any future edits to the receive path.
+
+### F3. PCM s16↔float round-trip gain is asymmetric (informational)
+
+**Status:** pinned by `tests/slang_validate/pcm_roundtrip_test.cpp`. **No
+fix recommended** — design choice not a bug — but the asymmetry is now
+formally pinned so future review can revisit with a concrete number.
+
+The encode side (`PcmToS16`, mirroring the inner loop of
+`SpeechProcessor::_mix_audio`) multiplies by **32767** with a clamp to
+`[-32768, +32767]`. The decode side (`PcmFromS16`, mirroring
+`SpeechProcessor::_16_pcm_mono_to_real_stereo`) divides by **32768**.
+Round-tripping `1.0f` produces `0.9999695...`, not `1.0f`:
+
+```
+pcm_roundtrip: encode/decode asymmetry sweep (N=65):
+  max |err|          = 3.051758e-05  (theoretical at x=+1: 3.051758e-05)
+  max signed err     = +3.051758e-05
+  round-trip gain    = 0.999969 (= 32767/32768; -0.0003 dB)
+```
+
+Both `* 32767` (Q15 with symmetric clamp; this codebase's choice) and
+`* 32768` (true 1-LSB-per-step encode; requires explicit overflow
+handling for input == 1.0) are valid PCM conventions. `* 32767`
+trades the unreachable `-32768` int16 value for a clamp-safe encoder
+that handles `1.0f` exactly without overflow. -0.0003 dB of round-trip
+gain is well below human-audible threshold (typical JND is ~0.5 dB).
+
+The validator pins the gain at exactly `32767/32768` and fails if the
+round-trip of `1.0f` ever returns something else. If a future refactor
+adopts `* 32768` (e.g. for tighter Bit-Exact-When-Possible
+interoperation with other PCM libraries), the validator will trip and
+require the decision to be revisited explicitly.
 
 ### F4. C5 / G181 (PredictiveBVH gap class) — voice jitter buffer too shallow for WAN RTT
 
