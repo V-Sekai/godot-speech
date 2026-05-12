@@ -286,6 +286,91 @@ sound.
 * C6 (coordinate frame mismatch) — Phase B concern (Steam Audio
   HRTF), not Phase A.
 
+## Test-harness requirement — Godot-independent networking tests
+
+**Standard:** any test that exercises networking-related policy
+(jitter buffer, framing cursor, packet sequence math, sizing
+invariants, etc.) must build and run **without** `godot-cpp` or
+the Godot engine. Existing pattern: `tests/slang_validate/*.cpp` —
+hand-written C++ that links only against the slangc-emit, the slang
+prelude header, and the C++ standard library.
+
+**Why:** networking policy is verified at the *math* layer (state
+machines, integer arithmetic, RTT-vs-depth invariants). Pulling in
+the Godot engine to test it would couple test execution to the editor
+build (slow, fragile across platforms, blocks CI matrices), and the
+real bugs (F1's unsigned underflow, F4's RTT-vs-depth mismatch) live
+in pure arithmetic that doesn't need a SceneTree to surface.
+
+**Current state of the test tree:**
+
+| Path                                | Godot-dependent? | What it covers                                                              |
+|-------------------------------------|------------------|-----------------------------------------------------------------------------|
+| `tests/slang_validate/*.cpp`        | **No**           | Lean-formalized kernels: FrameEnergy, FramingCursor, JitterAppend, VadGate. |
+| `tests/test_speech.h`               | Yes (SceneTree)  | Property getters/setters, integration with `AudioStreamPlayer`.             |
+| `tests/test_speech_decoder.h`       | Yes              | `SpeechDecoder` end-to-end with `PackedByteArray`.                          |
+| `tests/test_speech_processor.h`     | Yes              | `SpeechProcessor::_16_pcm_mono_to_real_stereo`, processor lifecycle.        |
+| `tests/test_playback_stats.h`       | Yes              | `PlaybackStats` initialization + stats dictionary.                          |
+
+The Godot-dependent tests cover ABI-and-lifecycle concerns (PR
+binding, ref-counted ownership, scene-tree integration) that *do*
+require the engine. The math layer should stay independent.
+
+**Going-forward rule for CHI-101 Phase A work:**
+
+* Any new networking policy lands first in
+  `lean/Speech/Protocol/` (formal spec) and
+  `tests/slang_validate/` (Godot-free C++ validator).
+* If a Godot-dependent test is added for the same surface, it
+  must be in addition to — not in lieu of — the slang_validate
+  harness.
+* The slang_validate harness is the *normative* test; any
+  divergence between it and a Godot-side test is a finding worth
+  recording.
+
+**Follow-up candidates** for porting Godot-side state-machine logic
+into Godot-free slang_validate validators:
+
+* `attempt_to_feed_stream` packet-feed cadence (currently exercised
+  only via the SceneTree-bound integration test).
+* The RTT-vs-jitter-buffer-depth invariant from F4 (currently has a
+  Lean proof but no runtime validator — adding one would close the
+  loop the same way `framing_cursor_test` closed it for F1).
+
+### End-to-end network test — basis from V-Sekai-fire/multiplayer-fabric-godot
+
+For a real send/receive loop that exercises the voice path under live
+QUIC/WebTransport conditions (RTT, jitter, datagram loss) — the
+substrate to reuse is V-Sekai-fire's existing HTTP/3 + WebTransport
+module:
+
+[`V-Sekai-fire/multiplayer-fabric-godot/modules/http3 @ 1c3e475`](https://github.com/V-Sekai-fire/multiplayer-fabric-godot/tree/1c3e475a4cd116f0b3ca13b25e4236bed783be93/modules/http3)
+
+Contents of interest:
+
+* `quic_picoquic_backend.{cpp,h}` — picoquic-library wrapper that
+  does the actual QUIC transport work. The wrapper layer is thin;
+  picoquic itself is portable C with no Godot dependency.
+* `web_transport_peer.{cpp,h}` — Godot `MultiplayerPeer` adapter
+  mapping `TRANSFER_MODE_UNRELIABLE`/`UNRELIABLE_ORDERED` to QUIC
+  datagrams (the path voice uses) and `TRANSFER_MODE_RELIABLE` to
+  per-packet bidi streams.
+* `lean/WebTransport.lean` — Lean audit of the state machine
+  (acyclicity, queue discipline, datagram-reader exclusivity).
+
+**Test architecture**: a standalone test binary that links picoquic
++ a slim non-Godot wrapper around the QUIC-datagram subset of
+`quic_picoquic_backend`, spins up two endpoints on the loopback,
+sends real Opus-encoded voice frames through, and validates that
+the receive-side jitter buffer behaves per the F4 invariants under
+configurable RTT/jitter/loss profiles. The Godot side stays the
+shipping `web_transport_peer`; only the test driver is Godot-free.
+
+This reuses the QUIC + Lean work already done rather than vendoring
+another QUIC stack, while keeping the test outside the Godot build
+matrix per the standard above. Implementation is a separate work
+item — this entry only documents the basis and direction.
+
 ## Other hypotheses still open
 
 * **Capture ring-buffer accounting.** `capture_discarded_frames` /
