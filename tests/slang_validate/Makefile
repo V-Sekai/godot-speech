@@ -56,7 +56,11 @@ KERNEL_FOR  = $(word 2,$(subst :, ,$(filter $(1):%,$(TESTS))))
 
 KERNELS    := $(sort $(foreach t,$(TESTS),$(word 2,$(subst :, ,$(t)))))
 SHADERS    := $(addprefix $(EMITTED)/,$(addsuffix _emit.cpp,$(KERNELS)))
-BINS       := $(addprefix $(EMITTED)/,$(addsuffix _test,$(TEST_NAMES)))
+# pcm_roundtrip_test is a multi-kernel composition (not in TESTS) but
+# must be included in BINS so `test-cpp` builds + runs it. Keep it
+# here so the dependency list is settled before `test-cpp: $(BINS)`.
+BINS       := $(addprefix $(EMITTED)/,$(addsuffix _test,$(TEST_NAMES))) \
+              $(EMITTED)/pcm_roundtrip_test
 
 .PHONY: test test-cpp test-metal clean emit-shaders metal-discipline
 
@@ -101,10 +105,6 @@ $(EMITTED)/pcm_roundtrip_test: pcm_roundtrip_test.cpp \
                                $(EMITTED)/pcm_to_s16_emit.cpp \
                                $(EMITTED)/pcm_from_s16_emit.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -I$(SLANG_INC) -o $@ $<
-
-# Add pcm_roundtrip to the test list (not in TESTS because it depends
-# on multiple kernels, but we still want `make test` to run it).
-BINS       += $(EMITTED)/pcm_roundtrip_test
 
 # ---- Metal discipline pipeline ----------------------------------------
 # slang -> .metal source -> .air -> .metallib. xcrun-only; skip on non-macOS.
