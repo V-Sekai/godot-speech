@@ -1,0 +1,87 @@
+name: 🧪 Godot-free CI
+
+# Build verification for the Godot-engine-independent test trees:
+#   * tests/slang_validate/  — Lean-formalized kernels + slangc-cpp + bit-exact CPU validators
+#   * tests/godot_audio_model/  — CMake-built stand-in for Godot's audio API, with the verbatim macOS CoreAudio driver
+#
+# Neither tree links against godot-cpp or the Godot engine; this
+# workflow exists precisely to keep them buildable on every PR
+# touching speech*, lean/, tests/slang_validate/, or
+# tests/godot_audio_model/.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  slang_validate:
+    name: Slang validators (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Lean 4 toolchain via elan. We pin in lean/lean-toolchain
+      # (currently leanprover/lean4:v4.29.1); elan reads it from cwd.
+      - name: Install elan + Lean
+        run: |
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Lake build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            lean/.lake
+            ~/.elan/toolchains
+          key: lake-${{ matrix.os }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}
+
+      - name: Build Lean tree (native_decide pins)
+        working-directory: lean
+        run: lake build Speech emit_shaders
+
+      - name: Install slangc (pinned)
+        env:
+          SLANG_HOME: ${{ runner.temp }}/slang
+        run: |
+          bash misc/install-slang.sh "$SLANG_HOME"
+          echo "SLANG_HOME=$SLANG_HOME" >> "$GITHUB_ENV"
+          echo "$SLANG_HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Run slang validators (cpp target — bit-exact)
+        working-directory: tests/slang_validate
+        run: SLANGC="$SLANG_HOME/bin/slangc" make test-cpp
+
+      - name: Run slang validators (metal target — discipline)
+        if: runner.os == 'macOS'
+        working-directory: tests/slang_validate
+        run: SLANGC="$SLANG_HOME/bin/slangc" make metal-discipline
+
+  audio_model_macos:
+    name: Audio model (macOS, CoreAudio)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        working-directory: tests/godot_audio_model
+        run: cmake -S . -B build -G "Unix Makefiles"
+
+      - name: Build
+        working-directory: tests/godot_audio_model
+        run: cmake --build build --parallel
+
+      - name: Smoke test
+        working-directory: tests/godot_audio_model
+        run: ./build/godot_audio_model_smoke
