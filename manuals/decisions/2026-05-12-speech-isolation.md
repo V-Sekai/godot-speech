@@ -481,9 +481,19 @@ the storage substrate the engine code path is built against.
 
 **Implementation outline (separate PR(s)):**
 
-1. **Core types pass.** `Vector2`, `PackedVector2Array`, `PackedByteArray`,
-   `Ref<T>`, `Dictionary`, `Array`, `Variant`, `String`, `StringName`,
-   `NodePath`, `Mutex`, math helpers. Header-only where possible.
+1. **Core types pass + verbatim CoreAudio driver.** `Vector2`,
+   `PackedVector2Array`, `PackedByteArray`, `PackedFloat32Array`,
+   `Vector<T>`, `Ref<T>`, `RefCounted`, `String`, `StringName`,
+   `NodePath`, `PackedStringArray`, `Mutex`, `MutexLock`,
+   `SafeNumeric<T>`, math helpers, allocator macros, error macros.
+   Header-only except for the `AudioDriver::singleton` definition.
+   The engine's CoreAudio driver (`audio_driver_coreaudio.{h,mm}`,
+   ~860 lines) is copied verbatim and wired up via header-path
+   shims (`shims/servers/audio/audio_server.h`, `shims/core/config/`,
+   `shims/core/os/`, `shims/core/math/`) so the copy itself stays
+   unedited. CMake build produces `libgodot_audio_model.a` and a
+   `godot_audio_model_smoke` exe that constructs the driver and
+   reports name + speaker mode. Done in PR #19 (this commit).
 2. **Node + RefCounted stand-ins.** Minimal `Node` with name/parent/child;
    `RefCounted` with strong+weak counts. Enough for `cast_to` to work.
 3. **AudioServer + bus model.** Plain map<StringName,int> of bus indices,
