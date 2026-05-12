@@ -10,6 +10,8 @@
 #include "audio/audio_effect_capture.h"
 #include "audio/audio_server.h"
 #include "audio/audio_stream_generator.h"
+#include "audio/audio_stream_player.h"
+#include "audio/node.h"
 #include "core/core_types.h"
 
 #include <cstdio>
@@ -144,6 +146,75 @@ static int test_playback_roundtrip() {
 	return 0;
 }
 
+static int test_player_polymorphism() {
+	// Build the player like Speech::add_player_audio would: an
+	// AudioStreamPlayer node with an AudioStreamGenerator stream.
+	AudioStreamPlayer player;
+	player.set_name(String("AudioStreamPlayer"));
+	player.set_bus(StringName("Master"));
+
+	Ref<AudioStreamGenerator> gen = new AudioStreamGenerator();
+	gen->set_mix_rate(48000.0f);
+	gen->set_buffer_length(0.1f);
+	player.set_stream(gen);
+
+	// cast_to should resolve to all three player tags (the test
+	// driver's parent walks the union of types).
+	Node *as_node = &player;
+	if (!cast_to<AudioStreamPlayer>(as_node)) {
+		std::fprintf(stderr, "FAIL: cast_to<AudioStreamPlayer> returned null\n");
+		return 1;
+	}
+	if (cast_to<AudioStreamPlayer2D>(as_node)) {
+		std::fprintf(stderr, "FAIL: cast_to<AudioStreamPlayer2D> succeeded on AudioStreamPlayer\n");
+		return 1;
+	}
+	if (cast_to<AudioStreamPlayer3D>(as_node)) {
+		std::fprintf(stderr, "FAIL: cast_to<AudioStreamPlayer3D> succeeded on AudioStreamPlayer\n");
+		return 1;
+	}
+
+	// has_method check (Speech does this before call("get_stream_playback")).
+	if (!as_node->has_method(StringName("get_stream_playback"))) {
+		std::fprintf(stderr, "FAIL: has_method(\"get_stream_playback\") returned false\n");
+		return 1;
+	}
+
+	// call("play", float) → no-op return; play state updates.
+	as_node->call(StringName("play"), Variant(0.25f));
+
+	// call("get_playback_position") → Variant(float)
+	Variant pos_var = as_node->call(StringName("get_playback_position"));
+	const float pos = static_cast<float>(pos_var);
+	if (pos != 0.25f) {
+		std::fprintf(stderr, "FAIL: playback_position after play(0.25) = %g\n", pos);
+		return 1;
+	}
+
+	// call("get_stream_playback") → Variant(Ref<AudioStreamPlayback>)
+	// which implicitly converts to Ref<AudioStreamGeneratorPlayback>.
+	Variant pb_var = as_node->call(StringName("get_stream_playback"));
+	Ref<AudioStreamGeneratorPlayback> pb = pb_var;
+	if (pb.is_null()) {
+		std::fprintf(stderr, "FAIL: get_stream_playback returned null Ref\n");
+		return 1;
+	}
+
+	// The returned playback must work end-to-end.
+	PackedVector2Array pkt;
+	pkt.resize(64);
+	for (int i = 0; i < 64; ++i) {
+		pkt[i] = Vector2(0.5f, -0.5f);
+	}
+	if (!pb->push_buffer(pkt)) {
+		std::fprintf(stderr, "FAIL: push_buffer via Variant-derived playback failed\n");
+		return 1;
+	}
+
+	std::printf("audio_model smoke: player polymorphism OK (cast_to + has_method + call -> Variant -> Ref<T>)\n");
+	return 0;
+}
+
 int main() {
 #ifdef COREAUDIO_ENABLED
 	AudioDriverCoreAudio driver;
@@ -158,5 +229,8 @@ int main() {
 	if (int rc = test_capture_roundtrip()) {
 		return rc;
 	}
-	return test_playback_roundtrip();
+	if (int rc = test_playback_roundtrip()) {
+		return rc;
+	}
+	return test_player_polymorphism();
 }

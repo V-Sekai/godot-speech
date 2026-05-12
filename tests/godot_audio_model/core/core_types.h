@@ -14,5 +14,6 @@
 #include "ref_counted.h"
 #include "string.h"
 #include "typedefs.h"
+#include "variant.h"
 #include "vector.h"
 #include "vector2.h"

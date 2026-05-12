@@ -48,6 +48,7 @@ set(MODEL_HEADERS
     core/ring_buffer.h
     core/string.h
     core/typedefs.h
+    core/variant.h
     core/vector.h
     core/vector2.h
     audio/audio_driver.h
@@ -56,6 +57,8 @@ set(MODEL_HEADERS
     audio/audio_server.h
     audio/audio_stream.h
     audio/audio_stream_generator.h
+    audio/audio_stream_player.h
+    audio/node.h
 )
 
 if(APPLE)
