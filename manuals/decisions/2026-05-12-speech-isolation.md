@@ -527,6 +527,21 @@ the storage substrate the engine code path is built against.
    audio thread. Smoke test now exercises a 100-frame round-trip
    through the capture ring, asserting bit-exact preservation.
    **Done in PR #22.**
+3. **AudioStreamGenerator + AudioStreamGeneratorPlayback.** Playback
+   side of the audio model. `AudioStream` and `AudioStreamPlayback`
+   intermediate base classes (engine has a deeper hierarchy via
+   `AudioStreamPlaybackResampled`; we flatten since godot-speech
+   only calls the leaf API). `AudioStreamGenerator` with
+   `set_mix_rate`/`get_mix_rate`, `set_buffer_length`/`get_buffer_length`,
+   and `instantiate_playback()` factory. `AudioStreamGeneratorPlayback`
+   with `push_buffer(PackedVector2Array) -> bool`, `can_push_buffer`,
+   `get_frames_available()` (engine semantics: FREE write room, not
+   data in buffer), and `get_skips()` overflow counter. Test-only
+   `consume_test_frames(int)` / `consume_test_frames_into(int)`
+   simulates the speaker drain that the engine's audio thread would
+   otherwise do. Smoke test pushes 480 frames, drains them with
+   bit-exact verification, then forces an overflow to confirm skips
+   increments. **Done in PR #23.**
 2. **Node + RefCounted stand-ins.** Minimal `Node` with name/parent/child;
    `RefCounted` with strong+weak counts. Enough for `cast_to` to work.
 3. **AudioServer + bus model.** Plain map<StringName,int> of bus indices,
