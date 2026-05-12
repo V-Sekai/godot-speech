@@ -15,9 +15,10 @@ methodology, and outstanding questions; it will be the artifact CHI-101 Step 6 e
 | 2    | Lean spec: jitter-buffer append (receive-side)      | done         |
 | 2    | Lean spec: PCM framing / resampling (full)          | partial      |
 | 2    | Lean spec: Opus encode/decode invariants            | not started  |
+| 2    | Lean spec: jitter buffer sizing (C5 from PredictiveBVH) | done     |
 | 3    | Dual-target codegen (slangc-cpp + slangc-metal)     | done (both pass) |
 | 3    | `tests/slang_validate/` bit-exact CPU validators    | done (4 kernels, green) |
-| 4    | Diff `speech_processor.cpp` against Lean reference  | **F1 landed + fixed; F2 noted** |
+| 4    | Diff `speech_processor.cpp` against Lean reference  | **F1 landed + fixed; F2 noted; F4 landed + fixed** |
 | 5    | End-to-end VAD-gate test on recorded clips          | not started  |
 | 6    | 30-min Win/macOS/Linux audio-thread soak            | not started  |
 
@@ -230,6 +231,60 @@ forward-by-1) and the kernel matches both the CPU reference and the
 hand-checked oracle frame-for-frame. The `on_received_audio_packet` math
 in `speech.cpp` is *correct* — it doesn't have an F1-style bug. The kernel
 stays in tree as a regression guard for any future edits to the receive path.
+
+### F4. C5 / G181 (PredictiveBVH gap class) — voice jitter buffer too shallow for WAN RTT
+
+**Status:** confirmed by Lean spec
+`lean/Speech/Protocol/JitterBufferSizing.lean`. **Fixed**: default
+`MAX_JITTER_BUFFER_SIZE` raised from `16` (160 ms) to `32` (320 ms).
+
+**Provenance:** voice falls under the conditions established by
+V-Sekai-fire's predictive-BVH spec for networking protocols
+([PredictiveBVH/Protocol/ScaleContradictionsGapClass.lean](https://github.com/V-Sekai-fire/multiplayer-fabric-predictive-bvh/blob/main/PredictiveBVH/Protocol/ScaleContradictionsGapClass.lean)).
+Of the seven adversarial gap classes (C1–C7), the one that applies
+directly to a 1D temporal audio stream is **C5 / G181 — Effective delta
+exceeded by RTT**:
+
+> *Witness*: configured `δ` < actual `δ` from client RTT → bound the
+> spec puts on time budget is violated.
+> *Mitigation*: `δ := max(configured, rttTicks)`.
+
+For voice, `δ` is the jitter buffer depth (in 10 ms packets), and
+`rttTicks` is client RTT divided by 10 ms. The prior default of 16
+packets covers only 160 ms RTT, which fails:
+
+| Route type           | Typical one-way | RTT  | Required depth (packets) | Prior 16 covers? |
+|----------------------|-----------------|------|--------------------------|------------------|
+| LAN                  | <5 ms           | 10 ms| 1                        | ✓                |
+| Continental WAN      | 30–60 ms        | ~100 ms | 10                    | ✓                |
+| Transcontinental WAN | 70–150 ms       | ~200 ms | 20                    | ✗ (16 < 20)      |
+| Trans-Pacific        | 120–200 ms      | ~300 ms | 30                    | ✗                |
+| LEO satellite        | 30–50 ms        | ~80 ms  | 8                     | ✓                |
+| GEO satellite        | 250–600 ms      | ~1200 ms| 120                   | ✗                |
+
+The new default of 32 (320 ms) handles most transcontinental WAN. GEO
+satellite operators must call `Speech.set_max_jitter_buffer_size(120)`
+(or higher) per the C5 mitigation formula. The Lean module includes
+`native_decide` examples that prove the prior `16` fails the satellite
+case and that the mitigation formula `max(baseline, rttTicks)` is
+sound.
+
+**Why C5 is the only gap class that applies:**
+
+* C1 (velocity), C2 (acceleration), C7 (segment-boundary velocity) —
+  spatial / motion concerns. Voice has no velocity analog.
+* C3 (position discontinuity / teleport) — voice has no spatial
+  position; Steam Audio spatialization at the receiver (Phase B,
+  CHI-101 step 9) attaches a position later but the *audio path*
+  itself is 1D.
+* C4 (entity lifecycle gap) — partially applies: the
+  peer-join-to-first-packet window. The current `currentSeqValid == 0`
+  path in `on_received_audio_packet` handles this with `fillerCount =
+  0, appendNew = 1`. A stricter C4 mitigation would pre-allocate a
+  silent slot at peer-join time so audio is never cold-started;
+  candidate for a follow-up if a real C4 incident shows up.
+* C6 (coordinate frame mismatch) — Phase B concern (Steam Audio
+  HRTF), not Phase A.
 
 ## Other hypotheses still open
 

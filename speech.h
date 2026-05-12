@@ -89,7 +89,13 @@ private:
 	float BUFFER_DELAY_THRESHOLD = 0.1;
 	float STREAM_STANDARD_PITCH = 1.0;
 	float STREAM_SPEEDUP_PITCH = 1.5;
-	int MAX_JITTER_BUFFER_SIZE = 16;
+	// WAN-safe baseline jitter buffer depth, in 10 ms packet ticks (= 320 ms).
+	// Covers most transcontinental RTTs; satellite operators must raise this
+	// per-deployment via set_max_jitter_buffer_size to at least rttMs / 10.
+	// See lean/Speech/Protocol/JitterBufferSizing.lean for the C5 invariant
+	// and manuals/decisions/2026-05-12-speech-isolation.md § F4 for the
+	// upstream PredictiveBVH gap-class reference.
+	int MAX_JITTER_BUFFER_SIZE = 32;
 	int JITTER_BUFFER_SPEEDUP = 12;
 	int JITTER_BUFFER_SLOWDOWN = 6;
 

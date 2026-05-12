@@ -1,3 +1,4 @@
+import Speech.Protocol
 import Speech.SlangCodegen
 
 /-!
