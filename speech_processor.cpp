@@ -127,7 +127,13 @@ void SpeechProcessor::_mix_audio(const Vector2 *p_capture_buffer) {
 								static_cast<size_t>(capture_real_array_offset));
 		capture_real_array_offset = 0;
 		const float *capture_real_array_read_ptr = capture_real_array.ptr();
-		while (capture_real_array_offset < resampled_frame_count - SPEECH_SETTING_BUFFER_FRAME_COUNT) {
+		// Integer-divmod framing — see lean/Speech/SlangCodegen/FramingCursor.lean
+		// and manuals/decisions/2026-05-12-speech-isolation.md (F1) for the prior
+		// `offset < count - frameSize` form, which underflowed on resampler
+		// return = 0 and silently dropped a frame on exact-multiple boundaries.
+		const uint32_t frames_to_emit =
+				resampled_frame_count / SPEECH_SETTING_BUFFER_FRAME_COUNT;
+		for (uint32_t f = 0; f < frames_to_emit; ++f) {
 			for (int64_t i = 0; i < SPEECH_SETTING_BUFFER_FRAME_COUNT; i++) {
 				float frame_float = capture_real_array_read_ptr[static_cast<size_t>(capture_real_array_offset) + i];
 				int16_t val = static_cast<int16_t>(CLAMP(frame_float * 32767.0f, -32768.0f, 32767.0f));

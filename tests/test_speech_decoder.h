@@ -38,7 +38,6 @@
 #include "tests/test_macros.h"
 
 namespace TestSpeechDecoder {
-
 TEST_CASE("[SpeechDecoder] Initialization") {
 	Ref<SpeechDecoder> decoder = memnew(SpeechDecoder);
 	REQUIRE(decoder.is_valid());
@@ -72,5 +71,4 @@ TEST_CASE("[SpeechDecoder] Process Empty or Invalid Input") {
 			SpeechProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT);
 	CHECK_MESSAGE(result == OPUS_INVALID_PACKET, "Processing with too small output buffer should return OPUS_INVALID_PACKET.");
 }
-
 } // namespace TestSpeechDecoder
