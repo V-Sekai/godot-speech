@@ -169,6 +169,25 @@ Phase A step 4b (apply-the-diff pass) and tracked separately — this doc only
 records the diagnosis. The kernel + validator stay in tree as a regression
 guard.
 
+**Corroborating evidence:** `speech_processor.cpp:401` (the analogous loop
+inside `test_process_mono_audio_frames`, the test-only entry point) already
+uses the safe form:
+
+```cpp
+while (current_offset + SPEECH_SETTING_BUFFER_FRAME_COUNT <= resampled_frame_count) {
+```
+
+i.e. the codebase had *already diverged*: someone wrote the safe form for the
+test path but did not propagate the fix back to `_mix_audio`. The existing
+test suite (`tests/test_speech_processor.h::Test Direct Audio Processing via
+test_process_mono_audio_frames`) exercises *only* the test path, so it would
+have continued reporting green forever without catching F1.
+
+**Fix applied:** see the diff that landed alongside this doc update —
+`_mix_audio` now uses the integer-divmod form, matching both the kernel and
+the previously-divergent test path. The `framing_cursor` validator stays in
+tree as a regression guard.
+
 **Status of the historical-stickiness hypothesis:** this is *one* of the things
 that was wrong on the speech path. Not necessarily the whole story. Phase A
 continues by formalizing the next layer (jitter buffer / decode-side cursor)
