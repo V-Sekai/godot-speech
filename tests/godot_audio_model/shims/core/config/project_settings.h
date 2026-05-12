@@ -11,7 +11,6 @@
 #include <cstring>
 
 namespace _audio_model {
-
 // Returns a default value for the few project-setting keys the
 // CoreAudio driver consults. Unknown keys return 0.
 inline int global_get_int(const char *key) {
@@ -20,7 +19,6 @@ inline int global_get_int(const char *key) {
 	}
 	return 0;
 }
-
 } // namespace _audio_model
 
 #define GLOBAL_GET(m_key) (_audio_model::global_get_int(m_key))

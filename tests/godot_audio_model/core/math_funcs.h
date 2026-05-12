@@ -9,7 +9,6 @@
 #include <cstdlib>
 
 namespace Math {
-
 inline float abs(float v) {
 	return std::fabs(v);
 }
@@ -53,5 +52,4 @@ inline bool is_equal_approx(float a, float b) {
 }
 
 constexpr double PI = 3.14159265358979323846;
-
 } // namespace Math

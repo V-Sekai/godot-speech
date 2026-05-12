@@ -20,7 +20,6 @@
 // the model's `String` (which fprintf with %s would otherwise treat
 // as a non-POD varargs target).
 namespace _audio_model {
-
 _FORCE_INLINE_ const char *as_c_str(const char *s) {
 	return s;
 }
@@ -37,7 +36,6 @@ _FORCE_INLINE_ const char *cstr(const T &v) {
 _FORCE_INLINE_ const char *cstr(const char *s) {
 	return s ? s : "";
 }
-
 } // namespace _audio_model
 
 #define ERR_PRINT(m_msg)                                               \

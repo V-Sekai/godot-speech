@@ -7,7 +7,6 @@
 #include "../../../core/math_funcs.h"
 
 namespace Math {
-
 inline int next_power_of_2(int v) {
 	if (v <= 1) {
 		return 1;
@@ -27,5 +26,4 @@ inline int closest_power_of_2(int v) {
 	int prv = nxt >> 1;
 	return (v - prv) <= (nxt - v) ? prv : nxt;
 }
-
 } // namespace Math
