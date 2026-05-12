@@ -32,21 +32,28 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(MODEL_SOURCES
     audio/audio_driver.cpp
+    audio/audio_server.cpp
 )
 
 set(MODEL_HEADERS
+    core/audio_frame.h
     core/core_types.h
     core/error_list.h
     core/error_macros.h
     core/math_funcs.h
+    core/memory.h
     core/mutex.h
     core/packed_arrays.h
     core/ref_counted.h
+    core/ring_buffer.h
     core/string.h
     core/typedefs.h
     core/vector.h
     core/vector2.h
     audio/audio_driver.h
+    audio/audio_effect.h
+    audio/audio_effect_capture.h
+    audio/audio_server.h
 )
 
 if(APPLE)

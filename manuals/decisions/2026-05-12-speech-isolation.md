@@ -512,7 +512,21 @@ the storage substrate the engine code path is built against.
    `shims/core/os/`, `shims/core/math/`) so the copy itself stays
    unedited. CMake build produces `libgodot_audio_model.a` and a
    `godot_audio_model_smoke` exe that constructs the driver and
-   reports name + speaker mode. Done in PR #19 (this commit).
+   reports name + speaker mode. **Done in PR #19.**
+2. **AudioEffectCapture + AudioServer bus tree.** `AudioFrame`
+   (the engine's stereo float pair); `RingBuffer<T>` (power-of-two
+   circular); `AudioEffect` + `AudioEffectInstance` minimal bases;
+   `AudioEffectCapture` with `get_buffer`, `can_get_buffer`,
+   `get_buffer_length_frames`, `get_frames_available`,
+   `clear_buffer`, `set_buffer_length`/`get_buffer_length` and the
+   `pushed_frames`/`discarded_frames` counters; `AudioServer` with
+   `get_bus_index`, `get_bus_effect_count`, `get_bus_effect`,
+   `get_input_mix_rate`. Test-only entries (`push_test_frames` on
+   AudioEffectCapture, `test_add_bus`/`test_add_bus_effect` on
+   AudioServer) let the harness drive the capture path without an
+   audio thread. Smoke test now exercises a 100-frame round-trip
+   through the capture ring, asserting bit-exact preservation.
+   **Done in PR #22.**
 2. **Node + RefCounted stand-ins.** Minimal `Node` with name/parent/child;
    `RefCounted` with strong+weak counts. Enough for `cast_to` to work.
 3. **AudioServer + bus model.** Plain map<StringName,int> of bus indices,
