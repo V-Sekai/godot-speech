@@ -584,64 +584,82 @@ Each pass is its own PR. Total scope is meaningful (several thousand
 LOC of stand-in headers) but bounded — the surface table above is the
 exhaustive list of what godot-speech actually uses.
 
-### Test UI — Dear ImGui
+### Test UI — FTXUI (replaces the prior Dear ImGui pick)
 
-The standalone networking-test binary uses [Dear ImGui](https://github.com/ocornut/imgui)
-(`ocornut/imgui`) as its UI layer. Pin against tag **v1.92.8** (released
-2026-05-12). Rationale:
+The standalone networking-test binary uses
+[FTXUI](https://github.com/ArthurSonzogni/FTXUI)
+(`ArthurSonzogni/FTXUI`) as its UI layer. Pin against tag **v6.1.9**
+(released 2025-05-07). **This supersedes the Dear ImGui v1.92.8 pick
+recorded in PR #16** — the prior choice tied the test to GLFW + a
+graphics backend (OpenGL3 / Vulkan / SDL), and the test surface (RTT
+sliders, jitter-buffer plots, kernel counters) doesn't need pixel
+fidelity. A terminal UI is a tighter fit for the developer-tool
+target.
 
-* **Godot-free.** ImGui has no dependency on a scene graph or engine
-  runtime — it's a single-header-style C++ library that renders against
-  a graphics backend you choose. Keeps the test binary outside the
-  Godot build matrix per the standard above.
-* **Immediate-mode is right for developer tools.** The whole UI is
-  state-driven from the test driver each frame; no widget tree to
-  manage means a tight loop between network state and what's on
-  screen. Good fit for live-tweaking RTT/jitter/loss profiles and
-  watching the jitter-buffer-depth, energy, and VAD-gate signals
-  evolve in real time.
-* **Cross-platform without effort.** Provided imgui_impl_glfw +
-  imgui_impl_opengl3 (or sdl2/vulkan if Steam Audio later prefers a
-  different backend) build clean on macOS, Linux, and Windows from
-  the same source tree.
+Rationale for FTXUI over Dear ImGui:
+
+* **Pure terminal — zero graphics dependency.** No GLFW, no OpenGL,
+  no SDL, no platform window-system glue. Headless CI runs the UI
+  unchanged (output to PTY in tests); developer runs it in any
+  terminal emulator.
+* **Same Godot-free property as ImGui.** Single C++ library, no
+  scene graph, no runtime — vendor as a sub-tree or build via
+  `FetchContent`. Builds clean on macOS, Linux, Windows.
+* **Component model fits the test driver naturally.** FTXUI's
+  Component / Element split lets the test driver expose each kernel
+  + signal as a Component returning Elements per render pass. Same
+  immediate-mode-ish ergonomic ImGui offered, no graphics stack.
+* **Composable layout instead of pixel layout.** `hbox`, `vbox`,
+  flex containers, gauges, sparklines, and color-block elements
+  cover everything the test UI sketch (below) needs.
 
 **Test UI surface (sketch):**
 
-* **Network profile** — sliders for RTT, jitter σ, datagram loss %,
-  reorder window. Buttons for `LAN` / `WAN` / `Trans-Pacific` /
-  `GEO Satellite` presets matching the F4 routing table.
-* **Live signals** — line charts for jitter-buffer fill depth,
-  per-frame energy from `FrameEnergy`, gated boolean from `VadGate`,
-  packets-emitted-per-tick from `FramingCursor`.
+* **Network profile** — sliders / inputs for RTT, jitter σ, datagram
+  loss %, reorder window. Buttons for `LAN` / `WAN` / `Trans-Pacific`
+  / `GEO Satellite` presets matching the F4 routing table.
+* **Live signals** — sparkline elements for jitter-buffer fill
+  depth, per-frame energy from `FrameEnergy`, gated boolean from
+  `VadGate`, packets-emitted-per-tick from `FramingCursor`.
 * **Counters** — `received / decoded / blank-pushed / dropped` per
   peer; sequence-ID gaps; current carry from the framing cursor;
   current jitter-buffer carry-state (`currentSeq`, `currentSize`)
   from `JitterAppend`.
 * **Per-kernel Lean-vs-runtime divergence indicator** — if a
   validator's slang_validate harness disagrees with the live
-  kernel output on the same input, light up the corresponding
-  kernel row.
+  kernel output on the same input, color the corresponding kernel
+  row red. (FTXUI's color API makes this trivial.)
 
 Library + backend layout (planned):
 
 ```
 tests/net_loopback/                       # new top-level test binary
-├── main.cpp                              # ImGui frame loop + test driver
-├── ui_*.cpp                              # one UI surface per kernel/signal
-├── thirdparty/imgui/                     # vendored ImGui v1.92.8
-│   ├── imgui.{h,cpp}                     # core
-│   ├── imgui_demo.cpp                    # demo (debug aid; not always linked)
-│   ├── imgui_draw.cpp, imgui_widgets.cpp,
-│   │   imgui_tables.cpp
-│   ├── backends/imgui_impl_glfw.{h,cpp}
-│   └── backends/imgui_impl_opengl3.{h,cpp}
+├── main.cpp                              # FTXUI ScreenInteractive loop + test driver
+├── ui_*.cpp                              # one Component per kernel/signal
+├── thirdparty/ftxui/                     # vendored FTXUI v6.1.9
+│   ├── src/                              # screen, component, dom, util
+│   └── include/ftxui/                    # public headers
 └── thirdparty/picoquic_wrapper/          # slim non-Godot wrapper
                                           #   pulled from V-Sekai-fire's http3 module
 ```
 
-`ImPlot` (`epezent/implot`) is the natural follow-up if the line
-charts get fiddly with raw ImGui — defer that pick until the basic
-UI is up.
+The FTXUI build is straightforward: a single CMake `add_subdirectory`
+or `FetchContent_Declare` brings it in. No graphics-driver
+dependencies to worry about across the macOS/Linux/Windows CI matrix.
+
+Tradeoffs vs the prior ImGui pick — what we give up:
+
+* No pixel-precise plots (FTXUI's sparkline is a Braille-bar approximation).
+  Acceptable: the kernel signals we plot don't need sub-cell resolution.
+* No mouse input outside terminals that support SGR mouse mode
+  (most modern ones do — iTerm2, Alacritty, kitty, Windows Terminal).
+* Slower fps cap (~30 Hz typical PTY refresh vs 60+ on a real
+  graphics swap chain). The kernel-tick rate is 100 Hz; FTXUI
+  rendering throttled to 30 Hz still shows every state change.
+
+None of those are dealbreakers for a developer tool that runs
+during CI + local debugging. The simpler dependency surface
+outweighs the loss of pixel fidelity.
 
 ## Other hypotheses still open
 
