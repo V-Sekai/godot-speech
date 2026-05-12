@@ -38,7 +38,6 @@
 #include "tests/test_macros.h"
 
 namespace TestPlaybackStats {
-
 TEST_CASE("[SceneTree][PlaybackStats] Initialization and Getters") {
 	SceneTree *tree = SceneTree::get_singleton();
 	Window *original_root_window = tree->get_root();
@@ -87,5 +86,4 @@ TEST_CASE("[SceneTree][PlaybackStats] Stats Modification and Retrieval") {
 	CHECK(stats->jitter_buffer_max_size == 5);
 	CHECK(Math::is_equal_approx(stats->playback_skips, 10.5));
 }
-
 } // namespace TestPlaybackStats

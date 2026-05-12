@@ -46,7 +46,6 @@
 #include "tests/test_macros.h"
 
 namespace TestSpeech {
-
 TEST_CASE("[SceneTree][Speech] Initialization and Default Properties") {
 	Speech *speech_node = memnew(Speech);
 	REQUIRE(speech_node != nullptr);
@@ -167,5 +166,4 @@ TEST_CASE("[SceneTree][Speech] Recording Control and Stream Player (No Crash)") 
 	speech_node->set_audio_input_stream_player(nullptr);
 	memdelete(speech_node);
 }
-
 } // namespace TestSpeech
