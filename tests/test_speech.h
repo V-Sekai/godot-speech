@@ -86,7 +86,7 @@ TEST_CASE("[SceneTree][Speech] Property Getters and Setters") {
 	CHECK(speech_node->get_jitter_buffer_slowdown() == 5);
 
 	speech_node->set_debug(true);
-	CHECK(speech_node->get_debug() == true);
+	CHECK(speech_node->get_debug());
 
 	memdelete(speech_node);
 }
