@@ -24,7 +24,13 @@ REPO_ROOT  := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 SLANGC     ?= slangc
 EMITTED    := $(CURDIR)/build
 LEAN_DIR   := $(REPO_ROOT)/lean
-SLANG_INC  := $(abspath $(dir $(SLANGC))/../include)
+# Slang's cpp prelude header lives next to the slangc binary tree.
+# Try $(SLANGC_DIR)/.slang/include first (wrapper-script layout used by
+# cloth_dynamics' bin/slangc), fall back to $(SLANGC_DIR)/../include
+# (raw-binary layout).
+SLANG_INC  := $(firstword \
+                $(wildcard $(dir $(SLANGC)).slang/include) \
+                $(abspath $(dir $(SLANGC))/../include))
 
 CXX        ?= clang++
 # -Wno-unused-parameter silences clang's complaint about
@@ -37,10 +43,12 @@ INCLUDES   := -I$(SLANG_INC) -I$(EMITTED)
 TESTS      := frame_energy:frame_energy \
               framing_cursor:framing_cursor \
               jitter_append:jitter_append \
+              pcm_from_s16:pcm_from_s16 \
+              pcm_to_s16:pcm_to_s16 \
               vad_gate:vad_gate
 
 # Metal kernels (discipline build; never run at runtime).
-METAL_KERNELS := frame_energy framing_cursor jitter_append vad_gate
+METAL_KERNELS := frame_energy framing_cursor jitter_append pcm_from_s16 pcm_to_s16 vad_gate
 METALLIBS     := $(addprefix $(EMITTED)/,$(addsuffix .metallib,$(METAL_KERNELS)))
 
 TEST_NAMES := $(foreach t,$(TESTS),$(word 1,$(subst :, ,$(t))))
@@ -84,6 +92,19 @@ $(EMITTED)/%_emit.cpp: emit-shaders
 .SECONDEXPANSION:
 $(EMITTED)/%_test: %_test.cpp $$(EMITTED)/$$(call KERNEL_FOR,%)_emit.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ $<
+
+# Multi-kernel composition: pcm_roundtrip co-includes both PCM emits
+# via the namespace + SLANG_PRELUDE_EXTERN_C-undef pattern (see
+# tests/slang_validate/pcm_roundtrip_test.cpp header comment, and
+# cloth_dynamics' cg_demo_test.cpp for the original pattern).
+$(EMITTED)/pcm_roundtrip_test: pcm_roundtrip_test.cpp \
+                               $(EMITTED)/pcm_to_s16_emit.cpp \
+                               $(EMITTED)/pcm_from_s16_emit.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -I$(SLANG_INC) -o $@ $<
+
+# Add pcm_roundtrip to the test list (not in TESTS because it depends
+# on multiple kernels, but we still want `make test` to run it).
+BINS       += $(EMITTED)/pcm_roundtrip_test
 
 # ---- Metal discipline pipeline ----------------------------------------
 # slang -> .metal source -> .air -> .metallib. xcrun-only; skip on non-macOS.

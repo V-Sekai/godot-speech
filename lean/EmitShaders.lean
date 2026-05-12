@@ -21,6 +21,8 @@ private def kernels : List (String × SlangShaderModule) :=
   [ ("frame_energy",    FrameEnergy.shader)
   , ("framing_cursor",  FramingCursor.shader)
   , ("jitter_append",   JitterAppend.shader)
+  , ("pcm_from_s16",    PcmFromS16.shader)
+  , ("pcm_to_s16",      PcmToS16.shader)
   , ("vad_gate",        VadGate.shader)
   ]
 
