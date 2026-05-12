@@ -54,6 +54,8 @@ set(MODEL_HEADERS
     audio/audio_effect.h
     audio/audio_effect_capture.h
     audio/audio_server.h
+    audio/audio_stream.h
+    audio/audio_stream_generator.h
 )
 
 if(APPLE)
