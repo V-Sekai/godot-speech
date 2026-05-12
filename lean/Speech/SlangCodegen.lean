@@ -1,5 +1,6 @@
 import Speech.SlangCodegen.FrameEnergy
 import Speech.SlangCodegen.FramingCursor
+import Speech.SlangCodegen.JitterAppend
 import Speech.SlangCodegen.VadGate
 
 /-!

@@ -20,6 +20,7 @@ open LeanSlang
 private def kernels : List (String × SlangShaderModule) :=
   [ ("frame_energy",    FrameEnergy.shader)
   , ("framing_cursor",  FramingCursor.shader)
+  , ("jitter_append",   JitterAppend.shader)
   , ("vad_gate",        VadGate.shader)
   ]
 

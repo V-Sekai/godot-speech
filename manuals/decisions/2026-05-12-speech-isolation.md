@@ -12,12 +12,12 @@ methodology, and outstanding questions; it will be the artifact CHI-101 Step 6 e
 | 2    | Lean spec: VAD gating policy                        | done (1st kernel) |
 | 2    | Lean spec: frame energy (VAD fallback signal)       | done         |
 | 2    | Lean spec: framing cursor (capture-loop policy)     | done         |
+| 2    | Lean spec: jitter-buffer append (receive-side)      | done         |
 | 2    | Lean spec: PCM framing / resampling (full)          | partial      |
-| 2    | Lean spec: jitter buffer arithmetic                 | not started  |
 | 2    | Lean spec: Opus encode/decode invariants            | not started  |
 | 3    | Dual-target codegen (slangc-cpp + slangc-metal)     | done (both pass) |
-| 3    | `tests/slang_validate/` bit-exact CPU validators    | done (3 kernels, green) |
-| 4    | Diff `speech_processor.cpp` against Lean reference  | **1st finding landed** |
+| 3    | `tests/slang_validate/` bit-exact CPU validators    | done (4 kernels, green) |
+| 4    | Diff `speech_processor.cpp` against Lean reference  | **F1 landed + fixed; F2 noted** |
 | 5    | End-to-end VAD-gate test on recorded clips          | not started  |
 | 6    | 30-min Win/macOS/Linux audio-thread soak            | not started  |
 
@@ -192,6 +192,44 @@ tree as a regression guard.
 that was wrong on the speech path. Not necessarily the whole story. Phase A
 continues by formalizing the next layer (jitter buffer / decode-side cursor)
 and diffing those.
+
+### F2. `JITTER_BUFFER_SPEEDUP` / `JITTER_BUFFER_SLOWDOWN` are dead settings
+
+**Status:** confirmed by `grep` over `speech.cpp` + `speech.h`. The fields
+exist, the getters/setters are bound, and `ADD_PROPERTY` exposes them to the
+editor. But **nothing reads them in any decision-logic code path**.
+
+```
+$ grep -n 'JITTER_BUFFER_SPEEDUP\|JITTER_BUFFER_SLOWDOWN' speech.cpp speech.h
+speech.h:93:    int JITTER_BUFFER_SPEEDUP = 12;
+speech.h:94:    int JITTER_BUFFER_SLOWDOWN = 6;
+speech.cpp:114-128: getters/setters only
+speech.cpp:307-321: ClassDB / ADD_PROPERTY only
+```
+
+The accompanying playback-rate fields `STREAM_STANDARD_PITCH` and
+`STREAM_SPEEDUP_PITCH` are also exposed but the playback code path doesn't
+read either — it always pushes packets at the default rate.
+
+**Implication:** either an adaptive playback-rate scheme was planned and the
+detection-side code never landed, or it was ripped out and the configuration
+surface was left behind. Either way, scripts setting these properties expect
+behavior the engine doesn't actually provide.
+
+**Recommendation:** fold into Phase B step 11 (push-to-talk + open-mic
+toggles). The jitter-buffer adaptive speed is a natural addition to the
+network-transport story and the Lean spec is straightforward (compare
+`currentSize` against thresholds; emit a per-tick rate-adjustment factor).
+Until then, mark these properties `@deprecated` or remove them to avoid
+silent misconfiguration.
+
+**Status of the JitterAppend kernel for F-finding:** the `JitterAppend`
+validator runs all eight oracle cases (first-packet, in-order, gap,
+overflow-maxSize, duplicate, out-of-order in-range, out-of-order too-old,
+forward-by-1) and the kernel matches both the CPU reference and the
+hand-checked oracle frame-for-frame. The `on_received_audio_packet` math
+in `speech.cpp` is *correct* — it doesn't have an F1-style bug. The kernel
+stays in tree as a regression guard for any future edits to the receive path.
 
 ## Other hypotheses still open
 
