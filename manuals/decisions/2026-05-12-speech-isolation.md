@@ -542,6 +542,26 @@ the storage substrate the engine code path is built against.
    otherwise do. Smoke test pushes 480 frames, drains them with
    bit-exact verification, then forces an overflow to confirm skips
    increments. **Done in PR #23.**
+4. **Node + cast_to + Variant + AudioStreamPlayer/2D/3D.**
+   Polymorphism layer that lets `Speech::attempt_to_feed_stream`
+   reach the playback through a Variant-typed dispatch. `Node`
+   base class with parent/child + `has_method` + `call(StringName,
+   …)` returning `Variant`. `cast_to<T>(Node*)` free function via
+   `dynamic_cast` (the engine uses GDCLASS-registered RTTI; we use
+   the language facility since every class in the model has at
+   least one virtual). `Variant` minimal tagged value supporting
+   { NIL, BOOL, INT, FLOAT, STRING, OBJECT(Ref<RefCounted>) } —
+   exactly the keyhole godot-speech walks. `AudioStreamPlayer`
+   `Player2D` `Player3D` share an `AudioStreamPlayerCommon` body;
+   `set_stream(Ref<AudioStream>)` auto-instantiates the generator
+   playback so `call("get_stream_playback")` returns a stable Ref.
+   Three call dispatches modeled: `play(float)`,
+   `get_playback_position` → float, `get_stream_playback` → Ref.
+   Smoke test exercises all three player types via cast_to,
+   walks the `has_method` / `call` / Variant → Ref<T> conversion
+   path, and pushes a packet through the resulting playback to
+   confirm it's the same ring object the player owns.
+   **Done in PR #24.**
 2. **Node + RefCounted stand-ins.** Minimal `Node` with name/parent/child;
    `RefCounted` with strong+weak counts. Enough for `cast_to` to work.
 3. **AudioServer + bus model.** Plain map<StringName,int> of bus indices,
