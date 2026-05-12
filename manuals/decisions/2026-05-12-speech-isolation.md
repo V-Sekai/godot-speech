@@ -404,6 +404,108 @@ another QUIC stack, while keeping the test outside the Godot build
 matrix per the standard above. Implementation is a separate work
 item — this entry only documents the basis and direction.
 
+### Godot audio-system model — minimum surface the test binary must reproduce
+
+The standalone `tests/net_loopback/` binary needs a stand-in implementation of
+the slice of Godot's audio API that `Speech`, `SpeechProcessor`, and
+`SpeechDecoder` link against. Authoritative reference for the API shapes is
+the engine source at `/Users/ernest.lee/Desktop/multiplayer-fabric/godot`
+(specifically `servers/audio/`, `servers/audio/effects/`, and `scene/audio/`).
+
+**Surface enumeration** (every symbol godot-speech actually uses):
+
+| Symbol                                            | Usage                                                            |
+|---------------------------------------------------|------------------------------------------------------------------|
+| `AudioServer::get_singleton()`                    | Bus lookup, input mix rate                                       |
+| `AudioServer::get_bus_index(StringName)`          | `set_streaming_bus` — find bus by name                           |
+| `AudioServer::get_bus_effect_count(int)`          | Iterate effects on a bus                                         |
+| `AudioServer::get_bus_effect(int, int)`           | Get the `AudioEffectCapture` ref                                 |
+| `AudioServer::get_input_mix_rate()` / `AudioDriver::get_singleton()->get_input_mix_rate()` | Capture rate                                                     |
+| `AudioEffectCapture::get_buffer(int)`             | Pull captured stereo frames from the ring                        |
+| `AudioEffectCapture::get_buffer_length_frames()`  | Ring capacity                                                    |
+| `AudioEffectCapture::get_frames_available()`      | Current ring fill                                                |
+| `AudioStreamGenerator::set_mix_rate(float)`       | Configure playback rate                                          |
+| `AudioStreamGenerator::get_mix_rate() / get_buffer_length()` | Playback ring sizing                                  |
+| `AudioStreamGeneratorPlayback::push_buffer(PackedVector2Array)` | Push decoded audio to the speaker                       |
+| `AudioStreamGeneratorPlayback::get_frames_available()` | How much room is left in the ring                          |
+| `AudioStreamGeneratorPlayback::get_skips()`       | Underrun counter                                                  |
+| `AudioStreamPlayer` / `AudioStreamPlayer2D` / `AudioStreamPlayer3D` | Node container; called via `cast_to`, `has_method`, `call("play", ...)`, `call("get_stream_playback")` |
+| `Node` polymorphism                               | `get_node_or_null`, `queue_free`, parent/child                   |
+| Core types: `Vector2`, `PackedVector2Array`, `PackedByteArray`, `PackedFloat32Array`, `Dictionary`, `Array`, `Variant`, `Ref<T>`, `String`, `StringName`, `NodePath`, `Mutex` | Pervasive                                                |
+| Math helpers: `MAX`, `CLAMP`, `Math::abs`, `Math::is_zero_approx` | A handful of call sites                                         |
+
+**Design constraints** (going into the model):
+
+* **Same public signatures, in-memory storage.** The model implements the
+  same class names and method signatures Godot exposes, but each method's
+  body operates on plain `std::vector`-backed buffers. No threading, no
+  audio driver, no DSP — just enough state to make `Speech`'s capture/
+  receive loops run end-to-end.
+* **Synthetic time.** The test driver ticks the model explicitly (e.g.
+  `model.advance_audio_thread_by(N frames)`) rather than relying on a
+  real audio clock. Predictable, single-threaded, no jitter except what
+  the test driver injects.
+* **Single-precision throughout.** Matches the engine and avoids any
+  fp32-vs-fp64 drift in spec ↔ runtime comparisons.
+* **Built independently of godot-cpp.** The model is its own library
+  (`tests/godot_audio_model/`), pulled into the net_loopback binary
+  via CMake — not scons, since scons assumes a Godot module build.
+
+**Where the model fits in the test stack:**
+
+```
+tests/net_loopback/main.cpp                ← ImGui frame loop + test driver
+        │
+        ├── tests/godot_audio_model/       ← stand-ins for AudioServer,
+        │     ├── audio_server.{h,cpp}        AudioEffectCapture,
+        │     ├── audio_effect_capture.{h,cpp}AudioStreamGenerator(Playback),
+        │     ├── audio_stream_generator.{h,cpp} core types (Vector2,
+        │     ├── core_types.h                PackedVector2Array, Ref, etc.)
+        │     └── CMakeLists.txt
+        │
+        ├── ../slang_validate/*_emit.cpp   ← live kernels (FrameEnergy,
+        │                                     FramingCursor, JitterAppend,
+        │                                     VadGate, PcmToS16, PcmFromS16)
+        │
+        └── thirdparty/picoquic_wrapper/   ← slim non-Godot QUIC backend
+                                              extracted from V-Sekai-fire's
+                                              http3 module @ 1c3e475
+```
+
+The model is **link-compatible** with `speech.cpp`, `speech_processor.cpp`,
+and `speech_decoder.cpp` so the test binary can run the *real* voice
+pipeline (capture → encode → QUIC datagrams → decode → playback ring),
+not a re-implementation. The slang_validate kernels remain the
+normative reference for the math layer; the audio model just provides
+the storage substrate the engine code path is built against.
+
+**Implementation outline (separate PR(s)):**
+
+1. **Core types pass.** `Vector2`, `PackedVector2Array`, `PackedByteArray`,
+   `Ref<T>`, `Dictionary`, `Array`, `Variant`, `String`, `StringName`,
+   `NodePath`, `Mutex`, math helpers. Header-only where possible.
+2. **Node + RefCounted stand-ins.** Minimal `Node` with name/parent/child;
+   `RefCounted` with strong+weak counts. Enough for `cast_to` to work.
+3. **AudioServer + bus model.** Plain map<StringName,int> of bus indices,
+   each bus owns a small `vector<Ref<AudioEffect>>`.
+4. **AudioEffectCapture model.** Ring of `Vector2` frames; `get_buffer(n)`
+   pops the front `n`; test driver pushes synthetic mic audio via a
+   non-Godot helper method.
+5. **AudioStreamGenerator(Playback) model.** Output ring of `Vector2`;
+   `push_buffer` appends with full-ring overflow tracking the same way
+   the engine does (`get_skips()` counts overruns).
+6. **AudioStreamPlayer + AudioStreamPlayer2D + AudioStreamPlayer3D
+   wrappers.** Holds a `Ref<AudioStreamGenerator>` and answers the
+   `call("get_stream_playback")` path.
+7. **Compile speech.cpp / speech_processor.cpp / speech_decoder.cpp
+   against the model.** Verify the same C++ source links against the
+   stand-in. Run the existing slang_validate validators against the
+   live runtime to confirm parity.
+
+Each pass is its own PR. Total scope is meaningful (several thousand
+LOC of stand-in headers) but bounded — the surface table above is the
+exhaustive list of what godot-speech actually uses.
+
 ### Test UI — Dear ImGui
 
 The standalone networking-test binary uses [Dear ImGui](https://github.com/ocornut/imgui)
