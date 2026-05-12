@@ -361,6 +361,25 @@ require the engine. The math layer should stay independent.
   divergence between it and a Godot-side test is a finding worth
   recording.
 
+**CI coverage:** the `.github/workflows/godot_free_ci.yml` workflow
+runs the Godot-free trees on every PR + main push:
+
+* `Slang validators (ubuntu-latest)` and `Slang validators (macos-latest)` —
+  install Lean via elan, install pinned `slangc` v2026.8.1 via
+  `misc/install-slang.sh`, build the Lean tree (`native_decide`
+  pins), then run `make -C tests/slang_validate test-cpp`. The
+  macOS job additionally runs `metal-discipline` (slangc-metal →
+  xcrun metal → .metallib) so the dual-target discipline check
+  doesn't rot.
+* `Audio model (macOS, CoreAudio)` — `cmake --build` the
+  `tests/godot_audio_model/` tree on macOS (including the verbatim
+  CoreAudio driver) and run the smoke test.
+
+No `godot-cpp`, no Godot module build, no scons. Total CI surface
+matches the test trees in the standard above. Both check names
+should be added to `main`'s branch protection as required checks
+once the workflow has run at least once.
+
 **Follow-up candidates** for porting Godot-side state-machine logic
 into Godot-free slang_validate validators:
 
