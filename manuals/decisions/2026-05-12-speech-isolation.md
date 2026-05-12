@@ -11,12 +11,13 @@ methodology, and outstanding questions; it will be the artifact CHI-101 Step 6 e
 | 1    | `lean/` subdirectory mirroring `TOOL_cloth_dynamics`| done         |
 | 2    | Lean spec: VAD gating policy                        | done (1st kernel) |
 | 2    | Lean spec: frame energy (VAD fallback signal)       | done         |
-| 2    | Lean spec: PCM framing / resampling                 | not started  |
+| 2    | Lean spec: framing cursor (capture-loop policy)     | done         |
+| 2    | Lean spec: PCM framing / resampling (full)          | partial      |
 | 2    | Lean spec: jitter buffer arithmetic                 | not started  |
 | 2    | Lean spec: Opus encode/decode invariants            | not started  |
 | 3    | Dual-target codegen (slangc-cpp + slangc-metal)     | done (both pass) |
-| 3    | `tests/slang_validate/` bit-exact CPU validators    | done (2 kernels, green) |
-| 4    | Diff `speech_processor.cpp` against Lean reference  | not started  |
+| 3    | `tests/slang_validate/` bit-exact CPU validators    | done (3 kernels, green) |
+| 4    | Diff `speech_processor.cpp` against Lean reference  | **1st finding landed** |
 | 5    | End-to-end VAD-gate test on recorded clips          | not started  |
 | 6    | 30-min Win/macOS/Linux audio-thread soak            | not started  |
 
@@ -104,31 +105,90 @@ Three orthogonal checks per kernel, all required to pass:
    produce a `.metallib` artifact. Never dispatched at runtime; failure
    here means the spec leaked a CPU-specific assumption.
 
-## Open questions for Phase A
+## Findings (Phase A step 4)
 
-### Q1. Where does the existing `speech_processor` divergence live?
+### F1. `speech_processor.cpp:130` — unsigned-underflow + off-by-one in the framing loop
 
-The CHI-101 issue notes "past V-Sekai voice attempts got stuck on the speech
-side". Phase A step 4 is to diff each Lean-specified kernel against the C++
-code path in `speech_processor.cpp` / `speech.cpp` / `speech_decoder.cpp` and
-find where they disagree.
+**Status:** confirmed by `tests/slang_validate/framing_cursor_test.cpp`.
+Five concrete diff cases between the Lean spec (`FramingCursor`) and the
+literal C++ loop.
 
-Hypotheses worth ruling out first:
+**Location:** `speech_processor.cpp:130`, inside `SpeechProcessor::_mix_audio`:
 
-* **Resampler offset accounting.** `speech_processor.cpp` runs libsamplerate
-  with a manual offset increment after each `_resample_audio_buffer` call. If
-  the increment formula doesn't match libsamplerate's internal frame consumption,
-  capture drift accumulates over minutes.
+```cpp
+while (capture_real_array_offset
+       < resampled_frame_count - SPEECH_SETTING_BUFFER_FRAME_COUNT) {
+  // emit one 480-sample packet
+  capture_real_array_offset += SPEECH_SETTING_BUFFER_FRAME_COUNT;
+}
+```
+
+**Two distinct defects in one line:**
+
+1. **Unsigned underflow.** `resampled_frame_count` and `SPEECH_SETTING_BUFFER_FRAME_COUNT`
+   are both `uint32_t`. When `resampled_frame_count < 480` — which can happen on
+   the very first audio-thread tick, or on a tick where `_resample_audio_buffer`
+   returns 0 from libsamplerate due to insufficient input — the subtraction wraps
+   to ~4 G and the loop reads way past `capture_real_array.size() = 8192`.
+   The validator caps iterations at 1 M so we can report the bug without hanging
+   CI; in production this would have been an out-of-bounds read until the AV
+   subsystem crashed or the audio thread starved.
+2. **Off-by-one at the boundary.** Even in the safe range, strict `<` rather than
+   `<=` mis-fires whenever `resampled_frame_count - capture_real_array_offset`
+   equals exactly `frameSize`. Validator demonstrates kernel=1, buggy=0 for
+   the `0 + 480` and `240 + 240` cases. Under happy-path 48 kHz capture with
+   `RECORD_MIX_FRAMES = 2048` this boundary rarely lines up — explaining why
+   the bug went undetected through manual testing — but every exact-multiple
+   tick is silently one frame light.
+
+**Validator output:**
+
+```
+framing_cursor diff against speech_processor.cpp:130 loop:
+  underflow: 0+100             kernel=0  buggy=1000001(FUSE-CAPPED)  expected=0  DIFF
+  underflow: 50+0              kernel=0  buggy=1000001(FUSE-CAPPED)  expected=0  DIFF
+  off-by-one: 0+480            kernel=1  buggy=0  expected=1  DIFF
+  off-by-one: 240+240          kernel=1  buggy=0  expected=1  DIFF
+  happy: 0+960                 kernel=2  buggy=1  expected=2  DIFF
+```
+
+**Recommended fix:** replace the loop with explicit integer divmod, mirroring
+the kernel:
+
+```cpp
+const uint32_t total = capture_real_array_offset + resampler_output_count;
+const uint32_t frames_to_emit = total / SPEECH_SETTING_BUFFER_FRAME_COUNT;
+for (uint32_t f = 0; f < frames_to_emit; ++f) {
+  // emit one 480-sample packet starting at capture_real_array + f * 480
+}
+capture_real_array_offset = total % SPEECH_SETTING_BUFFER_FRAME_COUNT;
+```
+
+That's exactly the policy `FramingCursor.lean` encodes. The fix is deferred to
+Phase A step 4b (apply-the-diff pass) and tracked separately — this doc only
+records the diagnosis. The kernel + validator stay in tree as a regression
+guard.
+
+**Status of the historical-stickiness hypothesis:** this is *one* of the things
+that was wrong on the speech path. Not necessarily the whole story. Phase A
+continues by formalizing the next layer (jitter buffer / decode-side cursor)
+and diffing those.
+
+## Other hypotheses still open
+
 * **Capture ring-buffer accounting.** `capture_discarded_frames` /
   `capture_pushed_frames` / `capture_ring_current_size` — if any of these are
   updated in the wrong order under audio-thread contention, frames get
-  silently dropped.
+  silently dropped. Not yet formalized.
 * **Opus 10 ms vs 20 ms frame mismatch.** `SPEECH_SETTING_MILLISECONDS_PER_PACKET
   = 10` and `OPUS_APPLICATION_VOIP` — verify libopus is configured for 10 ms
   frame size everywhere; one place defaulting to 20 ms would corrupt every
-  packet.
-
-None of these are confirmed yet — listing as candidates for the diff pass.
+  packet. Not yet formalized.
+* **`RESAMPLED_BUFFER_FACTOR = sizeof(int)`** in `speech_processor.cpp:44` —
+  using `sizeof(int)` as a buffer-size multiplier is a code smell of a
+  refactor-gone-wrong. It happens to be `4` on every target platform, so the
+  buffer is correctly oversized for 4× upsampling, but the *intent* is opaque.
+  Worth a follow-up rename even if not load-bearing.
 
 ### Q2. VAD policy parameters — what defaults?
 

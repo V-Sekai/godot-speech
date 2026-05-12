@@ -18,8 +18,9 @@ open Speech.SlangCodegen
 open LeanSlang
 
 private def kernels : List (String × SlangShaderModule) :=
-  [ ("frame_energy", FrameEnergy.shader)
-  , ("vad_gate",     VadGate.shader)
+  [ ("frame_energy",    FrameEnergy.shader)
+  , ("framing_cursor",  FramingCursor.shader)
+  , ("vad_gate",        VadGate.shader)
   ]
 
 def main (args : List String) : IO UInt32 := do

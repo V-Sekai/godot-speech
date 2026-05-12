@@ -34,10 +34,12 @@ CXXFLAGS   ?= -std=c++17 -O2 -Wall -Wextra -Wno-unused-parameter
 INCLUDES   := -I$(SLANG_INC) -I$(EMITTED)
 
 # Per-test-to-kernel mapping. test_name → kernel_name.
-TESTS      := frame_energy:frame_energy vad_gate:vad_gate
+TESTS      := frame_energy:frame_energy \
+              framing_cursor:framing_cursor \
+              vad_gate:vad_gate
 
 # Metal kernels (discipline build; never run at runtime).
-METAL_KERNELS := frame_energy vad_gate
+METAL_KERNELS := frame_energy framing_cursor vad_gate
 METALLIBS     := $(addprefix $(EMITTED)/,$(addsuffix .metallib,$(METAL_KERNELS)))
 
 TEST_NAMES := $(foreach t,$(TESTS),$(word 1,$(subst :, ,$(t))))
