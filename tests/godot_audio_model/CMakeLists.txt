@@ -132,3 +132,13 @@ target_link_libraries(godot_audio_model_decoder_smoke
     PRIVATE
         speech_engine
 )
+
+# Processor smoke (Pass 7b): exercises encode_buffer + a SpeechDecoder
+# round-trip end-to-end.
+add_executable(godot_audio_model_processor_smoke
+    processor_smoke_test.cpp
+)
+target_link_libraries(godot_audio_model_processor_smoke
+    PRIVATE
+        speech_engine
+)

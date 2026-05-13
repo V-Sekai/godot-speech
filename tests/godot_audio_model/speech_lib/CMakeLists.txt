@@ -22,6 +22,7 @@ pkg_check_modules(SAMPLERATE REQUIRED samplerate)
 
 add_library(speech_engine STATIC
     ${SPEECH_ROOT}/speech_decoder.cpp
+    ${SPEECH_ROOT}/speech_processor.cpp
 )
 
 target_include_directories(speech_engine

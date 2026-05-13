@@ -1,4 +1,4 @@
-// CHI-101 Phase A pass-3 — `RefCounted` + `Ref<T>` stand-ins.
+// CHI-101 Phase A — `RefCounted` + `Ref<T>` stand-ins.
 //
 // Same idea as core/object/ref_counted.h: an intrusive ref-count on
 // the pointee, and a `Ref<T>` smart pointer that increments/
@@ -29,66 +29,93 @@ public:
 
 template <typename T>
 class Ref {
-	T *ptr = nullptr;
+	// Storage. The member is named `_ref` to free the `ptr` and
+	// `ptr_raw` identifiers for the engine-style accessor methods.
+	T *_ref = nullptr;
 
 public:
 	Ref() = default;
 	Ref(T *p) :
-			ptr(p) {
-		if (ptr)
-			ptr->reference();
+			_ref(p) {
+		if (_ref) {
+			_ref->reference();
+		}
 	}
 	Ref(const Ref &o) :
-			ptr(o.ptr) {
-		if (ptr)
-			ptr->reference();
+			_ref(o._ref) {
+		if (_ref) {
+			_ref->reference();
+		}
 	}
 
 	template <typename U>
 	Ref(const Ref<U> &o) :
-			ptr(static_cast<T *>(o.ptr_raw())) {
-		if (ptr)
-			ptr->reference();
+			_ref(static_cast<T *>(o.ptr_raw())) {
+		if (_ref) {
+			_ref->reference();
+		}
 	}
 
 	~Ref() {
-		if (ptr && ptr->unreference()) {
-			delete ptr;
+		if (_ref && _ref->unreference()) {
+			delete _ref;
 		}
 	}
 
 	Ref &operator=(const Ref &o) {
-		if (this == &o)
+		if (this == &o) {
 			return *this;
-		if (o.ptr)
-			o.ptr->reference();
-		if (ptr && ptr->unreference())
-			delete ptr;
-		ptr = o.ptr;
+		}
+		if (o._ref) {
+			o._ref->reference();
+		}
+		if (_ref && _ref->unreference()) {
+			delete _ref;
+		}
+		_ref = o._ref;
 		return *this;
 	}
 
 	Ref &operator=(T *p) {
-		if (p)
+		if (p) {
 			p->reference();
-		if (ptr && ptr->unreference())
-			delete ptr;
-		ptr = p;
+		}
+		if (_ref && _ref->unreference()) {
+			delete _ref;
+		}
+		_ref = p;
 		return *this;
 	}
 
-	T *operator->() const { return ptr; }
-	T &operator*() const { return *ptr; }
-	T *ptr_raw() const { return ptr; }
+	T *operator->() const { return _ref; }
+	T &operator*() const { return *_ref; }
 
-	bool is_valid() const { return ptr != nullptr; }
-	bool is_null() const { return ptr == nullptr; }
-	void unref() {
-		if (ptr && ptr->unreference())
-			delete ptr;
-		ptr = nullptr;
+	// Engine API names: both ptr() and ptr_raw() return the raw
+	// pointer. The engine has only ptr(); we keep ptr_raw() too
+	// for backward compat with earlier pass code in the model.
+	T *ptr() const { return _ref; }
+	T *ptr_raw() const { return _ref; }
+
+	// Engine API: Ref<T>::instantiate() creates a new instance.
+	void instantiate() {
+		if (_ref && _ref->unreference()) {
+			delete _ref;
+		}
+		_ref = new T();
+		if (_ref) {
+			_ref->reference();
+		}
 	}
 
-	bool operator==(const Ref &o) const { return ptr == o.ptr; }
-	bool operator!=(const Ref &o) const { return ptr != o.ptr; }
+	bool is_valid() const { return _ref != nullptr; }
+	bool is_null() const { return _ref == nullptr; }
+	void unref() {
+		if (_ref && _ref->unreference()) {
+			delete _ref;
+		}
+		_ref = nullptr;
+	}
+
+	bool operator==(const Ref &o) const { return _ref == o._ref; }
+	bool operator!=(const Ref &o) const { return _ref != o._ref; }
 };

@@ -53,9 +53,13 @@ public:
 	StringName get_bus() const { return bus_name; }
 
 	// Direct API (the engine bind also exposes these as methods).
-	void play(float p_position) {
+	void play(float p_position = 0.0f) {
 		playback_position = p_position;
 		playing = true;
+	}
+	void stop() {
+		playing = false;
+		playback_position = 0.0f;
 	}
 	float get_playback_position() const { return playback_position; }
 	Ref<AudioStreamPlayback> get_stream_playback() const { return playback; }

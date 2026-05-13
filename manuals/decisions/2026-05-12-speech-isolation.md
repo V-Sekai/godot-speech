@@ -580,6 +580,35 @@ filesystem. Engine code stays unedited.
    otherwise do. Smoke test pushes 480 frames, drains them with
    bit-exact verification, then forces an overflow to confirm skips
    increments. **Done in PR #23.**
+7b. **Link speech_processor.cpp against the model + end-to-end
+    Opus round-trip.** Build on pass-7a: extend Variant with
+    `PackedByteArray` carrier + matching operator=. Add
+    `ProjectSettings::get_singleton()->get(...)` to the shim layer.
+    Add `set_process`, `set_physics_process`, `set_process_input`,
+    `NOTIFICATION_READY/ENTER_TREE/EXIT_TREE/PROCESS` free helpers
+    to Node so the engine's `_notification` switch compiles. Add
+    `vformat`, `SNAME`, `real_t`. Add `Ref<T>::ptr()` (engine
+    accessor; rename the storage member to `_ref` to avoid the
+    method/field name collision) and `Ref<T>::instantiate()`. Add
+    `Variant::DICTIONARY`/`ARRAY`/`PACKED_BYTE_ARRAY` enum values
+    so PropertyInfo declarations parse. The `speech_lib/`
+    CMake target now compiles **`speech_processor.cpp`** alongside
+    `speech_decoder.cpp` into `libspeech_engine.a`. A new
+    `processor_smoke_test.cpp` drives a 440 Hz tone through the
+    real `SpeechProcessor::encode_buffer`, then decodes the
+    resulting Opus packet through `SpeechDecoder::process`, and
+    asserts the decoder returns the full 480-sample frame count.
+    Output:
+    ```
+    processor_smoke: SpeechProcessor constructed
+    processor_smoke: encode_buffer wrote 71 bytes (negative = Opus error)
+    processor_smoke: PASS — Opus emitted 71-byte compressed packet
+    processor_smoke: decoder->process returned 480 (positive = frames decoded)
+    processor_smoke: PASS — Opus encode -> decode round-trip ran end-to-end
+    ```
+    CI runs the new smoke test on both macOS and Linux. Done in
+    PR #27.
+
 7a. **Link speech_decoder.cpp against the model.** Add `Dictionary`
     + `Array` core types (std::map + std::vector backed; mirror
     the engine's `has` / `[]` / `size` / `push_back` / `pop_front`
