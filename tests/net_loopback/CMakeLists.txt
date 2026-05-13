@@ -42,6 +42,19 @@ set(FTXUI_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(ftxui)
 
+# Picoquic — vendor via FetchContent. picoquic's master branch is
+# what people use (last tag is "draft-16-final" from QUIC pre-RFC).
+# Pin a known-good master commit. The picotls TLS backend is auto-
+# fetched via PICOQUIC_FETCH_PTLS; the picotls-openssl layer needs
+# system OpenSSL (libssl-dev on Linux, openssl@3 from brew on macOS).
+set(PICOQUIC_FETCH_PTLS ON CACHE BOOL "" FORCE)
+FetchContent_Declare(picoquic
+  GIT_REPOSITORY https://github.com/private-octopus/picoquic.git
+  GIT_TAG        f54239a39145
+  GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(picoquic)
+
 # Reuse the audio_model speech_engine library so the receive +
 # capture paths are exercised through the unedited godot-speech
 # .cpp files. The audio_model CMake target sits one level up.
@@ -116,6 +129,25 @@ target_link_libraries(net_loopback_observer
 )
 
 target_compile_options(net_loopback_observer
+  PRIVATE
+    -Wall -Wextra -Wno-unused-parameter
+)
+
+# Step 4: picoquic vendoring smoke. Constructs a picoquic_quic_t
+# context, queries the library version, and frees it. Doesn't open
+# sockets — proves the FetchContent vendoring + header path + link
+# work. Real QUIC datagram loopback (4b) wires it through the
+# NetMiddleware abstraction in a follow-up.
+add_executable(net_loopback_picoquic_smoke
+  picoquic_smoke.cpp
+)
+
+target_link_libraries(net_loopback_picoquic_smoke
+  PRIVATE
+    picoquic-core
+)
+
+target_compile_options(net_loopback_picoquic_smoke
   PRIVATE
     -Wall -Wextra -Wno-unused-parameter
 )
