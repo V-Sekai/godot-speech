@@ -67,6 +67,39 @@ jobs:
         working-directory: tests/slang_validate
         run: SLANGC="$SLANG_HOME/bin/slangc" make metal-discipline
 
+  net_loopback:
+    name: net_loopback (FTXUI vendor, ${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cmake + ninja
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y cmake ninja-build
+          else
+            brew install cmake ninja
+          fi
+        shell: bash
+
+      - name: Configure (FetchContent fetches FTXUI v6.1.9)
+        working-directory: tests/net_loopback
+        run: cmake -S . -B build -G Ninja
+
+      - name: Build
+        working-directory: tests/net_loopback
+        run: cmake --build build
+
+      - name: Hello smoke (FTXUI link + render)
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_hello
+
   audio_model_macos:
     name: Audio model (macOS, CoreAudio)
     runs-on: macos-latest
