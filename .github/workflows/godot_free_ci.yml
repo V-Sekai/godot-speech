@@ -120,6 +120,10 @@ jobs:
         working-directory: tests/net_loopback
         run: ./build/net_loopback_picoquic_datagram
 
+      - name: picoquic datagram stress sweep
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_picoquic_stress
+
   audio_model_macos:
     name: Audio model (macOS, CoreAudio)
     runs-on: macos-latest
