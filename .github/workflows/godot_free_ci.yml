@@ -116,6 +116,10 @@ jobs:
         working-directory: tests/net_loopback
         run: ./build/net_loopback_picoquic_smoke
 
+      - name: picoquic datagram loopback (server thread + client packet loop)
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_picoquic_datagram
+
   audio_model_macos:
     name: Audio model (macOS, CoreAudio)
     runs-on: macos-latest

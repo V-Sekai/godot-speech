@@ -47,7 +47,13 @@ FetchContent_MakeAvailable(ftxui)
 # Pin a known-good master commit. The picotls TLS backend is auto-
 # fetched via PICOQUIC_FETCH_PTLS; the picotls-openssl layer needs
 # system OpenSSL (libssl-dev on Linux, openssl@3 from brew on macOS).
+#
+# BUILD_LOGLIB=ON forces picoquic-log to build — the sockloop.c
+# objects in picoquic-core reference picoquic_set_qlog, so anything
+# that pulls in sockloop (i.e. the real packet-loop tests) needs the
+# loglib symbols at link time.
 set(PICOQUIC_FETCH_PTLS ON CACHE BOOL "" FORCE)
+set(BUILD_LOGLIB ON CACHE BOOL "" FORCE)
 FetchContent_Declare(picoquic
   GIT_REPOSITORY https://github.com/private-octopus/picoquic.git
   GIT_TAG        f54239a39145
@@ -133,11 +139,10 @@ target_compile_options(net_loopback_observer
     -Wall -Wextra -Wno-unused-parameter
 )
 
-# Step 4: picoquic vendoring smoke. Constructs a picoquic_quic_t
+# Step 4a: picoquic vendoring smoke. Constructs a picoquic_quic_t
 # context, queries the library version, and frees it. Doesn't open
 # sockets — proves the FetchContent vendoring + header path + link
-# work. Real QUIC datagram loopback (4b) wires it through the
-# NetMiddleware abstraction in a follow-up.
+# work.
 add_executable(net_loopback_picoquic_smoke
   picoquic_smoke.cpp
 )
@@ -148,6 +153,35 @@ target_link_libraries(net_loopback_picoquic_smoke
 )
 
 target_compile_options(net_loopback_picoquic_smoke
+  PRIVATE
+    -Wall -Wextra -Wno-unused-parameter
+)
+
+# Step 4b: real picoquic datagram loopback. Spawns a server in a
+# background thread (picoquic_start_network_thread) and a client on
+# the main thread (picoquic_packet_loop), negotiates
+# max_datagram_frame_size, round-trips N datagrams, and asserts the
+# server received exactly what was sent. Uses the picoquic-shipped
+# test cert (CN=test.example.com); the client installs
+# picoquic_set_null_verifier because the cert isn't signed by a real
+# CA.
+add_executable(net_loopback_picoquic_datagram
+  picoquic_loopback_test.cpp
+)
+
+target_link_libraries(net_loopback_picoquic_datagram
+  PRIVATE
+    picoquic-core
+    picoquic-log
+)
+
+target_compile_definitions(net_loopback_picoquic_datagram
+  PRIVATE
+    PICOQUIC_LOOPBACK_CERT_PATH="${picoquic_SOURCE_DIR}/certs/cert.pem"
+    PICOQUIC_LOOPBACK_KEY_PATH="${picoquic_SOURCE_DIR}/certs/key.pem"
+)
+
+target_compile_options(net_loopback_picoquic_datagram
   PRIVATE
     -Wall -Wextra -Wno-unused-parameter
 )
