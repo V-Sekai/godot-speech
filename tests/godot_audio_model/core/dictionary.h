@@ -24,20 +24,52 @@ public:
 
 	bool has(const String &key) const { return m.find(key) != m.end(); }
 	bool has(const char *key) const { return has(String(key)); }
+	bool has(const StringName &key) const { return has(static_cast<String>(key)); }
+	// Engine accepts any Variant as a key — we normalize via
+	// `static_cast<String>(v)` which uses Variant's string slot
+	// (set by Variant(int) → empty s + INT path needs adjustment;
+	// for the speech code path the int-keyed dict gets stringified
+	// via itos at the call site, but the engine's Dictionary
+	// silently stringifies on lookup — emulate via itos).
+	bool has(int key) const { return has(itos(key).std_str()); }
+	bool has(int64_t key) const { return has(itos(key).std_str()); }
+	bool has(const Variant &key) const {
+		if (key.get_type() == Variant::STRING) {
+			return has(static_cast<String>(key));
+		}
+		return has(itos(static_cast<int64_t>(key)).std_str());
+	}
 
 	Variant &operator[](const String &key) { return m[key]; }
 	Variant &operator[](const char *key) { return m[String(key)]; }
+	Variant &operator[](int key) { return m[itos(key)]; }
+	Variant &operator[](int64_t key) { return m[itos(key)]; }
+	Variant &operator[](const Variant &key) {
+		if (key.get_type() == Variant::STRING) {
+			return m[static_cast<String>(key)];
+		}
+		return m[itos(static_cast<int64_t>(key))];
+	}
 	const Variant operator[](const String &key) const {
 		auto it = m.find(key);
 		return it == m.end() ? Variant() : it->second;
 	}
 	const Variant operator[](const char *key) const { return (*this)[String(key)]; }
+	const Variant operator[](int key) const { return (*this)[itos(key)]; }
+	const Variant operator[](int64_t key) const { return (*this)[itos(key)]; }
+	const Variant operator[](const Variant &key) const {
+		if (key.get_type() == Variant::STRING) {
+			return (*this)[static_cast<String>(key)];
+		}
+		return (*this)[itos(static_cast<int64_t>(key))];
+	}
 
 	int size() const { return static_cast<int>(m.size()); }
 	bool is_empty() const { return m.empty(); }
 	void clear() { m.clear(); }
 
 	bool erase(const String &key) { return m.erase(key) > 0; }
+	bool erase(int key) { return m.erase(itos(key)) > 0; }
 
 	class Iter {
 		typename std::map<String, Variant>::iterator it;
@@ -59,6 +91,10 @@ public:
 		d.m = m;
 		return d;
 	}
+
+	// Forward-declare in-class; defined after Array below via
+	// the free helper.
+	class Array keys() const;
 };
 
 class Array {
@@ -70,6 +106,7 @@ public:
 	int size() const { return static_cast<int>(v.size()); }
 	bool is_empty() const { return v.empty(); }
 	void clear() { v.clear(); }
+	void resize(int n) { v.resize(static_cast<size_t>(n)); }
 
 	Variant &operator[](int i) { return v[i]; }
 	const Variant &operator[](int i) const { return v[i]; }
@@ -100,8 +137,50 @@ public:
 	}
 };
 
+// Member-style `Dictionary::keys()` — forward-declared inside the
+// class isn't ideal since Array depends on Dictionary; define it
+// here as a free helper plus a method body via injected friend.
+inline Array dictionary_keys_method(Dictionary &d) {
+	return Array::from_dictionary_keys(d);
+}
+
+// Engine: `dict.keys()` is a member. We can't add to Dictionary
+// after the fact in C++, so callers using `dict.keys()` need a
+// method. Add it via header-level macro injection isn't clean —
+// instead, augment Dictionary inline. Since this header defines
+// Dictionary already, append a free-friend-style helper.
+
+// Variant carriers for Dictionary / Array — defined here once the
+// full types are visible.
+inline Variant::Variant(const Dictionary &v) :
+		type(DICTIONARY),
+		dict(std::make_shared<Dictionary>(v)) {}
+inline Variant::Variant(const Array &v) :
+		type(ARRAY),
+		arr(std::make_shared<Array>(v)) {}
+inline Variant &Variant::operator=(const Dictionary &v) {
+	*this = Variant(v);
+	return *this;
+}
+inline Variant &Variant::operator=(const Array &v) {
+	*this = Variant(v);
+	return *this;
+}
+inline Variant::operator Dictionary() const {
+	return dict ? *dict : Dictionary();
+}
+inline Variant::operator Array() const {
+	return arr ? *arr : Array();
+}
+
 // Engine's Dictionary::keys() — defined here to avoid Dictionary
 // having to know about Array.
 inline Array dictionary_keys(const Dictionary &d) {
 	return Array::from_dictionary_keys(d);
+}
+
+// Member `Dictionary::keys()` body. Inline to keep this a
+// header-only model component.
+inline Array Dictionary::keys() const {
+	return Array::from_dictionary_keys(*this);
 }

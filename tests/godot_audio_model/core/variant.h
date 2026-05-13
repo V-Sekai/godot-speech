@@ -53,6 +53,8 @@ private:
 	// Heavy payloads carried via shared pointer so Variant remains
 	// small and copyable; the engine uses CoW + in-place storage.
 	std::shared_ptr<PackedByteArray> pba;
+	std::shared_ptr<class Dictionary> dict;
+	std::shared_ptr<class Array> arr;
 	// PackedVector2Array isn't actually round-tripped through
 	// Variant in godot-speech (the engine binds it but it's never
 	// the rhs of `Variant = …`); declare a placeholder slot for
@@ -68,6 +70,8 @@ public:
 			type(INT), i(v) {}
 	Variant(uint32_t v) :
 			type(INT), i(static_cast<int64_t>(v)) {}
+	Variant(uint64_t v) :
+			type(INT), i(static_cast<int64_t>(v)) {}
 	Variant(float v) :
 			type(FLOAT), f(v) {}
 	Variant(double v) :
@@ -79,6 +83,15 @@ public:
 	Variant(const PackedByteArray &v) :
 			type(PACKED_BYTE_ARRAY),
 			pba(std::make_shared<PackedByteArray>(v)) {}
+
+	// Dictionary / Array carriers — forward-declared types
+	// (defined in dictionary.h, which #includes this header).
+	// Ctors and operator= are implemented out-of-line below so
+	// the full types are visible when their bodies are emitted.
+	Variant(const class Dictionary &v);
+	Variant(const class Array &v);
+	Variant(const StringName &v) :
+			type(STRING), s(static_cast<String>(v)) {}
 
 	// Accept any Ref<T> where T derives from RefCounted.
 	template <typename T>
@@ -110,7 +123,17 @@ public:
 		*this = Variant(v);
 		return *this;
 	}
+	Variant &operator=(uint64_t v) {
+		*this = Variant(v);
+		return *this;
+	}
 	Variant &operator=(const PackedByteArray &v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(const Dictionary &v);
+	Variant &operator=(const Array &v);
+	Variant &operator=(const StringName &v) {
 		*this = Variant(v);
 		return *this;
 	}
@@ -159,9 +182,20 @@ public:
 	operator float() const { return static_cast<float>(f); }
 	operator double() const { return f; }
 	operator String() const { return s; }
+	operator StringName() const { return StringName(s); }
 	operator PackedByteArray() const {
 		return pba ? *pba : PackedByteArray();
 	}
+
+	// Dictionary / Array fall back to default-constructed since
+	// godot-speech only reads them via the implicit conversion in
+	// `Dictionary d = elem["…"]` patterns where the cell would
+	// have been assigned with a Dictionary value. Defer the
+	// shared-pointer wiring for those until a real test exercises
+	// the conversion.
+	operator Dictionary() const;
+	operator Array() const;
+	operator NodePath() const { return NodePath(s); }
 
 	// Implicit Ref<T> conversion via dynamic_cast through the
 	// stored RefCounted*. Mirrors the engine's behavior: the
@@ -174,4 +208,15 @@ public:
 		T *casted = dynamic_cast<T *>(o.ptr_raw());
 		return Ref<T>(casted);
 	}
+
+	// Access the stored RefCounted*. Used by cast_to<T>(Variant).
+	RefCounted *_obj_ptr() const { return o.ptr_raw(); }
 };
+
+// `cast_to<T>(Variant)` — engine's overload for objects stored
+// inside a Variant. Returns T* via dynamic_cast or null.
+template <typename T>
+inline T *cast_to(const Variant &v) {
+	RefCounted *p = v._obj_ptr();
+	return p ? dynamic_cast<T *>(p) : nullptr;
+}

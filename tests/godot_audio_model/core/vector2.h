@@ -54,4 +54,17 @@ public:
 	Vector2 &operator[](int i) { return v[i]; }
 
 	void push_back(const Vector2 &x) { v.push_back(x); }
+
+	// Engine API: `write` is a struct member (not a method) of the
+	// engine's typed packed array — callers do `arr.write[i] = …`.
+	// Match the shape with a proxy that captures the storage by
+	// reference and forwards `[]`.
+	struct Writer {
+		std::vector<Vector2> *v_ref = nullptr;
+		Vector2 &operator[](int i) { return (*v_ref)[i]; }
+	};
+	// Public Writer instance refreshed each access via property-like
+	// initializer; assigning to write[i] mutates the backing vector
+	// because Writer carries a pointer.
+	Writer write{ &v };
 };

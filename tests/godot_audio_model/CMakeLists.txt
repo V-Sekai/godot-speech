@@ -33,6 +33,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(MODEL_SOURCES
     audio/audio_driver.cpp
     audio/audio_server.cpp
+    audio/node.cpp
 )
 
 set(MODEL_HEADERS
@@ -139,6 +140,17 @@ add_executable(godot_audio_model_processor_smoke
     processor_smoke_test.cpp
 )
 target_link_libraries(godot_audio_model_processor_smoke
+    PRIVATE
+        speech_engine
+)
+
+# Speech smoke (Pass 7c): constructs the full Speech node, verifies
+# SceneTree + MultiplayerAPI plumbing, drives a packet through
+# on_received_audio_packet to confirm the receive path doesn't crash.
+add_executable(godot_audio_model_speech_smoke
+    speech_smoke_test.cpp
+)
+target_link_libraries(godot_audio_model_speech_smoke
     PRIVATE
         speech_engine
 )
