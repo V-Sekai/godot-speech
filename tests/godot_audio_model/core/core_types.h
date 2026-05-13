@@ -17,3 +17,6 @@
 #include "variant.h"
 #include "vector.h"
 #include "vector2.h"
+
+// Dictionary + Array depend on Variant, so include after.
+#include "dictionary.h"
