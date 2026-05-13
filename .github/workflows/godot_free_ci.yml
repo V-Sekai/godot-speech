@@ -124,6 +124,10 @@ jobs:
         working-directory: tests/net_loopback
         run: ./build/net_loopback_picoquic_stress
 
+      - name: Polymorphic observer (audio through real QUIC + in-process)
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_picoquic_observer
+
   audio_model_macos:
     name: Audio model (macOS, CoreAudio)
     runs-on: macos-latest
