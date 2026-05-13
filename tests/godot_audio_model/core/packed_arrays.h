@@ -65,4 +65,11 @@ public:
 
 	float operator[](int i) const { return v[i]; }
 	float &operator[](int i) { return v[i]; }
+
+	// Engine API: `arr.write[i] = …` Writer-proxy struct member.
+	struct Writer {
+		std::vector<float> *v_ref = nullptr;
+		float &operator[](int i) { return (*v_ref)[i]; }
+	};
+	Writer write{ &v };
 };
