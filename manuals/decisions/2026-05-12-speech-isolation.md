@@ -498,6 +498,44 @@ not a re-implementation. The slang_validate kernels remain the
 normative reference for the math layer; the audio model just provides
 the storage substrate the engine code path is built against.
 
+**Engine-path shim layout (pass-7 stage):**
+
+The Godot engine code reaches its dependencies through canonical
+include paths like `core/object/ref_counted.h`,
+`servers/audio/audio_server.h`, `thirdparty/opus/opus/opus.h`. The
+model preserves the engine sources unedited by interposing a
+shim header at every such path:
+
+```
+tests/godot_audio_model/shims/
+├── core/
+│   ├── config/engine.h               → Engine::get_audio_output_latency stub
+│   ├── config/project_settings.h     → GLOBAL_GET macro
+│   ├── error/error_macros.h          → model's error_macros.h
+│   ├── math/math_funcs_binary.h      → model's math_funcs.h + next_power_of_2
+│   ├── object/class_db.h             → GDCLASS / ADD_SIGNAL / BIND_CONSTANT no-ops
+│   ├── object/ref_counted.h          → model's ref_counted.h + class_db.h bundle
+│   ├── os/mutex.h                    → model's mutex.h
+│   ├── os/os.h                       → OS::get_singleton stub
+│   └── variant/{variant,dictionary,array}.h → re-export model types
+├── scene/
+│   ├── audio/audio_stream_player.h   → model's audio_stream_player.h
+│   └── main/node.h                   → model's node.h
+├── servers/
+│   ├── audio_server.h                → AudioDriver + AudioServer bundle
+│   └── audio/
+│       ├── audio_server.h            → AudioDriver + AudioServer bundle
+│       ├── audio_stream.h            → model's audio_stream.h
+│       └── effects/audio_effect_capture.h → model's audio_effect_capture.h
+└── thirdparty/
+    ├── opus/opus/opus.h              → <opus/opus.h> (system install)
+    └── libsamplerate/src/samplerate.h → <samplerate.h> (system install)
+```
+
+CMake's `target_include_directories(... PUBLIC shims/)` makes every
+engine `#include` resolve through the shim before hitting the real
+filesystem. Engine code stays unedited.
+
 **Implementation outline (separate PR(s)):**
 
 1. **Core types pass + verbatim CoreAudio driver.** `Vector2`,
@@ -542,6 +580,27 @@ the storage substrate the engine code path is built against.
    otherwise do. Smoke test pushes 480 frames, drains them with
    bit-exact verification, then forces an overflow to confirm skips
    increments. **Done in PR #23.**
+7a. **Link speech_decoder.cpp against the model.** Add `Dictionary`
+    + `Array` core types (std::map + std::vector backed; mirror
+    the engine's `has` / `[]` / `size` / `push_back` / `pop_front`
+    surface). Add the binding-stub layer at
+    `shims/core/object/class_db.h` — `GDCLASS`, `ADD_SIGNAL`,
+    `ADD_PROPERTY`, `BIND_CONSTANT`, `D_METHOD`, `ClassDB::bind_method`
+    all as compile-time no-ops (the test path never calls into
+    GDScript). Add shims at every engine include path
+    `speech_decoder.cpp` walks (`core/object/ref_counted.h`,
+    `core/os/mutex.h`, `scene/main/node.h`,
+    `servers/audio/*`, `thirdparty/opus/opus/opus.h`,
+    `thirdparty/libsamplerate/src/samplerate.h`). New CMake
+    subproject `speech_lib/` builds `speech_decoder.cpp` into
+    `libspeech_engine.a`, linking via `pkg-config` against the
+    system `opus` + `samplerate`. A new `decoder_smoke_test.cpp`
+    constructs a `SpeechDecoder` and verifies the wrapper
+    initialises Opus and rejects an invalid-state call. Done in
+    PR #25 (the FTXUI swap is rolled into the same diff as a
+    docs-only sibling change in this commit; pass-7a code lands
+    in PR #26).
+
 4. **Node + cast_to + Variant + AudioStreamPlayer/2D/3D.**
    Polymorphism layer that lets `Speech::attempt_to_feed_stream`
    reach the playback through a Variant-typed dispatch. `Node`

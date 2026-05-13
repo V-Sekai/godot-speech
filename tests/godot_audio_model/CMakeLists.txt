@@ -114,3 +114,21 @@ target_link_libraries(godot_audio_model_smoke
     PRIVATE
         godot_audio_model
 )
+
+# Pass-7 subproject: compile godot-speech's engine .cpp sources
+# against the audio model. Currently builds speech_decoder.cpp only
+# (Pass 7a); speech_processor.cpp / speech.cpp follow in later
+# sub-passes.
+add_subdirectory(speech_lib)
+
+# Decoder smoke test — constructs SpeechDecoder and verifies Opus
+# decoder creation succeeds. Doesn't decode a real packet (that's
+# integration-level and belongs in the next sub-pass once the
+# encoder is also linked).
+add_executable(godot_audio_model_decoder_smoke
+    decoder_smoke_test.cpp
+)
+target_link_libraries(godot_audio_model_decoder_smoke
+    PRIVATE
+        speech_engine
+)
