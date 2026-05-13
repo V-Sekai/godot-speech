@@ -73,14 +73,23 @@ public:
 	}
 };
 
-// `itos` mirrors Godot's int-to-String helper.
+// `itos` mirrors Godot's int-to-String helper. Linux's GCC aliases
+// `int64_t` to `long` (not `long long`), and macOS's clang aliases
+// it to `long long` — both overloads need to exist to resolve
+// without ambiguity across platforms.
 inline String itos(long long v) {
+	return String(std::to_string(v));
+}
+inline String itos(long v) {
 	return String(std::to_string(v));
 }
 inline String itos(int v) {
 	return String(std::to_string(v));
 }
 inline String itos(unsigned int v) {
+	return String(std::to_string(v));
+}
+inline String itos(unsigned long v) {
 	return String(std::to_string(v));
 }
 inline String itos(unsigned long long v) {
