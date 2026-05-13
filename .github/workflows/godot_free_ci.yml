@@ -105,6 +105,10 @@ jobs:
         working-directory: tests/godot_audio_model
         run: ./build/godot_audio_model_integration
 
+      - name: Kernel ⇔ runtime agreement (slang_validate ⇔ engine)
+        working-directory: tests/godot_audio_model
+        run: ./build/godot_audio_model_agreement
+
   audio_model_linux:
     name: Audio model (Linux, no CoreAudio)
     runs-on: ubuntu-latest
@@ -144,3 +148,7 @@ jobs:
       - name: End-to-end integration (capture -> encode -> receive)
         working-directory: tests/godot_audio_model
         run: ./build/godot_audio_model_integration
+
+      - name: Kernel ⇔ runtime agreement (slang_validate ⇔ engine)
+        working-directory: tests/godot_audio_model
+        run: ./build/godot_audio_model_agreement
