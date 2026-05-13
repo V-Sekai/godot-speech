@@ -240,3 +240,32 @@ target_compile_options(net_loopback_picoquic_observer
   PRIVATE
     -Wall -Wextra -Wno-unused-parameter
 )
+
+# Step 4e: jitter/loss/reorder over real QUIC via UDP relay.
+# Routes the audio pipeline's packets through a `UDPRelayProxy` that
+# sits between the picoquic client and server, applying a
+# NetworkProfile (LAN / WAN / lossy). Asserts bookkeeping closes
+# and kernel ⇔ engine agreement still holds.
+add_executable(net_loopback_picoquic_relay
+  picoquic_relay_test.cpp
+)
+
+target_link_libraries(net_loopback_picoquic_relay
+  PRIVATE
+    speech_engine
+    ftxui::screen
+    ftxui::dom
+    picoquic-core
+    picoquic-log
+)
+
+target_compile_definitions(net_loopback_picoquic_relay
+  PRIVATE
+    PICOQUIC_LOOPBACK_CERT_PATH="${picoquic_SOURCE_DIR}/certs/cert.pem"
+    PICOQUIC_LOOPBACK_KEY_PATH="${picoquic_SOURCE_DIR}/certs/key.pem"
+)
+
+target_compile_options(net_loopback_picoquic_relay
+  PRIVATE
+    -Wall -Wextra -Wno-unused-parameter
+)
