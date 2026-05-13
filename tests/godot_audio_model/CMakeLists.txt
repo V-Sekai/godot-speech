@@ -154,3 +154,13 @@ target_link_libraries(godot_audio_model_speech_smoke
     PRIVATE
         speech_engine
 )
+
+# End-to-end integration test: drives the full capture -> encode ->
+# receive pipeline through the model + real godot-speech engine code.
+add_executable(godot_audio_model_integration
+    integration_test.cpp
+)
+target_link_libraries(godot_audio_model_integration
+    PRIVATE
+        speech_engine
+)
