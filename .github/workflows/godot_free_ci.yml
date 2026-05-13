@@ -79,10 +79,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install cmake + ninja + opus + libsamplerate + openssl
+        timeout-minutes: 5
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            sudo apt-get update
-            sudo apt-get install -y cmake ninja-build libopus-dev libsamplerate0-dev libssl-dev pkg-config
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y \
+              cmake ninja-build libopus-dev libsamplerate0-dev libssl-dev pkg-config
           else
             brew install cmake ninja opus libsamplerate openssl@3 pkg-config
           fi
@@ -182,9 +184,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install opus + libsamplerate
+        timeout-minutes: 5
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libopus-dev libsamplerate0-dev pkg-config cmake ninja-build
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y \
+            libopus-dev libsamplerate0-dev pkg-config cmake ninja-build
 
       - name: Configure CMake
         working-directory: tests/godot_audio_model
