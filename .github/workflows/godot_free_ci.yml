@@ -78,13 +78,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install cmake + ninja + opus + libsamplerate
+      - name: Install cmake + ninja + opus + libsamplerate + openssl
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
             sudo apt-get update
-            sudo apt-get install -y cmake ninja-build libopus-dev libsamplerate0-dev pkg-config
+            sudo apt-get install -y cmake ninja-build libopus-dev libsamplerate0-dev libssl-dev pkg-config
           else
-            brew install cmake ninja opus libsamplerate pkg-config
+            brew install cmake ninja opus libsamplerate openssl@3 pkg-config
           fi
         shell: bash
 
@@ -111,6 +111,10 @@ jobs:
       - name: Observer (live loopback + kernel ⇔ engine markers)
         working-directory: tests/net_loopback
         run: ./build/net_loopback_observer
+
+      - name: picoquic vendoring smoke
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_picoquic_smoke
 
   audio_model_macos:
     name: Audio model (macOS, CoreAudio)
