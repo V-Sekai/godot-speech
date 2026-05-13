@@ -164,3 +164,14 @@ target_link_libraries(godot_audio_model_integration
     PRIVATE
         speech_engine
 )
+
+# Agreement: kernel-vs-runtime equivalence. Drives deterministic
+# fixtures through the real engine + audio model and asserts the
+# observable output matches each slang_validate kernel's formula.
+add_executable(godot_audio_model_agreement
+    agreement_test.cpp
+)
+target_link_libraries(godot_audio_model_agreement
+    PRIVATE
+        speech_engine
+)
