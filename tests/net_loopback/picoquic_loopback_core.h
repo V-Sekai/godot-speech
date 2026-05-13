@@ -494,17 +494,48 @@ inline LoopbackResult run_picoquic_loopback(const LoopbackConfig &cfg) {
 	return result;
 }
 
+struct PassthroughBatchOptions {
+	// Address picoquic client should target. 0 (default) means
+	// connect directly to the server (no relay).
+	uint16_t relay_port_override = 0;
+	// Pre-bound server port. 0 (default) lets the helper pick one
+	// itself; callers that need to insert a relay in front of the
+	// server (and so need the server port up-front) bind a free
+	// port externally and pass it here.
+	int server_port_override = 0;
+	// Override the picoquic_packet_loop deadline in milliseconds.
+	// 0 (default) → derived from payload count. Relay-fronted paths
+	// need a much higher budget because the handshake alone takes
+	// ~2 RTT and the simulated WAN profile pushes RTT to 160 ms.
+	uint64_t test_timeout_ms = 0;
+};
+
+// Forward declaration so the no-arg `run_passthrough_batch` can
+// delegate to the options-aware variant.
+inline std::vector<std::vector<uint8_t>> run_passthrough_batch_ex(
+		const std::vector<std::vector<uint8_t>> &payloads,
+		const PassthroughBatchOptions &opts);
+
 // Variable-payload batch round-trip: feed each entry of `payloads`
 // to the client as a datagram, return whatever the server received
 // (in arrival order). Used by `PicoquicNetTransport` to ferry the
 // audio engine's actual packets through real QUIC.
 inline std::vector<std::vector<uint8_t>> run_passthrough_batch(
 		const std::vector<std::vector<uint8_t>> &payloads) {
+	PassthroughBatchOptions opts;
+	return run_passthrough_batch_ex(payloads, opts);
+}
+
+inline std::vector<std::vector<uint8_t>> run_passthrough_batch_ex(
+		const std::vector<std::vector<uint8_t>> &payloads,
+		const PassthroughBatchOptions &opts) {
 	std::vector<std::vector<uint8_t>> received_out;
 	if (payloads.empty()) {
 		return received_out;
 	}
-	const int server_port = pick_free_udp_port();
+	const int server_port = opts.server_port_override != 0
+			? opts.server_port_override
+			: pick_free_udp_port();
 	if (server_port <= 0) {
 		return received_out;
 	}
@@ -561,15 +592,17 @@ inline std::vector<std::vector<uint8_t>> run_passthrough_batch(
 	picoquic_set_default_tp_value(client_quic, picoquic_tp_max_datagram_frame_size, kMaxDatagramFrameSize);
 	picoquic_set_null_verifier(client_quic);
 
-	sockaddr_in server_addr{};
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	server_addr.sin_port = htons(static_cast<uint16_t>(server_port));
+	sockaddr_in connect_addr{};
+	connect_addr.sin_family = AF_INET;
+	connect_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	connect_addr.sin_port = htons(opts.relay_port_override != 0
+					? opts.relay_port_override
+					: static_cast<uint16_t>(server_port));
 
 	picoquic_cnx_t *cnx = picoquic_create_cnx(
 			client_quic,
 			picoquic_null_connection_id, picoquic_null_connection_id,
-			reinterpret_cast<sockaddr *>(&server_addr),
+			reinterpret_cast<sockaddr *>(&connect_addr),
 			now_us, 0, kSni, kAlpn, /*client_mode=*/1);
 	if (cnx == nullptr) {
 		picoquic_delete_network_thread(server_thread);
@@ -587,7 +620,9 @@ inline std::vector<std::vector<uint8_t>> run_passthrough_batch(
 		return received_out;
 	}
 
-	const uint64_t timeout_ms = 2'000 + static_cast<uint64_t>(payloads.size()) * 5;
+	const uint64_t timeout_ms = opts.test_timeout_ms != 0
+			? opts.test_timeout_ms
+			: 2'000 + static_cast<uint64_t>(payloads.size()) * 5;
 	ClientLoopState loop_state;
 	loop_state.client = &client_ctx;
 	loop_state.deadline_us = picoquic_current_time() + timeout_ms * 1000;

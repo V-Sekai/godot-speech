@@ -128,6 +128,10 @@ jobs:
         working-directory: tests/net_loopback
         run: ./build/net_loopback_picoquic_observer
 
+      - name: UDP relay (jitter/loss/reorder profiles over real QUIC)
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_picoquic_relay
+
   audio_model_macos:
     name: Audio model (macOS, CoreAudio)
     runs-on: macos-latest
