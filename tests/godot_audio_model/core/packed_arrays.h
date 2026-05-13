@@ -30,6 +30,17 @@ public:
 
 	uint8_t operator[](int i) const { return v[i]; }
 	uint8_t &operator[](int i) { return v[i]; }
+
+	// Engine API: `slice(int begin, int end)` returns a copy of the
+	// half-open range [begin, end). end defaults to size().
+	PackedByteArray slice(int begin, int end = -1) const {
+		PackedByteArray out;
+		const int sz = size();
+		const int e = (end < 0) ? sz : ((end > sz) ? sz : end);
+		const int b = (begin < 0) ? 0 : ((begin > e) ? e : begin);
+		out.v.assign(v.begin() + b, v.begin() + e);
+		return out;
+	}
 };
 
 class PackedFloat32Array {

@@ -5,12 +5,30 @@
 // decrements on construction/copy/destruction. The engine's full
 // `Object` hierarchy isn't reproduced — `RefCounted` here is a
 // standalone base class with no signal/method/property machinery.
+//
+// GDCLASS lives here too (engine puts it in core/object/object.h
+// which is transitively pulled in by ref_counted.h). Keeping the
+// macro alongside RefCounted means every header that declares a
+// reference-counted class also has the macro visible.
 
 #pragma once
 
 #include "typedefs.h"
 
 #include <atomic>
+
+// GDCLASS marker — the engine's macro generates ClassDB
+// registration boilerplate. We emit just a `BaseClass` typedef so
+// engine code that uses `BaseClass::method()` from inside the class
+// body keeps compiling. Method registration itself is a no-op
+// (test binary doesn't reflect into GDScript).
+#ifndef GDCLASS
+#define GDCLASS(m_class, m_inherits) \
+public:                              \
+	using BaseClass = m_inherits;    \
+                                     \
+private:
+#endif
 
 class RefCounted {
 	mutable std::atomic<int> ref_count{ 0 };

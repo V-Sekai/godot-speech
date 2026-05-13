@@ -174,3 +174,9 @@ _FORCE_INLINE_ const char *cstr(const char *s) {
 		std::fprintf(stderr, "[audio_model] %s\n", \
 				_audio_model::cstr(m_msg));        \
 	} while (0)
+
+#define print_error(m_msg)                               \
+	do {                                                 \
+		std::fprintf(stderr, "[audio_model error] %s\n", \
+				_audio_model::cstr(m_msg));              \
+	} while (0)

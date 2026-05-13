@@ -20,6 +20,7 @@
 
 #include "../core/core_types.h"
 #include "../core/variant.h"
+#include "multiplayer.h"
 
 #include <vector>
 
@@ -36,13 +37,40 @@ public:
 
 	// Tree manipulation (test-driver only; the engine has a
 	// scene-tree state machine we don't model).
-	void add_child(Node *p_child) {
+	// Engine has 1-arg + 2-arg overloads; latter accepts a
+	// force-readable-name flag that the test path ignores.
+	void add_child(Node *p_child, bool /*p_force_readable_name*/ = false) {
 		if (!p_child) {
 			return;
 		}
 		p_child->parent = this;
 		children.push_back(p_child);
 	}
+
+	void remove_child(Node *p_child) {
+		for (auto it = children.begin(); it != children.end(); ++it) {
+			if (*it == p_child) {
+				children.erase(it);
+				if (p_child->parent == this) {
+					p_child->parent = nullptr;
+				}
+				return;
+			}
+		}
+	}
+
+	void set_owner(Node * /*p_owner*/) {}
+	Node *get_owner() const { return nullptr; }
+
+	void set_process_internal(bool /*p_enable*/) {}
+
+	// Engine `queue_free` requests deletion at end of frame. The
+	// test binary has no frame loop; queue_free is a no-op and
+	// the test driver is responsible for memdelete lifetimes.
+	void queue_free() {}
+
+	// Per-frame delta — test driver advances time manually.
+	float get_process_delta_time() const { return 1.0f / 60.0f; }
 
 	Node *get_node_or_null(const NodePath &p_path) {
 		const String target = p_path.get_path();
@@ -74,7 +102,21 @@ public:
 	// engine calls during scene-tree state changes. Test path
 	// drives this manually when needed.
 	virtual void _notification(int /*p_what*/) {}
+
+	// `get_tree()` — engine returns the SceneTree singleton when
+	// the Node is in the tree. Test binary returns a single global
+	// SceneTree that test drivers can configure via
+	// `MultiplayerAPI::test_attach_peer`.
+	SceneTree *get_tree() const;
 };
+
+// Storage + access for the global SceneTree the test driver
+// configures. Defined in node.cpp (out-of-line so audio_driver.cpp
+// alone owns the symbol).
+SceneTree *_audio_model_get_or_create_scene_tree();
+inline SceneTree *Node::get_tree() const {
+	return _audio_model_get_or_create_scene_tree();
+}
 
 // Engine NOTIFICATION_* constants — the few godot-speech reacts to.
 enum {
@@ -84,6 +126,7 @@ enum {
 	NOTIFICATION_PROCESS = 13,
 	NOTIFICATION_PHYSICS_PROCESS = 14,
 	NOTIFICATION_INTERNAL_PROCESS = 15,
+	NOTIFICATION_POSTINITIALIZE = 16,
 };
 
 // Node lifecycle setters — engine controls whether `_notification`
@@ -108,3 +151,7 @@ template <typename T>
 const T *cast_to(const Node *p_node) {
 	return dynamic_cast<const T *>(p_node);
 }
+
+// `cast_to<T>(Variant)` is defined in core/variant.h — the
+// declaration here is the engine's convention that the overload
+// also works for Variant payloads.
