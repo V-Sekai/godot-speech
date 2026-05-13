@@ -61,7 +61,40 @@ public:
 			const Variant & /*p_arg0*/) {
 		return Variant();
 	}
+
+	// `emit_signal` — engine fans the signal out to connected
+	// handlers. The test path has no signal listeners (the engine
+	// scene graph isn't running); we accept the call as a no-op
+	// and silently drop the payload. If a future test needs to
+	// observe emitted signals, route via a per-Node callback list.
+	template <typename... Args>
+	void emit_signal(const StringName & /*p_name*/, Args &&...) const {}
+
+	// `_notification(int p_what)` — virtual lifecycle hook the
+	// engine calls during scene-tree state changes. Test path
+	// drives this manually when needed.
+	virtual void _notification(int /*p_what*/) {}
 };
+
+// Engine NOTIFICATION_* constants — the few godot-speech reacts to.
+enum {
+	NOTIFICATION_ENTER_TREE = 10,
+	NOTIFICATION_READY = 11,
+	NOTIFICATION_EXIT_TREE = 12,
+	NOTIFICATION_PROCESS = 13,
+	NOTIFICATION_PHYSICS_PROCESS = 14,
+	NOTIFICATION_INTERNAL_PROCESS = 15,
+};
+
+// Node lifecycle setters — engine controls whether `_notification`
+// fires per-frame. Test path drives manually; setters are no-ops.
+inline void set_process(bool /*p_active*/) {}
+inline void set_physics_process(bool /*p_active*/) {}
+inline void set_process_input(bool /*p_active*/) {}
+
+// `real_t` — engine's switchable float/double precision type. We
+// fix it to float since the model is fp32 throughout.
+using real_t = float;
 
 // Engine-style typed cast. The engine implements this via its own
 // RTTI (registered via GDCLASS); dynamic_cast works for us because

@@ -93,6 +93,10 @@ jobs:
         working-directory: tests/godot_audio_model
         run: ./build/godot_audio_model_decoder_smoke
 
+      - name: Smoke test (processor encode -> decode round-trip)
+        working-directory: tests/godot_audio_model
+        run: ./build/godot_audio_model_processor_smoke
+
   audio_model_linux:
     name: Audio model (Linux, no CoreAudio)
     runs-on: ubuntu-latest
@@ -120,3 +124,7 @@ jobs:
       - name: Smoke test (decoder linked against model)
         working-directory: tests/godot_audio_model
         run: ./build/godot_audio_model_decoder_smoke
+
+      - name: Smoke test (processor encode -> decode round-trip)
+        working-directory: tests/godot_audio_model
+        run: ./build/godot_audio_model_processor_smoke

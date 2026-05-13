@@ -21,9 +21,12 @@
 
 #pragma once
 
+#include "packed_arrays.h"
 #include "ref_counted.h"
 #include "string.h"
 #include "typedefs.h"
+
+#include <memory>
 
 class Variant {
 public:
@@ -34,6 +37,10 @@ public:
 		FLOAT,
 		STRING,
 		OBJECT,
+		DICTIONARY,
+		ARRAY,
+		PACKED_BYTE_ARRAY,
+		PACKED_VECTOR2_ARRAY,
 	};
 
 private:
@@ -43,6 +50,13 @@ private:
 	bool b = false;
 	String s;
 	Ref<RefCounted> o;
+	// Heavy payloads carried via shared pointer so Variant remains
+	// small and copyable; the engine uses CoW + in-place storage.
+	std::shared_ptr<PackedByteArray> pba;
+	// PackedVector2Array isn't actually round-tripped through
+	// Variant in godot-speech (the engine binds it but it's never
+	// the rhs of `Variant = …`); declare a placeholder slot for
+	// completeness so the conversion path compiles.
 
 public:
 	Variant() = default;
@@ -62,6 +76,9 @@ public:
 			type(STRING), s(v) {}
 	Variant(const String &v) :
 			type(STRING), s(v) {}
+	Variant(const PackedByteArray &v) :
+			type(PACKED_BYTE_ARRAY),
+			pba(std::make_shared<PackedByteArray>(v)) {}
 
 	// Accept any Ref<T> where T derives from RefCounted.
 	template <typename T>
@@ -70,6 +87,53 @@ public:
 		if (v.is_valid()) {
 			o = Ref<RefCounted>(static_cast<RefCounted *>(v.ptr_raw()));
 		}
+	}
+
+	// Engine's Dictionary::operator[] returns a Variant&, which
+	// callers then assign to. The model uses std::map under the
+	// hood, so to match `dict["key"] = some_value` we need
+	// Variant's assignment to accept whatever the engine assigns.
+	// Implement via re-construction from the rhs.
+	Variant &operator=(bool v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(int v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(int64_t v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(uint32_t v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(const PackedByteArray &v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(float v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(double v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(const char *v) {
+		*this = Variant(v);
+		return *this;
+	}
+	Variant &operator=(const String &v) {
+		*this = Variant(v);
+		return *this;
+	}
+	template <typename T>
+	Variant &operator=(const Ref<T> &v) {
+		*this = Variant(v);
+		return *this;
 	}
 
 	Type get_type() const { return type; }
@@ -95,6 +159,9 @@ public:
 	operator float() const { return static_cast<float>(f); }
 	operator double() const { return f; }
 	operator String() const { return s; }
+	operator PackedByteArray() const {
+		return pba ? *pba : PackedByteArray();
+	}
 
 	// Implicit Ref<T> conversion via dynamic_cast through the
 	// stored RefCounted*. Mirrors the engine's behavior: the

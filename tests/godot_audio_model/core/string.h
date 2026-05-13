@@ -93,6 +93,68 @@ inline String operator+(const char *lhs, const String &rhs) {
 	return String(lhs) + rhs;
 }
 
+// `vformat(fmt, args...)` — engine's printf-ish String formatter.
+// Engine uses `String::sprintf` with Variant args; we forward to
+// snprintf and ignore type-checking. Sufficient for the few log
+// strings godot-speech builds with it.
+namespace _audio_model {
+inline String vformat_impl(const char *fmt) {
+	return String(fmt);
+}
+
+template <typename T>
+inline String vformat_impl(const char *fmt, T arg) {
+	char buf[256];
+	std::snprintf(buf, sizeof(buf), fmt, arg);
+	return String(buf);
+}
+
+inline const char *cstr_of(const String &s) {
+	return s.utf8().get_data();
+}
+inline const char *cstr_of(const char *s) {
+	return s;
+}
+} // namespace _audio_model
+
+// vformat with arbitrary args — Godot's signature accepts up to N
+// args of any printable type. We forward through snprintf.
+inline String vformat(const String &fmt) {
+	return fmt;
+}
+
+template <typename A>
+inline String vformat(const String &fmt, const A &a) {
+	(void)a;
+	// Replace each `%s` with the next arg via simple substitution.
+	// godot-speech uses %s with already-stringified arguments, so a
+	// single-pass single-arg replace is sufficient.
+	const std::string &src = fmt.std_str();
+	auto pos = src.find("%s");
+	if (pos == std::string::npos) {
+		return fmt;
+	}
+	String result(src.substr(0, pos));
+	if constexpr (std::is_same_v<A, String>) {
+		result = result + a;
+	} else if constexpr (std::is_same_v<A, const char *>) {
+		result = result + String(a);
+	} else {
+		result = result + itos(static_cast<long long>(a));
+	}
+	return result + String(src.substr(pos + 2));
+}
+
+template <typename A, typename B>
+inline String vformat(const String &fmt, const A &a, const B &b) {
+	return vformat(vformat(fmt, a), b);
+}
+
+// `SNAME("foo")` — the engine's compile-time StringName literal.
+// Inlines to a temporary StringName here; matches the value-level
+// behavior without the engine's static-cache optimization.
+#define SNAME(m_str) StringName(m_str)
+
 class StringName {
 	std::string s;
 
