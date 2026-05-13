@@ -211,3 +211,32 @@ target_compile_options(net_loopback_picoquic_stress
   PRIVATE
     -Wall -Wextra -Wno-unused-parameter
 )
+
+# Step 4d: polymorphic observer. Runs the same audio pipeline as
+# `net_loopback_observer` (in-process middleware) and additionally
+# pushes the audio packets through `PicoquicNetTransport` for a
+# real QUIC datagram round-trip. Asserts kernel ⇔ engine agreement
+# on both backends.
+add_executable(net_loopback_picoquic_observer
+  picoquic_observer_test.cpp
+)
+
+target_link_libraries(net_loopback_picoquic_observer
+  PRIVATE
+    speech_engine
+    ftxui::screen
+    ftxui::dom
+    picoquic-core
+    picoquic-log
+)
+
+target_compile_definitions(net_loopback_picoquic_observer
+  PRIVATE
+    PICOQUIC_LOOPBACK_CERT_PATH="${picoquic_SOURCE_DIR}/certs/cert.pem"
+    PICOQUIC_LOOPBACK_KEY_PATH="${picoquic_SOURCE_DIR}/certs/key.pem"
+)
+
+target_compile_options(net_loopback_picoquic_observer
+  PRIVATE
+    -Wall -Wextra -Wno-unused-parameter
+)

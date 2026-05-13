@@ -83,7 +83,13 @@ struct ClientCtx {
 	int datagrams_lost = 0; // picoquic gave up on these
 	int last_progress_count = 0; // acked + lost from last progress tick
 	int target_count = 0;
+	// Synthetic-mode payload: every datagram is target_size bytes,
+	// filled by `fill_payload(seq)`.
 	size_t target_size = 0;
+	// Passthrough-mode payload: each datagram comes from
+	// `(*passthrough_payloads)[seq]`. When non-null, target_size is
+	// ignored.
+	const std::vector<std::vector<uint8_t>> *passthrough_payloads = nullptr;
 	int in_flight_window = 8;
 	uint64_t all_queued_at_us = 0;
 	uint64_t last_progress_us = 0;
@@ -106,7 +112,10 @@ inline void fill_payload(uint8_t *buf, size_t len, int seq) {
 // Top up the in-flight window: queue datagrams until either the
 // target count is reached or the window (queued - resolved) is full.
 inline int refill_in_flight(ClientCtx *ctx) {
-	std::vector<uint8_t> payload(ctx->target_size);
+	std::vector<uint8_t> synthetic_payload;
+	if (ctx->passthrough_payloads == nullptr) {
+		synthetic_payload.resize(ctx->target_size);
+	}
 	while (ctx->datagrams_queued < ctx->target_count) {
 		const int resolved = ctx->datagrams_acked + ctx->datagrams_lost;
 		const int in_flight = ctx->datagrams_queued - resolved;
@@ -114,8 +123,18 @@ inline int refill_in_flight(ClientCtx *ctx) {
 			break;
 		}
 		const int seq = ctx->datagrams_queued;
-		fill_payload(payload.data(), payload.size(), seq);
-		int rc = picoquic_queue_datagram_frame(ctx->cnx, payload.size(), payload.data());
+		const uint8_t *bytes = nullptr;
+		size_t len = 0;
+		if (ctx->passthrough_payloads != nullptr) {
+			const auto &p = (*ctx->passthrough_payloads)[seq];
+			bytes = p.data();
+			len = p.size();
+		} else {
+			fill_payload(synthetic_payload.data(), synthetic_payload.size(), seq);
+			bytes = synthetic_payload.data();
+			len = synthetic_payload.size();
+		}
+		int rc = picoquic_queue_datagram_frame(ctx->cnx, len, bytes);
 		if (rc != 0) {
 			std::fprintf(stderr, "picoquic_queue_datagram_frame[%d] = %d\n", seq, rc);
 			return rc;
@@ -473,5 +492,116 @@ inline LoopbackResult run_picoquic_loopback(const LoopbackConfig &cfg) {
 		}
 	}
 	return result;
+}
+
+// Variable-payload batch round-trip: feed each entry of `payloads`
+// to the client as a datagram, return whatever the server received
+// (in arrival order). Used by `PicoquicNetTransport` to ferry the
+// audio engine's actual packets through real QUIC.
+inline std::vector<std::vector<uint8_t>> run_passthrough_batch(
+		const std::vector<std::vector<uint8_t>> &payloads) {
+	std::vector<std::vector<uint8_t>> received_out;
+	if (payloads.empty()) {
+		return received_out;
+	}
+	const int server_port = pick_free_udp_port();
+	if (server_port <= 0) {
+		return received_out;
+	}
+
+	ServerCtx server_ctx;
+	const uint64_t now_us = picoquic_current_time();
+	picoquic_quic_t *server_quic = picoquic_create(
+			8,
+			PICOQUIC_LOOPBACK_CERT_PATH,
+			PICOQUIC_LOOPBACK_KEY_PATH,
+			nullptr,
+			kAlpn,
+			server_callback, &server_ctx,
+			nullptr, nullptr, nullptr,
+			now_us, nullptr,
+			nullptr, nullptr, 0);
+	if (server_quic == nullptr) {
+		return received_out;
+	}
+	picoquic_set_default_tp_value(server_quic, picoquic_tp_max_datagram_frame_size, kMaxDatagramFrameSize);
+	picoquic_set_default_tp_value(server_quic, picoquic_tp_idle_timeout, 1000);
+
+	picoquic_packet_loop_param_t loop_param{};
+	loop_param.local_port = static_cast<uint16_t>(server_port);
+	loop_param.local_af = AF_INET;
+	loop_param.socket_buffer_size = 2 * 1024 * 1024;
+
+	int thread_ret = 0;
+	picoquic_network_thread_ctx_t *server_thread = picoquic_start_network_thread(
+			server_quic, &loop_param, server_loop_cb, nullptr, &thread_ret);
+	if (server_thread == nullptr || thread_ret != 0) {
+		picoquic_free(server_quic);
+		return received_out;
+	}
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+	ClientCtx client_ctx;
+	client_ctx.target_count = static_cast<int>(payloads.size());
+	client_ctx.passthrough_payloads = &payloads;
+	client_ctx.in_flight_window = 2;
+	picoquic_quic_t *client_quic = picoquic_create(
+			1,
+			nullptr, nullptr, nullptr,
+			kAlpn,
+			nullptr, nullptr,
+			nullptr, nullptr, nullptr,
+			now_us, nullptr,
+			nullptr, nullptr, 0);
+	if (client_quic == nullptr) {
+		picoquic_delete_network_thread(server_thread);
+		picoquic_free(server_quic);
+		return received_out;
+	}
+	picoquic_set_default_tp_value(client_quic, picoquic_tp_max_datagram_frame_size, kMaxDatagramFrameSize);
+	picoquic_set_null_verifier(client_quic);
+
+	sockaddr_in server_addr{};
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	server_addr.sin_port = htons(static_cast<uint16_t>(server_port));
+
+	picoquic_cnx_t *cnx = picoquic_create_cnx(
+			client_quic,
+			picoquic_null_connection_id, picoquic_null_connection_id,
+			reinterpret_cast<sockaddr *>(&server_addr),
+			now_us, 0, kSni, kAlpn, /*client_mode=*/1);
+	if (cnx == nullptr) {
+		picoquic_delete_network_thread(server_thread);
+		picoquic_free(client_quic);
+		picoquic_free(server_quic);
+		return received_out;
+	}
+	client_ctx.cnx = cnx;
+	picoquic_set_callback(cnx, client_callback, &client_ctx);
+	picoquic_enable_keep_alive(cnx, 50'000);
+	if (picoquic_start_client_cnx(cnx) != 0) {
+		picoquic_delete_network_thread(server_thread);
+		picoquic_free(client_quic);
+		picoquic_free(server_quic);
+		return received_out;
+	}
+
+	const uint64_t timeout_ms = 2'000 + static_cast<uint64_t>(payloads.size()) * 5;
+	ClientLoopState loop_state;
+	loop_state.client = &client_ctx;
+	loop_state.deadline_us = picoquic_current_time() + timeout_ms * 1000;
+
+	(void)picoquic_packet_loop(client_quic, 0, AF_INET, 0, 2 * 1024 * 1024, 0,
+			client_loop_cb, &loop_state);
+
+	picoquic_wake_up_network_thread(server_thread);
+	picoquic_delete_network_thread(server_thread);
+	picoquic_free(client_quic);
+	picoquic_free(server_quic);
+
+	std::lock_guard<std::mutex> lock(server_ctx.mu);
+	received_out = std::move(server_ctx.received);
+	return received_out;
 }
 } // namespace picoquic_loopback
