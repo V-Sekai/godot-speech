@@ -353,6 +353,12 @@ lean/build/
 # slang_validate build artifacts
 tests/slang_validate/build/
 
+# net_loopback build (also contains the FetchContent FTXUI checkout)
+tests/net_loopback/build/
+
+# godot_audio_model build
+tests/godot_audio_model/build/
+
 # Scons construction environment dump
 .scons_env.json
 
