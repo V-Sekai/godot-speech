@@ -78,13 +78,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install cmake + ninja
+      - name: Install cmake + ninja + opus + libsamplerate
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
             sudo apt-get update
-            sudo apt-get install -y cmake ninja-build
+            sudo apt-get install -y cmake ninja-build libopus-dev libsamplerate0-dev pkg-config
           else
-            brew install cmake ninja
+            brew install cmake ninja opus libsamplerate pkg-config
           fi
         shell: bash
 
@@ -99,6 +99,18 @@ jobs:
       - name: Hello smoke (FTXUI link + render)
         working-directory: tests/net_loopback
         run: ./build/net_loopback_hello
+
+      - name: Loopback driver (sender -> middleware -> receiver)
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_driver
+
+      - name: Dashboard render smoke (FTXUI layout)
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_dashboard_smoke
+
+      - name: Observer (live loopback + kernel ⇔ engine markers)
+        working-directory: tests/net_loopback
+        run: ./build/net_loopback_observer
 
   audio_model_macos:
     name: Audio model (macOS, CoreAudio)

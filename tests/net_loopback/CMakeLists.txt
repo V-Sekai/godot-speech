@@ -18,6 +18,11 @@
 #     V-Sekai-fire/multiplayer-fabric-godot/modules/http3 @ 1c3e475
 
 cmake_minimum_required(VERSION 3.20)
+project(net_loopback CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
 
@@ -37,6 +42,11 @@ set(FTXUI_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(ftxui)
 
+# Reuse the audio_model speech_engine library so the receive +
+# capture paths are exercised through the unedited godot-speech
+# .cpp files. The audio_model CMake target sits one level up.
+add_subdirectory(../godot_audio_model godot_audio_model_build)
+
 # Smoke test: construct an FTXUI element + render to a string in
 # headless mode. Proves the vendoring works without grabbing a PTY.
 add_executable(net_loopback_hello
@@ -50,6 +60,62 @@ target_link_libraries(net_loopback_hello
 )
 
 target_compile_options(net_loopback_hello
+  PRIVATE
+    -Wall -Wextra -Wno-unused-parameter
+)
+
+# Step 1: assertion-based loopback driver. Sender (SpeechProcessor)
+# -> NetMiddleware (synthetic jitter/loss/reorder) -> Speech
+# receiver. No UI; pure pass/fail.
+add_executable(net_loopback_driver
+  loopback_test.cpp
+)
+
+target_link_libraries(net_loopback_driver
+  PRIVATE
+    speech_engine
+)
+
+target_compile_options(net_loopback_driver
+  PRIVATE
+    -Wall -Wextra -Wno-unused-parameter
+)
+
+# Step 2: FTXUI dashboard smoke. Renders the live-state dashboard
+# layout once per profile snapshot. Headless — no ScreenInteractive,
+# no PTY.
+add_executable(net_loopback_dashboard_smoke
+  dashboard_smoke.cpp
+)
+
+target_link_libraries(net_loopback_dashboard_smoke
+  PRIVATE
+    ftxui::screen
+    ftxui::dom
+)
+
+target_compile_options(net_loopback_dashboard_smoke
+  PRIVATE
+    -Wall -Wextra -Wno-unused-parameter
+)
+
+# Step 3: kernel observer overlay. Drives the live loopback and
+# renders the dashboard with kernel-vs-engine agreement markers
+# flipped to red if anything diverges. Same regression-guard
+# contract as godot_audio_model_agreement, but in the loopback
+# context.
+add_executable(net_loopback_observer
+  observer_test.cpp
+)
+
+target_link_libraries(net_loopback_observer
+  PRIVATE
+    speech_engine
+    ftxui::screen
+    ftxui::dom
+)
+
+target_compile_options(net_loopback_observer
   PRIVATE
     -Wall -Wextra -Wno-unused-parameter
 )
