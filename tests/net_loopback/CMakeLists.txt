@@ -185,3 +185,29 @@ target_compile_options(net_loopback_picoquic_datagram
   PRIVATE
     -Wall -Wextra -Wno-unused-parameter
 )
+
+# Step 4c: picoquic datagram stress sweep. Reuses the shared
+# `picoquic_loopback_core.h` harness to drive several (count, size)
+# configurations and assert byte-exact round-trip for each. Same
+# transport setup as 4b — server in background thread, client on
+# main thread, max_datagram_frame_size negotiated.
+add_executable(net_loopback_picoquic_stress
+  picoquic_stress_test.cpp
+)
+
+target_link_libraries(net_loopback_picoquic_stress
+  PRIVATE
+    picoquic-core
+    picoquic-log
+)
+
+target_compile_definitions(net_loopback_picoquic_stress
+  PRIVATE
+    PICOQUIC_LOOPBACK_CERT_PATH="${picoquic_SOURCE_DIR}/certs/cert.pem"
+    PICOQUIC_LOOPBACK_KEY_PATH="${picoquic_SOURCE_DIR}/certs/key.pem"
+)
+
+target_compile_options(net_loopback_picoquic_stress
+  PRIVATE
+    -Wall -Wextra -Wno-unused-parameter
+)
